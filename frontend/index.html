@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Астрокалькулятор · Project Artemisa</title>
+  <meta name="description" content="Астрокалькулятор Project Artemisa — натальная карта, транзиты, синастрия, прогноз, ректификация и Панчанг на точных эфемеридах Swiss Ephemeris. С интерпретациями." />
+  <meta name="theme-color" content="#0c0c1e" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230c0c1e'/%3E%3Ctext x='16' y='23' font-size='20' text-anchor='middle' fill='%23c9a86a'%3E%E2%9C%B7%3C/text%3E%3C/svg%3E" />
+  <meta property="og:title" content="Астрокалькулятор · Project Artemisa" />
+  <meta property="og:description" content="Натальная карта, транзиты, синастрия, прогноз и Панчанг на точных эфемеридах — с понятными интерпретациями." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary" />
+  <script>(function(){try{var t=localStorage.getItem('astro_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div class="stars" id="stars"></div>
+
+  <header class="site-header">
+    <div class="logo">
+      <span class="logo-glyph">☉</span>
+      <div>
+        <h1 data-i18n="title">Астрокалькулятор</h1>
+        <p class="brand" data-i18n="brand">Project Artemisa</p>
+        <p class="tagline" data-i18n="tagline">Натальная карта и транзиты на базе Swiss Ephemeris</p>
+      </div>
+    </div>
+    <div class="auth-area">
+      <div class="lang-switch" id="lang-switch" data-i18n-title="lang_title" title="Язык / Language">
+        <button class="lang-opt" data-lang="ru">RU</button>
+        <button class="lang-opt" data-lang="en">EN</button>
+      </div>
+      <button id="theme-toggle" class="theme-btn" aria-label="Сменить тему" data-i18n-title="theme_title" title="Светлая / тёмная тема">🌙</button>
+      <button id="login-btn" class="auth-btn" data-i18n="login">Войти / Регистрация</button>
+      <div id="user-box" class="user-box hidden">
+        <span class="user-name" id="user-name"></span>
+        <button id="premium-btn" class="auth-btn" data-i18n="premium_btn">✦ Премиум</button>
+        <button id="admin-btn" class="auth-btn hidden" data-i18n="admin_panel">⚙ Админ</button>
+        <button id="logout-btn" class="auth-btn ghost" data-i18n="logout">Выйти</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="modal-overlay hidden" id="auth-modal">
+    <div class="modal">
+      <button class="modal-close" id="modal-close" aria-label="Закрыть">×</button>
+      <div class="tabs auth-tabs">
+        <button class="auth-tab active" data-auth="login" type="button" data-i18n="auth_login">Вход</button>
+        <button class="auth-tab" data-auth="register" type="button" data-i18n="auth_register">Регистрация</button>
+      </div>
+      <form id="auth-form" autocomplete="off">
+        <label data-i18n="username">Имя пользователя
+          <input type="text" id="auth-username" autocomplete="username" />
+        </label>
+        <label data-i18n="password">Пароль
+          <input type="password" id="auth-password" autocomplete="current-password" />
+        </label>
+        <div class="consent-row hidden" id="consent-row">
+          <label class="consent-item">
+            <input type="checkbox" id="terms-check" />
+            <span data-i18n-html="consent_terms">Я принимаю <a href="#" id="terms-link">Пользовательское соглашение</a>.</span>
+          </label>
+          <label class="consent-item">
+            <input type="checkbox" id="consent-check" />
+            <span data-i18n-html="consent">Я ознакомлен(а) с <a href="#" id="privacy-link">политикой обработки персональных данных</a> и даю согласие на обработку моих данных в соответствии с Федеральным законом № 152-ФЗ.</span>
+          </label>
+        </div>
+        <div class="auth-error hidden" id="auth-error"></div>
+        <button type="submit" class="btn-primary" id="auth-submit" data-i18n="do_login">Войти</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="premium-modal">
+    <div class="modal">
+      <button class="modal-close" id="premium-close" aria-label="Закрыть">×</button>
+      <h3 data-i18n="premium_title">Подписка «Премиум»</h3>
+      <p class="section-note" data-i18n="premium_desc">Глубокий отчёт, ректификация, синастрия, прогнозы и PDF-экспорт.</p>
+      <div class="premium-status hidden" id="premium-status"></div>
+      <div class="premium-plans" id="premium-plans">
+        <button class="btn-primary" data-plan="month" type="button">
+          <span data-i18n="plan_month">Месяц</span> — 299 ₽
+        </button>
+        <button class="btn-primary" data-plan="year" type="button">
+          <span data-i18n="plan_year">Год</span> — 1990 ₽ <small data-i18n="plan_year_note">(экономия 45%)</small>
+        </button>
+      </div>
+      <div class="auth-error hidden" id="premium-error"></div>
+      <p class="section-note" data-i18n="premium_note">Оплата через ЮKassa. Подписка активируется сразу после оплаты.</p>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="privacy-modal">
+    <div class="modal modal-wide">
+      <button class="modal-close" id="privacy-close" aria-label="Закрыть">×</button>
+      <h2 class="privacy-title" data-i18n="privacy_title">Политика обработки персональных данных</h2>
+      <div class="privacy-text">
+        <p data-i18n="privacy_p_intro">Настоящая Политика разработана в соответствии с Федеральным законом от 27.07.2006 № 152-ФЗ «О персональных данных» и определяет порядок обработки данных пользователей сервиса «Project Artemisa» (далее — Сервис).</p>
+        <p data-i18n-html="privacy_p_operator"><strong>Оператор.</strong> Обработку персональных данных осуществляет Шубин Артём Иванович, применяющий специальный налоговый режим «Налог на профессиональный доход» (самозанятый), ИНН 245010711934. Адрес для запросов по вопросам обработки персональных данных (удаление, отзыв согласия): [указать e-mail].</p>
+        <p data-i18n-html="privacy_p1"><strong>1. Какие данные обрабатываются.</strong> Имя пользователя и пароль (в зашифрованном виде); вводимые вами данные рождения (дата, время, место/координаты) и названия сохранённых карт. Сервис не запрашивает паспортных данных, контактов и платёжной информации.</p>
+        <p data-i18n-html="privacy_p2"><strong>2. Цель обработки.</strong> Регистрация и вход в личный кабинет, выполнение астрологических расчётов и сохранение ваших карт для повторного доступа.</p>
+        <p data-i18n-html="privacy_p3"><strong>3. Правовое основание.</strong> Согласие субъекта персональных данных, выражаемое путём отметки соответствующего поля при регистрации.</p>
+        <p data-i18n-html="privacy_p4"><strong>4. Хранение и защита.</strong> Данные хранятся в базе данных Сервиса; пароли хранятся только в виде криптографического хеша (PBKDF2) и не доступны в открытом виде. Доступ к данным ограничен.</p>
+        <p data-i18n-html="privacy_p5"><strong>5. Передача третьим лицам.</strong> Персональные данные не передаются третьим лицам. Для поиска города используется внешний сервис геокодирования (OpenStreetMap) — туда отправляется только введённый вами текст города, без привязки к личности.</p>
+        <p data-i18n-html="privacy_p6"><strong>6. Права пользователя.</strong> Вы вправе в любой момент удалить сохранённые карты, отозвать согласие и потребовать удаления учётной записи. Согласие даётся добровольно.</p>
+        <p data-i18n-html="privacy_p7"><strong>7. Срок.</strong> Данные обрабатываются до удаления учётной записи пользователем либо до отзыва согласия.</p>
+        <p class="info-disclaimer" data-i18n="privacy_disclaimer">Сервис носит образовательно-развлекательный характер и не оказывает медицинских, юридических или финансовых услуг.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="terms-modal">
+    <div class="modal modal-wide">
+      <button class="modal-close" id="terms-close" aria-label="Закрыть">×</button>
+      <h2 class="privacy-title" data-i18n="terms_title">Пользовательское соглашение</h2>
+      <div class="privacy-text">
+        <p data-i18n="terms_p_intro">Настоящее Пользовательское соглашение (далее — Соглашение) регулирует отношения между Шубиным Артёмом Ивановичем, применяющим специальный налоговый режим «Налог на профессиональный доход» (самозанятый), ИНН 245010711934 (далее — Администрация), и пользователем сервиса «Project Artemisa» (далее — Сервис). Начиная использовать Сервис, пользователь принимает условия Соглашения в полном объёме.</p>
+        <p data-i18n-html="terms_p1"><strong>1. Предмет.</strong> Сервис предоставляет пользователю доступ к астрологическим расчётам (натальная карта, транзиты, синастрия, прогнозы, ректификация и др.) и текстовым интерпретациям на основе алгоритмов и эфемерид Swiss Ephemeris.</p>
+        <p data-i18n-html="terms_p2"><strong>2. Характер сервиса.</strong> Сервис носит информационно-развлекательный и образовательный характер. Материалы и интерпретации не являются научным, медицинским, психологическим, юридическим или финансовым заключением и не заменяют консультацию соответствующего специалиста.</p>
+        <p data-i18n-html="terms_p3"><strong>3. Отсутствие гарантий и ограничение ответственности.</strong> Астрологические расчёты и прогнозы описывают потенциал и тенденции, а не предопределённые события. Администрация не гарантирует достоверность, точность или применимость результатов и не несёт ответственности за решения, действия или последствия, наступившие в результате использования Сервиса. Пользователь принимает такие решения самостоятельно и на свой риск.</p>
+        <p data-i18n-html="terms_p4"><strong>4. Возрастное ограничение.</strong> Сервис предназначен для лиц старше 18 лет (18+).</p>
+        <p data-i18n-html="terms_p5"><strong>5. Обязанности пользователя.</strong> Пользователь обязуется не использовать Сервис в противоправных целях, не нарушать его работу и не вводить данные третьих лиц без их согласия. Ответственность за корректность введённых данных несёт пользователь.</p>
+        <p data-i18n-html="terms_p6"><strong>6. Интеллектуальная собственность.</strong> Программный код, оформление и тексты интерпретаций Сервиса охраняются законом. Использование материалов Сервиса вне личных некоммерческих целей без согласия Администрации не допускается.</p>
+        <p data-i18n-html="terms_p7"><strong>7. Персональные данные.</strong> Обработка персональных данных осуществляется в соответствии с Политикой обработки персональных данных, размещённой на Сервисе.</p>
+        <p data-i18n-html="terms_p8"><strong>8. Изменение условий.</strong> Администрация вправе изменять условия Соглашения и функциональность Сервиса. Актуальная редакция размещается на Сервисе.</p>
+        <p class="info-disclaimer" data-i18n="terms_disclaimer">Платные функции и условия подписки, при их введении, будут регулироваться отдельной публичной офертой.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="chart-modal">
+    <div class="chart-modal-inner">
+      <button class="modal-close" id="chart-modal-close" aria-label="Закрыть">×</button>
+      <div id="chart-modal-svg"></div>
+      <div class="chart-zoom-controls">
+        <button id="chart-zoom-out" aria-label="Уменьшить">−</button>
+        <button id="chart-zoom-reset" aria-label="По размеру экрана">⤢</button>
+        <button id="chart-zoom-in" aria-label="Увеличить">+</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="admin-modal">
+    <div class="modal modal-wide">
+      <button class="modal-close" id="admin-close" aria-label="Закрыть">×</button>
+      <h2 class="privacy-title" data-i18n="admin_panel">Админ-панель</h2>
+      <div id="admin-stats" class="admin-stats"></div>
+      <div class="table-wrap"><table id="admin-users"></table></div>
+
+      <h3 class="adm-section-title" data-i18n="admin_texts_title">Редактор текстов</h3>
+      <p class="hint" data-i18n="admin_texts_hint">Найдите любой текст по словам или ключу и отредактируйте. Изменения применяются сразу ко всем расчётам.</p>
+      <div class="adm-text-controls">
+        <input type="text" id="admin-text-search" data-i18n-ph="admin_texts_search" placeholder="Поиск по тексту или ключу…" />
+        <label class="adm-text-onlyov"><input type="checkbox" id="admin-text-overridden" /> <span data-i18n="admin_texts_only">только изменённые</span></label>
+      </div>
+      <div id="admin-text-count" class="adm-text-count"></div>
+      <div id="admin-text-list"></div>
+      <button id="admin-text-more" class="vedic-btn hidden" data-i18n="admin_texts_more">Показать ещё</button>
+
+      <details class="adm-audit">
+        <summary data-i18n="admin_audit_title">История правок текстов</summary>
+        <div id="admin-audit-list"></div>
+      </details>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="deep-modal">
+    <div class="modal modal-report">
+      <button class="modal-close" id="deep-close" aria-label="Закрыть">×</button>
+      <div class="report-actions">
+        <button id="deep-pdf" class="vedic-btn" data-i18n="deep_pdf">📄 Скачать PDF</button>
+        <button id="deep-print" class="vedic-btn" data-i18n="deep_print">🖨 Печать</button>
+      </div>
+      <div id="deep-content" class="report-content"></div>
+    </div>
+  </div>
+
+  <main class="layout">
+    <!-- Панель ввода -->
+    <aside class="panel form-panel">
+      <h2 data-i18n="birth_data">Данные рождения</h2>
+      <form id="birth-form" autocomplete="off">
+        <label data-i18n="name">Имя
+          <input type="text" id="name" data-i18n-ph="name_ph" placeholder="Например, Анна" />
+        </label>
+
+        <div class="row">
+          <label data-i18n="birth_date">Дата рождения
+            <input type="date" id="birth-date" required />
+          </label>
+          <label data-i18n="time">Время
+            <input type="time" id="birth-time" value="12:00" required />
+          </label>
+        </div>
+
+        <label data-i18n="birth_city">Город рождения
+          <div class="autocomplete">
+            <input type="text" id="city" data-i18n-ph="city_ph" placeholder="Начните вводить город…" autocomplete="off" />
+            <ul id="city-results" class="suggestions hidden"></ul>
+          </div>
+        </label>
+
+        <div class="geo-confirm hidden" id="geo-confirm"></div>
+
+        <details class="manual-coords" id="manual-coords">
+          <summary data-i18n="manual_coords">Координаты вручную</summary>
+          <div class="row">
+            <label data-i18n="lat">Широта
+              <input type="number" id="lat" step="any" placeholder="55.7558" />
+            </label>
+            <label data-i18n="lng">Долгота
+              <input type="number" id="lng" step="any" placeholder="37.6173" />
+            </label>
+          </div>
+          <button type="button" class="btn-rev-geo" id="rev-geo-btn" data-i18n="rev_geo_btn">🔎 Определить место по координатам</button>
+          <input type="hidden" id="tz" />
+        </details>
+
+        <label data-i18n="houses_system">Система домов
+          <select id="houses-system">
+            <option value="P" selected data-i18n="hs_P">Плацидус</option>
+            <option value="K" data-i18n="hs_K">Кох</option>
+            <option value="W" data-i18n="hs_W">Цельнознаковая</option>
+            <option value="E" data-i18n="hs_E">Равнодомная</option>
+            <option value="R" data-i18n="hs_R">Региомонтан</option>
+            <option value="C" data-i18n="hs_C">Кампано</option>
+            <option value="B" data-i18n="hs_B">Алькабитиус</option>
+            <option value="M" data-i18n="hs_M">Морин</option>
+          </select>
+        </label>
+
+        <div class="transit-block hidden" id="transit-block">
+          <h3 data-i18n="transit_date_title">Дата транзита</h3>
+          <div class="row">
+            <label data-i18n="date_cap">Дата
+              <input type="date" id="transit-date" />
+            </label>
+            <label data-i18n="time">Время
+              <input type="time" id="transit-time" value="12:00" />
+            </label>
+          </div>
+        </div>
+
+        <div class="transit-block hidden" id="synastry-block">
+          <h3 data-i18n="syn_second_person">Второй человек</h3>
+          <label class="b-saved-wrap hidden" id="b-saved-wrap" data-i18n="syn_from_saved">Из сохранённых карт
+            <select id="b-saved"><option value=""></option></select>
+          </label>
+          <label data-i18n="name">Имя
+            <input type="text" id="b-name" data-i18n-ph="name_ph" placeholder="Например, Иван" />
+          </label>
+          <div class="row">
+            <label data-i18n="birth_date">Дата рождения
+              <input type="date" id="b-date" />
+            </label>
+            <label data-i18n="time">Время
+              <input type="time" id="b-time" value="12:00" />
+            </label>
+          </div>
+          <label data-i18n="birth_city">Город рождения
+            <div class="autocomplete">
+              <input type="text" id="b-city" data-i18n-ph="city_ph" placeholder="Начните вводить город…" autocomplete="off" />
+              <ul id="b-city-results" class="suggestions hidden"></ul>
+            </div>
+          </label>
+
+          <div class="geo-confirm hidden" id="b-geo-confirm"></div>
+
+          <details class="manual-coords">
+            <summary data-i18n="manual_coords">Координаты вручную</summary>
+            <div class="row">
+              <label data-i18n="lat">Широта
+                <input type="number" id="b-lat" step="any" placeholder="59.9311" />
+              </label>
+              <label data-i18n="lng">Долгота
+                <input type="number" id="b-lng" step="any" placeholder="30.3609" />
+              </label>
+            </div>
+          </details>
+          <input type="hidden" id="b-tz" />
+        </div>
+
+        <div class="transit-block hidden" id="return-block">
+          <h3 data-i18n="return_chart_title">Карта возвращения</h3>
+          <div class="row">
+            <label><span data-i18n="return_type">Тип</span>
+              <select id="return-type">
+                <option value="Solar" data-i18n="return_solar_opt">Соляр — год</option>
+                <option value="Lunar" data-i18n="return_lunar_opt">Лунар — месяц</option>
+              </select>
+            </label>
+            <label id="return-year-label"><span data-i18n="return_year_cap">Год</span>
+              <input type="number" id="return-year" placeholder="2026" min="1" max="3000" />
+            </label>
+            <label id="return-month-label" class="hidden"><span data-i18n="return_month_cap">Месяц</span>
+              <select id="return-month"></select>
+            </label>
+          </div>
+          <p class="hint" id="return-hint" style="margin-top:0"></p>
+        </div>
+
+        <div class="transit-block hidden" id="progression-block">
+          <h3 data-i18n="prog_date_title">Дата прогрессии</h3>
+          <div class="row">
+            <label data-i18n="date_cap">Дата
+              <input type="date" id="prog-date" />
+            </label>
+            <label data-i18n="time">Время
+              <input type="time" id="prog-time" value="12:00" />
+            </label>
+          </div>
+          <p class="hint" style="margin-top:0" data-i18n="prog_hint">Вторичные прогрессии (день = год) + дирекции солнечной дуги на указанную дату.</p>
+        </div>
+
+        <div class="transit-block hidden" id="calendar-block">
+          <h3 data-i18n="cal_period_title">Период календаря</h3>
+          <div class="row">
+            <label data-i18n="period_from">С
+              <input type="date" id="cal-start" />
+            </label>
+            <label data-i18n="period_to">По
+              <input type="date" id="cal-end" />
+            </label>
+          </div>
+          <p class="hint" style="margin-top:0" data-i18n="cal_hint">Даты точных транзитов медленных планет к натальной карте (без Луны и осей). Максимум 2 года.</p>
+        </div>
+
+        <div class="transit-block hidden" id="forecast-block">
+          <h3 data-i18n="fc_period_title">Период прогноза</h3>
+          <div class="row">
+            <label data-i18n="period_from">С
+              <input type="date" id="fc-start" />
+            </label>
+            <label data-i18n="period_to">По
+              <input type="date" id="fc-end" />
+            </label>
+          </div>
+          <p class="hint" style="margin-top:0" data-i18n="fc_hint">Профекция (хозяин года), прогрессивная Луна и ключевые транзиты медленных планет с трактовкой. Максимум 3 года.</p>
+        </div>
+
+        <div class="transit-block hidden" id="rect-block">
+          <h3 data-i18n="rect_title">Ректификация времени</h3>
+          <p class="hint" style="margin-top:0" data-i18n="rect_hint">Не знаете точное время рождения? Укажите события жизни и/или опишите себя в анкете по Асценденту — подберём наиболее вероятное время.</p>
+          <p class="rect-key-note" data-i18n="rect_key_note">⭐ Главное для точности: заполните «Анкету по Асценденту» и «Предрасположенности» — они надёжно определяют восходящий знак (окно ~2 ч). По одним только событиям время определить нельзя.</p>
+          <div class="row" id="rect-mode-switch">
+            <label class="consent-row">
+              <input type="radio" name="rect-mode" value="range" checked />
+              <span data-i18n="rect_mode_range">Диапазон времени</span>
+            </label>
+            <label class="consent-row">
+              <input type="radio" name="rect-mode" value="window" />
+              <span data-i18n="rect_mode_window">Примерное время ± окно</span>
+            </label>
+          </div>
+          <div id="rect-range-fields">
+            <div class="row">
+              <label data-i18n="rect_from">Время с
+                <input type="time" id="rect-start" value="00:00" />
+              </label>
+              <label data-i18n="rect_to">Время по
+                <input type="time" id="rect-end" value="23:59" />
+              </label>
+            </div>
+            <label data-i18n="rect_step">Шаг перебора
+              <select id="rect-step">
+                <option value="5" data-i18n="rect_step_5">5 минут (точнее, дольше)</option>
+                <option value="10" data-i18n="rect_step_10">10 минут</option>
+                <option value="15" selected data-i18n="rect_step_15">15 минут</option>
+                <option value="20" data-i18n="rect_step_20">20 минут</option>
+                <option value="30" data-i18n="rect_step_30">30 минут (быстро)</option>
+              </select>
+            </label>
+          </div>
+          <div id="rect-window-fields" class="hidden">
+            <div class="row">
+              <label data-i18n="rect_center">Примерное время рождения
+                <input type="time" id="rect-center" value="12:00" />
+              </label>
+              <label data-i18n="rect_window">Окно перебора
+                <select id="rect-window">
+                  <option value="60" data-i18n="rect_window_60">±1 час</option>
+                  <option value="120" selected data-i18n="rect_window_120">±2 часа</option>
+                  <option value="180" data-i18n="rect_window_180">±3 часа</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div class="rect-sub-title" data-i18n="rect_events_title">События жизни</div>
+          <p class="hint" style="margin-top:2px" data-i18n="rect_events_hint">Браки, переезды, рождение детей, потери, травмы — дата и краткое описание.</p>
+          <div class="rect-events" id="rect-events"></div>
+          <button type="button" id="rect-add-event" class="save-btn">＋ <span data-i18n="rect_add_event">Добавить событие</span></button>
+
+          <details class="rect-asc" id="rect-asc">
+            <summary data-i18n="rect_asc_title">Анкета по Асценденту (опишите себя)</summary>
+            <p class="hint" data-i18n="rect_asc_hint">Выберите по одному варианту в каждом пункте — это поможет уточнить восходящий знак, даже если событий мало.</p>
+            <div id="rect-asc-q"></div>
+          </details>
+
+          <details class="rect-asc" id="rect-pred">
+            <summary data-i18n="rect_pred_title">Предрасположенности (что про вас?)</summary>
+            <p class="hint" data-i18n="rect_pred_hint">Отметьте редкие, но «читаемые» в карте особенности судьбы. Это сильно уточняет время (признаки зависят от домов).</p>
+            <div id="rect-pred-list"></div>
+            <div class="row" style="margin-top:12px">
+              <label data-i18n="rect_parent_mother">Знак Солнца мамы
+                <select id="rect-parent-mother"></select>
+              </label>
+              <label data-i18n="rect_parent_father">Знак Солнца папы
+                <select id="rect-parent-father"></select>
+              </label>
+            </div>
+            <p class="hint" data-i18n="rect_parent_hint">Тай-брейк: если Асцендент неоднозначен, он обычно совпадает со знаком Солнца одного из родителей.</p>
+          </details>
+        </div>
+
+        <div class="transit-block hidden" id="vedic-block">
+          <h3 data-i18n="tab_vedic">Панчанг</h3>
+          <p class="hint" style="margin-top:0" data-i18n="vedic_hint">Ведический календарь…</p>
+          <label data-i18n="vedic_month">Месяц
+            <input type="month" id="vedic-month" />
+          </label>
+          <label class="consent-row" style="margin-top:6px">
+            <input type="checkbox" id="vedic-personalize" checked />
+            <span data-i18n="vedic_personalize">Учитывать мои данные (Тарабала)</span>
+          </label>
+        </div>
+
+        <datalist id="event-suggestions"></datalist>
+
+        <button type="submit" class="btn-primary" id="calc-btn">
+          <span class="btn-text">Рассчитать</span>
+        </button>
+        <button type="button" class="btn-sample" id="sample-btn" data-i18n="sample_btn">✦ Показать пример</button>
+      </form>
+
+      <div class="saved-block hidden" id="saved-block">
+        <h3 data-i18n="my_charts">Мои карты</h3>
+        <button type="button" id="save-current" class="save-btn" data-i18n="save_current">＋ Сохранить текущие данные</button>
+        <ul id="saved-list" class="saved-list"></ul>
+      </div>
+
+      <p class="hint" data-i18n="hint_offline">Если интернет недоступен — введите широту/долготу вручную, часовой пояс определится по координатам офлайн.</p>
+    </aside>
+
+    <!-- Результаты -->
+    <section class="panel result-panel">
+      <div class="tabs">
+        <button class="tab active" data-mode="natal" data-i18n="tab_natal" data-i18n-title="tt_natal">Натальная карта</button>
+        <button class="tab" data-mode="transit" data-i18n="tab_transit" data-i18n-title="tt_transit">Транзиты</button>
+        <button class="tab" data-mode="synastry" data-i18n="tab_synastry" data-i18n-title="tt_synastry">Синастрия</button>
+        <button class="tab" data-mode="return" data-i18n="tab_return" data-i18n-title="tt_return">Соляр / Лунар</button>
+        <button class="tab" data-mode="progression" data-i18n="tab_progression" data-i18n-title="tt_progression">Прогрессии</button>
+        <button class="tab" data-mode="calendar" data-i18n="tab_calendar" data-i18n-title="tt_calendar">Календарь</button>
+        <button class="tab" data-mode="forecast" data-i18n="tab_forecast" data-i18n-title="tt_forecast">Прогноз</button>
+        <button class="tab" data-mode="rectification" data-i18n="tab_rectification" data-i18n-title="tt_rectification">Ректификация</button>
+        <button class="tab" data-mode="vedic" data-i18n="tab_vedic" data-i18n-title="tt_vedic">Панчанг</button>
+      </div>
+
+      <div id="placeholder" class="placeholder">
+        <div class="placeholder-glyph">✷</div>
+        <p data-i18n="placeholder">Заполните данные рождения и нажмите «Рассчитать», чтобы увидеть карту, положения планет, дома и аспекты.</p>
+      </div>
+
+      <div id="loader" class="loader hidden"><div class="spinner"></div><span data-i18n="loading">Считаем эфемериды…</span></div>
+      <div id="error" class="error hidden"></div>
+
+      <div id="result-toolbar" class="result-toolbar hidden">
+        <button id="result-pdf" class="result-print-btn" data-i18n="result_pdf">📄 Скачать PDF</button>
+        <button id="result-print" class="result-print-btn" data-i18n="result_print">🖨 Печать</button>
+      </div>
+
+      <div id="results" class="results hidden">
+        <label id="simple-toggle-row" class="simple-toggle hidden">
+          <input type="checkbox" id="simple-mode" />
+          <span data-i18n="simple_mode">Простыми словами — без астрологических терминов</span>
+        </label>
+        <div class="chart-area" id="chart-area">
+          <div id="chart-svg" class="chart-svg"></div>
+          <button type="button" id="chart-png-btn" class="chart-png-btn hidden" data-i18n="save_png">🖼 Сохранить карту (PNG)</button>
+          <div class="summary" id="summary"></div>
+        </div>
+
+        <div id="portrait" class="portrait hidden"></div>
+        <div id="psych" class="portrait hidden"></div>
+        <button id="deep-report-btn" class="btn-deep hidden" data-i18n="deep_report">📖 Подробный разбор</button>
+        <div id="spheres" class="portrait hidden"></div>
+        <div id="story" class="story-view hidden"></div>
+
+        <div id="forecast-view" class="hidden">
+          <div class="summary" id="forecast-summary"></div>
+          <div id="forecast-blocks" class="portrait"></div>
+          <h3 class="forecast-events-title" data-i18n="fc_key_transits">Ключевые транзиты периода</h3>
+          <div id="forecast-list" class="calendar-list"></div>
+        </div>
+
+        <div id="calendar-view" class="hidden">
+          <div class="summary" id="calendar-summary"></div>
+          <div id="calendar-grids" class="cal-months"></div>
+          <div id="calendar-detail" class="vedic-detail"></div>
+        </div>
+
+        <div id="vedic-view" class="hidden">
+          <div class="vedic-head" id="vedic-head"></div>
+          <div class="vedic-grid" id="vedic-grid"></div>
+          <div class="vedic-detail" id="vedic-detail"></div>
+        </div>
+
+        <div id="rect-view" class="hidden">
+          <div id="rect-best" class="rect-best"></div>
+          <div id="rect-luminary"></div>
+          <h3 class="forecast-events-title" data-i18n="rect_top_title">Наиболее вероятные времена</h3>
+          <div id="rect-candidates" class="rect-candidates"></div>
+          <h3 class="forecast-events-title" data-i18n="rect_why_title">Почему это время: совпадения по событиям</h3>
+          <div class="table-wrap"><table id="rect-breakdown"></table></div>
+          <p class="info-disclaimer" style="margin-top:16px" data-i18n="rect_disclaimer">Ректификация — вспомогательный инструмент: она предлагает вероятные времена по астрологическим совпадениям, но итоговое время стоит подтвердить у астролога и сверить с характером и внешностью.</p>
+        </div>
+
+        <div class="data-grids" id="data-grids">
+          <div class="data-section hidden" id="interp-section">
+            <h3 id="interp-section-title" data-i18n="sec_interp">Интерпретации</h3>
+            <div id="interp-list" class="interp-list"></div>
+          </div>
+
+          <details class="data-section collapsible" open>
+            <summary><h3 id="planets-title" data-i18n="sec_planets">Положения планет</h3></summary>
+            <div class="table-wrap"><table id="planets-table"></table></div>
+          </details>
+
+          <details class="data-section collapsible" id="houses-section" open>
+            <summary><h3 id="houses-section-title" data-i18n="sec_houses">Дома</h3></summary>
+            <div class="table-wrap"><table id="houses-table"></table></div>
+          </details>
+
+          <details class="data-section collapsible" open>
+            <summary><h3 id="aspects-title" data-i18n="sec_aspects">Аспекты</h3></summary>
+            <p class="section-note" id="aspects-note" data-i18n="aspects_note">Наведите на строку аспекта, чтобы увидеть трактовку.</p>
+            <div class="table-wrap"><table id="aspects-table"></table></div>
+          </details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <section class="info-section">
+    <details id="archetypes-details">
+      <summary data-i18n="archetypes_summary">Как понять себя и других — архетипы знаков</summary>
+      <div class="info-body">
+        <p data-i18n="archetypes_intro">Каждый знак — это архетип, психологический «тип энергии». У любого знака есть здоровое (сильное) и теневое (искажённое) проявление. Понимание архетипа помогает увидеть мотивы — свои и окружающих.</p>
+        <div id="archetypes-grid" class="archetypes-grid"></div>
+      </div>
+    </details>
+    <details>
+      <summary data-i18n="method_summary">О методике и точности расчётов</summary>
+      <div class="info-body">
+        <p data-i18n-html="method_ephemeris"><strong>Эфемериды.</strong> Положения планет, светил и фиктивных точек вычисляются с помощью <em>Swiss Ephemeris</em> — того же высокоточного эфемеридного движка, что используется в профессиональных астрологических программах. Точность положений — доли угловой секунды.</p>
+        <p data-i18n-html="method_houses"><strong>Дома.</strong> Доступны 8 систем домов: Плацидус (по умолчанию, наиболее распространённая), Кох, Региомонтан, Кампано, равнодомная, цельнознаковая (Whole Sign), Алькабитиус и Морин. Для корректного расчёта домов и Асцендента важно указать точное время рождения.</p>
+        <p data-i18n-html="method_aspects"><strong>Аспекты.</strong> Учитываются мажорные и минорные аспекты с принятыми орбисами. Характер аспекта (гармоничный, напряжённый, нейтральный) обозначен цветом.</p>
+        <p data-i18n-html="method_dignities"><strong>Достоинства.</strong> Эссенциальные достоинства планет (обитель, экзальтация, изгнание, падение) рассчитываются по традиционной системе управителей и показывают силу планеты в знаке.</p>
+        <p data-i18n-html="method_rulers"><strong>Управители и традиция.</strong> Управитель карты, хозяин года и достоинства считаются по <em>традиционным</em> управителям (Скорпион — Марс, Водолей — Сатурн, Рыбы — Юпитер), а высшие планеты (Уран, Нептун, Плутон) показаны в карте как со-управители современной школы. Дополнительно учитываются классические факторы: <em>карта дня или ночи</em> (секта — рождение днём/ночью) и <em>Жребий Фортуны</em>.</p>
+        <p data-i18n-html="method_forecast"><strong>Прогностика.</strong> Годовая профекция строится по <em>цельнознаковой</em> системе (один знак — один год жизни), даже когда натальная карта рассчитана в Плацидусе — это принятая практика традиционной астрологии. Прогрессии — вторичные (день за год), дирекции — солнечной дугой.</p>
+        <p data-i18n-html="method_interp"><strong>Интерпретации.</strong> Тексты формируются по классическим астрологическим принципам и носят рекомендательный характер. Натальная карта описывает потенциал и тенденции, а не предопределённость: то, как реализуются её указания, зависит от самого человека.</p>
+        <p class="info-disclaimer" data-i18n="method_disclaimer">Сервис предназначен для самопознания и образования и не заменяет консультацию специалиста по вопросам здоровья, финансов или права.</p>
+      </div>
+    </details>
+    <details id="glossary-details">
+      <summary data-i18n="glossary_title">Словарь терминов</summary>
+      <div class="info-body">
+        <p data-i18n="glossary_hint">Короткие пояснения основных понятий — чтобы результаты были понятнее.</p>
+        <div id="glossary-grid" class="glossary-grid"></div>
+      </div>
+    </details>
+  </section>
+
+  <footer class="site-footer">
+    <p data-i18n="footer">Расчёты выполняются Swiss Ephemeris через Kerykeion. Создано для самопознания и образования.</p>
+    <p class="footer-legal">
+      <a href="#" id="footer-privacy" data-i18n="footer_privacy">Политика обработки персональных данных</a>
+      <span class="footer-sep" aria-hidden="true">·</span>
+      <a href="#" id="footer-terms" data-i18n="footer_terms">Пользовательское соглашение</a>
+      <span class="footer-sep" aria-hidden="true">·</span>
+      <span class="age-badge" data-i18n-title="age_badge_title" title="Сервис предназначен для лиц старше 18 лет">18+</span>
+      <span class="footer-sep" aria-hidden="true">·</span>
+      <a href="https://github.com/shubinarti-glitch/astro-calculator" id="footer-source" target="_blank" rel="noopener" data-i18n="footer_source">Исходный код (AGPL-3.0)</a>
+    </p>
+    <p class="footer-disclaimer info-disclaimer" data-i18n="footer_disclaimer">Сервис носит информационно-развлекательный характер, не гарантирует достоверность прогнозов и не заменяет консультацию специалиста. Оператор — Шубин А. И., самозанятый (НПД).</p>
+  </footer>
+
+  <script src="/js/i18n.js?v=8"></script>
+  <script src="/js/app.js?v=8"></script>
+</body>
+</html>

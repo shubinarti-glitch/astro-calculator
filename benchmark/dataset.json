@@ -1,0 +1,392 @@
+{
+  "meta": {
+    "description": "AA-rated birth data benchmark for rectification validation",
+    "generated": "2026-07-05",
+    "count": 15
+  },
+  "cases": [
+    {
+      "name": "Elvis Presley",
+      "rodden": "AA",
+      "source": "https://www.astro.com/astro-databank/Presley,_Elvis",
+      "birth": {
+        "year": 1935, "month": 1, "day": 8,
+        "hour": 4, "minute": 35,
+        "lat": 34.2576, "lng": -88.7034,
+        "tz_str": "America/Chicago",
+        "city": "Tupelo, MS, USA"
+      },
+      "events": [
+        {"date": {"year": 1955, "month": 11, "day": 21}, "type": "career", "label": "Contract acquired by RCA Victor", "source": "https://en.wikipedia.org/wiki/Elvis_Presley"},
+        {"date": {"year": 1958, "month": 3, "day": 24}, "type": "career", "label": "Inducted into US Army", "source": "https://en.wikipedia.org/wiki/Elvis_Presley", "type_detail": "military"},
+        {"date": {"year": 1958, "month": 8, "day": 14}, "type": "loss", "label": "Death of mother Gladys Presley", "source": "https://bestclassicbands.com/gladys-presley-death-8-14-155/", "type_detail": "parentloss"},
+        {"date": {"year": 1967, "month": 5, "day": 1}, "type": "relationship", "label": "Marriage to Priscilla Beaulieu", "source": "https://en.wikipedia.org/wiki/Elvis_Presley"},
+        {"date": {"year": 1968, "month": 2, "day": 1}, "type": "child", "label": "Birth of daughter Lisa Marie", "source": "https://en.wikipedia.org/wiki/Lisa_Marie_Presley"},
+        {"date": {"year": 1977, "month": 8, "day": 16}, "type": "loss", "label": "Death of Elvis Presley", "source": "https://en.wikipedia.org/wiki/Elvis_Presley", "type_detail": "death"}
+      ],
+      "predispositions": [
+        {"key": "fame", "rating": "yes_strong"},
+        {"key": "wealth", "rating": "yes_strong"},
+        {"key": "art", "rating": "yes_strong"}
+      ],
+      "parent_sun_signs": []
+    },
+    {
+      "name": "Marilyn Monroe",
+      "rodden": "AA",
+      "source": "https://www.astro.com/astro-databank/Monroe,_Marilyn",
+      "birth": {
+        "year": 1926, "month": 6, "day": 1,
+        "hour": 9, "minute": 30,
+        "lat": 34.0522, "lng": -118.2437,
+        "tz_str": "America/Los_Angeles",
+        "city": "Los Angeles, CA, USA"
+      },
+      "events": [
+        {"date": {"year": 1946, "month": 8, "day": 26}, "type": "career", "label": "First studio contract with 20th Century-Fox", "source": "https://en.wikipedia.org/wiki/Marilyn_Monroe"},
+        {"date": {"year": 1954, "month": 1, "day": 14}, "type": "relationship", "label": "Marriage to Joe DiMaggio", "source": "https://en.wikipedia.org/wiki/Marilyn_Monroe"},
+        {"date": {"year": 1954, "month": 10, "day": 27}, "type": "relationship", "label": "Divorce from Joe DiMaggio", "source": "https://en.wikipedia.org/wiki/Marilyn_Monroe", "type_detail": "divorce"},
+        {"date": {"year": 1956, "month": 6, "day": 29}, "type": "relationship", "label": "Marriage to Arthur Miller", "source": "https://en.wikipedia.org/wiki/Marilyn_Monroe"},
+        {"date": {"year": 1961, "month": 1, "day": 20}, "type": "relationship", "label": "Divorce from Arthur Miller", "source": "https://en.wikipedia.org/wiki/Marilyn_Monroe", "type_detail": "divorce"},
+        {"date": {"year": 1962, "month": 8, "day": 4}, "type": "loss", "label": "Death of Marilyn Monroe", "source": "https://en.wikipedia.org/wiki/Marilyn_Monroe", "type_detail": "death"}
+      ],
+      "predispositions": [
+        {"key": "fame", "rating": "yes_strong"},
+        {"key": "art", "rating": "yes_strong"},
+        {"key": "childless", "rating": "yes"}
+      ],
+      "parent_sun_signs": []
+    },
+    {
+      "name": "Muhammad Ali",
+      "rodden": "AA",
+      "source": "https://www.astro.com/astro-databank/Ali,_Muhammad",
+      "birth": {
+        "year": 1942, "month": 1, "day": 17,
+        "hour": 18, "minute": 35,
+        "lat": 38.2527, "lng": -85.7585,
+        "tz_str": "America/New_York",
+        "city": "Louisville, KY, USA"
+      },
+      "events": [
+        {"date": {"year": 1964, "month": 2, "day": 25}, "type": "career", "label": "Won world heavyweight title vs Sonny Liston", "source": "https://en.wikipedia.org/wiki/Muhammad_Ali"},
+        {"date": {"year": 1967, "month": 4, "day": 28}, "type": "career", "label": "Refused induction into US military (draft)", "source": "https://en.wikipedia.org/wiki/Muhammad_Ali", "type_detail": "conviction"},
+        {"date": {"year": 1971, "month": 6, "day": 28}, "type": "career", "label": "Supreme Court overturns conviction", "source": "https://en.wikipedia.org/wiki/Muhammad_Ali"},
+        {"date": {"year": 1974, "month": 10, "day": 30}, "type": "career", "label": "Rumble in the Jungle - beat George Foreman", "source": "https://en.wikipedia.org/wiki/Muhammad_Ali"},
+        {"date": {"year": 1975, "month": 10, "day": 1}, "type": "career", "label": "Thrilla in Manila - beat Joe Frazier", "source": "https://en.wikipedia.org/wiki/Muhammad_Ali"},
+        {"date": {"year": 2016, "month": 6, "day": 3}, "type": "loss", "label": "Death of Muhammad Ali", "source": "https://en.wikipedia.org/wiki/Muhammad_Ali", "type_detail": "death"}
+      ],
+      "predispositions": [
+        {"key": "fame", "rating": "yes_strong"},
+        {"key": "wealth", "rating": "yes"},
+        {"key": "illness", "rating": "yes"}
+      ],
+      "parent_sun_signs": []
+    },
+    {
+      "name": "Frida Kahlo",
+      "rodden": "AA",
+      "source": "https://www.astro.com/astro-databank/Kahlo,_Frida",
+      "birth": {
+        "year": 1907, "month": 7, "day": 6,
+        "hour": 8, "minute": 30,
+        "lat": 19.3467, "lng": -99.1618,
+        "tz_str": "America/Mexico_City",
+        "city": "Coyoacan, Mexico City, Mexico"
+      },
+      "events": [
+        {"date": {"year": 1925, "month": 9, "day": 17}, "type": "health", "label": "Bus accident causing lifelong injuries", "source": "https://en.wikipedia.org/wiki/Frida_Kahlo", "type_detail": "accident"},
+        {"date": {"year": 1929, "month": 8, "day": 21}, "type": "relationship", "label": "Marriage to Diego Rivera", "source": "https://en.wikipedia.org/wiki/Frida_Kahlo"},
+        {"date": {"year": 1938, "month": 11, "day": 1}, "type": "career", "label": "First solo exhibition, Julien Levy Gallery, New York", "source": "https://en.wikipedia.org/wiki/Frida_Kahlo"},
+        {"date": {"year": 1939, "month": 11, "day": 6}, "type": "relationship", "label": "Divorce from Diego Rivera", "source": "https://en.wikipedia.org/wiki/Frida_Kahlo", "type_detail": "divorce"},
+        {"date": {"year": 1940, "month": 12, "day": 8}, "type": "relationship", "label": "Remarriage to Diego Rivera", "source": "https://en.wikipedia.org/wiki/Frida_Kahlo"},
+        {"date": {"year": 1954, "month": 7, "day": 13}, "type": "loss", "label": "Death of Frida Kahlo", "source": "https://en.wikipedia.org/wiki/Frida_Kahlo", "type_detail": "death"}
+      ],
+      "predispositions": [
+        {"key": "art", "rating": "yes_strong"},
+        {"key": "fame", "rating": "yes_strong"},
+        {"key": "illness", "rating": "yes_strong"},
+        {"key": "accidents", "rating": "yes_strong"},
+        {"key": "childless", "rating": "yes"}
+      ],
+      "parent_sun_signs": []
+    },
+    {
+      "name": "Diana, Princess of Wales",
+      "rodden": "AA",
+      "source": "https://www.astro.com/astro-databank/Diana,_Princess_of_Wales",
+      "birth": {
+        "year": 1961, "month": 7, "day": 1,
+        "hour": 19, "minute": 45,
+        "lat": 52.8309, "lng": 0.5140,
+        "tz_str": "Europe/London",
+        "city": "Sandringham, England, UK"
+      },
+      "events": [
+        {"date": {"year": 1981, "month": 7, "day": 29}, "type": "relationship", "label": "Marriage to Prince Charles", "source": "https://en.wikipedia.org/wiki/Diana,_Princess_of_Wales"},
+        {"date": {"year": 1982, "month": 6, "day": 21}, "type": "child", "label": "Birth of Prince William", "source": "https://en.wikipedia.org/wiki/Diana,_Princess_of_Wales"},
+        {"date": {"year": 1984, "month": 9, "day": 15}, "type": "child", "label": "Birth of Prince Harry", "source": "https://en.wikipedia.org/wiki/Diana,_Princess_of_Wales"},
+        {"date": {"year": 1992, "month": 12, "day": 9}, "type": "relationship", "label": "Separation from Prince Charles announced", "source": "https://en.wikipedia.org/wiki/Diana,_Princess_of_Wales", "type_detail": "separation"},
+        {"date": {"year": 1996, "month": 8, "day": 28}, "type": "relationship", "label": "Divorce from Prince Charles finalized", "source": "https://en.wikipedia.org/wiki/Diana,_Princess_of_Wales", "type_detail": "divorce"},
+        {"date": {"year": 1997, "month": 8, "day": 31}, "type": "loss", "label": "Death in Paris car crash", "source": "https://en.wikipedia.org/wiki/Diana,_Princess_of_Wales", "type_detail": "death"}
+      ],
+      "predispositions": [
+        {"key": "fame", "rating": "yes_strong"},
+        {"key": "wealth", "rating": "yes_strong"},
+        {"key": "earlymarriage", "rating": "yes"}
+      ],
+      "parent_sun_signs": []
+    },
+    {
+      "name": "Angelina Jolie",
+      "rodden": "AA",
+      "source": "https://www.astro.com/astro-databank/Jolie,_Angelina",
+      "birth": {
+        "year": 1975, "month": 6, "day": 4,
+        "hour": 9, "minute": 9,
+        "lat": 34.0522, "lng": -118.2437,
+        "tz_str": "America/Los_Angeles",
+        "city": "Los Angeles, CA, USA"
+      },
+      "events": [
+        {"date": {"year": 2000, "month": 5, "day": 5}, "type": "relationship", "label": "Marriage to Billy Bob Thornton", "source": "https://en.wikipedia.org/wiki/Angelina_Jolie"},
+        {"date": {"year": 2002, "month": 3, "day": 10}, "type": "child", "label": "Adoption of son Maddox", "source": "https://en.wikipedia.org/wiki/Angelina_Jolie"},
+        {"date": {"year": 2006, "month": 5, "day": 27}, "type": "child", "label": "Birth of daughter Shiloh", "source": "https://en.wikipedia.org/wiki/Angelina_Jolie"},
+        {"date": {"year": 2014, "month": 8, "day": 23}, "type": "relationship", "label": "Marriage to Brad Pitt", "source": "https://en.wikipedia.org/wiki/Angelina_Jolie"},
+        {"date": {"year": 2016, "month": 9, "day": 19}, "type": "relationship", "label": "Filed for divorce from Brad Pitt", "source": "https://en.wikipedia.org/wiki/Angelina_Jolie", "type_detail": "divorce"}
+      ],
+      "predispositions": [
+        {"key": "fame", "rating": "yes_strong"},
+        {"key": "wealth", "rating": "yes_strong"},
+        {"key": "manychildren", "rating": "yes"},
+        {"key": "art", "rating": "yes"}
+      ],
+      "parent_sun_signs": []
+    },
+    {
+      "name": "Barack Obama",
+      "rodden": "AA",
+      "source": "https://www.astro.com/astro-databank/Obama,_Barack",
+      "birth": {
+        "year": 1961, "month": 8, "day": 4,
+        "hour": 19, "minute": 24,
+        "lat": 21.3069, "lng": -157.8583,
+        "tz_str": "Pacific/Honolulu",
+        "city": "Honolulu, HI, USA"
+      },
+      "events": [
+        {"date": {"year": 1992, "month": 10, "day": 3}, "type": "relationship", "label": "Marriage to Michelle Robinson", "source": "https://en.wikipedia.org/wiki/Barack_Obama"},
+        {"date": {"year": 1998, "month": 7, "day": 4}, "type": "child", "label": "Birth of daughter Malia", "source": "https://en.wikipedia.org/wiki/Barack_Obama"},
+        {"date": {"year": 2001, "month": 6, "day": 10}, "type": "child", "label": "Birth of daughter Sasha", "source": "https://en.wikipedia.org/wiki/Barack_Obama"},
+        {"date": {"year": 2004, "month": 11, "day": 2}, "type": "career", "label": "Elected US Senator for Illinois", "source": "https://en.wikipedia.org/wiki/Barack_Obama"},
+        {"date": {"year": 2008, "month": 11, "day": 4}, "type": "career", "label": "Elected President of the United States", "source": "https://en.wikipedia.org/wiki/Barack_Obama", "type_detail": "fame"},
+        {"date": {"year": 2009, "month": 1, "day": 20}, "type": "career", "label": "Inaugurated as President", "source": "https://en.wikipedia.org/wiki/Barack_Obama"}
+      ],
+      "predispositions": [
+        {"key": "fame", "rating": "yes_strong"},
+        {"key": "wealth", "rating": "yes"}
+      ],
+      "parent_sun_signs": []
+    },
+    {
+      "name": "Arnold Schwarzenegger",
+      "rodden": "AA",
+      "source": "https://www.astro.com/astro-databank/Schwarzenegger,_Arnold",
+      "birth": {
+        "year": 1947, "month": 7, "day": 30,
+        "hour": 4, "minute": 10,
+        "lat": 47.0667, "lng": 15.3667,
+        "tz_str": "Europe/Vienna",
+        "city": "Thal, Styria, Austria"
+      },
+      "events": [
+        {"date": {"year": 1968, "month": 10, "day": 1}, "type": "move", "label": "Immigrated to the United States", "source": "https://en.wikipedia.org/wiki/Arnold_Schwarzenegger", "type_detail": "emigration"},
+        {"date": {"year": 1986, "month": 4, "day": 26}, "type": "relationship", "label": "Marriage to Maria Shriver", "source": "https://en.wikipedia.org/wiki/Arnold_Schwarzenegger"},
+        {"date": {"year": 2003, "month": 10, "day": 7}, "type": "career", "label": "Elected Governor of California (recall election)", "source": "https://en.wikipedia.org/wiki/Arnold_Schwarzenegger"},
+        {"date": {"year": 2003, "month": 11, "day": 17}, "type": "career", "label": "Sworn in as Governor of California", "source": "https://en.wikipedia.org/wiki/Arnold_Schwarzenegger"},
+        {"date": {"year": 2011, "month": 5, "day": 9}, "type": "relationship", "label": "Separation from Maria Shriver announced", "source": "https://abcnews.go.com/US/arnold-schwarzenegger-maria-shriver-separate-california-governor-wife/story?id=13567217", "type_detail": "separation"}
+      ],
+      "predispositions": [
+        {"key": "fame", "rating": "yes_strong"},
+        {"key": "wealth", "rating": "yes_strong"},
+        {"key": "emigration", "rating": "yes_strong"}
+      ],
+      "parent_sun_signs": []
+    },
+    {
+      "name": "Madonna",
+      "rodden": "AA",
+      "source": "https://www.astro.com/astro-databank/Madonna",
+      "birth": {
+        "year": 1958, "month": 8, "day": 16,
+        "hour": 7, "minute": 5,
+        "lat": 43.5945, "lng": -83.8889,
+        "tz_str": "America/Detroit",
+        "city": "Bay City, MI, USA"
+      },
+      "events": [
+        {"date": {"year": 1983, "month": 7, "day": 27}, "type": "career", "label": "Release of debut album Madonna", "source": "https://en.wikipedia.org/wiki/Madonna"},
+        {"date": {"year": 1984, "month": 11, "day": 12}, "type": "career", "label": "Release of album Like a Virgin", "source": "https://en.wikipedia.org/wiki/Madonna", "type_detail": "fame"},
+        {"date": {"year": 1985, "month": 8, "day": 16}, "type": "relationship", "label": "Marriage to Sean Penn", "source": "https://en.wikipedia.org/wiki/Madonna"},
+        {"date": {"year": 1989, "month": 1, "day": 5}, "type": "relationship", "label": "Divorce from Sean Penn", "source": "https://en.wikipedia.org/wiki/Madonna", "type_detail": "divorce"},
+        {"date": {"year": 1996, "month": 10, "day": 14}, "type": "child", "label": "Birth of daughter Lourdes", "source": "https://en.wikipedia.org/wiki/Madonna"},
+        {"date": {"year": 2000, "month": 8, "day": 11}, "type": "child", "label": "Birth of son Rocco", "source": "https://en.wikipedia.org/wiki/Madonna"},
+        {"date": {"year": 2000, "month": 12, "day": 22}, "type": "relationship", "label": "Marriage to Guy Ritchie", "source": "https://en.wikipedia.org/wiki/Madonna"}
+      ],
+      "predispositions": [
+        {"key": "fame", "rating": "yes_strong"},
+        {"key": "wealth", "rating": "yes_strong"},
+        {"key": "art", "rating": "yes_strong"}
+      ],
+      "parent_sun_signs": []
+    },
+    {
+      "name": "Kurt Cobain",
+      "rodden": "AA",
+      "source": "https://www.astro.com/astro-databank/Cobain,_Kurt",
+      "birth": {
+        "year": 1967, "month": 2, "day": 20,
+        "hour": 19, "minute": 38,
+        "lat": 46.9754, "lng": -123.8157,
+        "tz_str": "America/Los_Angeles",
+        "city": "Aberdeen, WA, USA"
+      },
+      "events": [
+        {"date": {"year": 1979, "month": 6, "day": 28}, "type": "loss", "label": "Parents' divorce; custody granted to father", "source": "https://en.wikipedia.org/wiki/Kurt_Cobain", "type_detail": "parentaldivorce"},
+        {"date": {"year": 1991, "month": 9, "day": 24}, "type": "career", "label": "Release of album Nevermind", "source": "https://en.wikipedia.org/wiki/Nevermind", "type_detail": "fame"},
+        {"date": {"year": 1992, "month": 2, "day": 24}, "type": "relationship", "label": "Marriage to Courtney Love", "source": "https://en.wikipedia.org/wiki/Kurt_Cobain"},
+        {"date": {"year": 1992, "month": 8, "day": 18}, "type": "child", "label": "Birth of daughter Frances Bean", "source": "https://en.wikipedia.org/wiki/Kurt_Cobain"},
+        {"date": {"year": 1994, "month": 4, "day": 5}, "type": "loss", "label": "Death of Kurt Cobain", "source": "https://en.wikipedia.org/wiki/Kurt_Cobain", "type_detail": "death"}
+      ],
+      "predispositions": [
+        {"key": "fame", "rating": "yes_strong"},
+        {"key": "art", "rating": "yes_strong"},
+        {"key": "illness", "rating": "yes"}
+      ],
+      "parent_sun_signs": []
+    },
+    {
+      "name": "Albert Einstein",
+      "rodden": "AA",
+      "source": "https://www.astro.com/astro-databank/Einstein,_Albert",
+      "birth": {
+        "year": 1879, "month": 3, "day": 14,
+        "hour": 11, "minute": 30,
+        "lat": 48.3984, "lng": 9.9916,
+        "tz_str": "Europe/Berlin",
+        "city": "Ulm, Germany"
+      },
+      "events": [
+        {"date": {"year": 1903, "month": 1, "day": 6}, "type": "relationship", "label": "Marriage to Mileva Maric", "source": "https://en.wikipedia.org/wiki/Albert_Einstein"},
+        {"date": {"year": 1919, "month": 6, "day": 2}, "type": "relationship", "label": "Marriage to Elsa Lowenthal", "source": "https://en.wikipedia.org/wiki/Albert_Einstein"},
+        {"date": {"year": 1922, "month": 11, "day": 9}, "type": "career", "label": "Awarded the 1921 Nobel Prize in Physics", "source": "https://en.wikipedia.org/wiki/Albert_Einstein", "type_detail": "fame"},
+        {"date": {"year": 1933, "month": 10, "day": 17}, "type": "move", "label": "Emigrated to the United States", "source": "https://www.edn.com/einstein-moves-to-us-october-17-1933/", "type_detail": "emigration"},
+        {"date": {"year": 1955, "month": 4, "day": 18}, "type": "loss", "label": "Death of Albert Einstein", "source": "https://en.wikipedia.org/wiki/Albert_Einstein", "type_detail": "death"}
+      ],
+      "predispositions": [
+        {"key": "fame", "rating": "yes_strong"},
+        {"key": "emigration", "rating": "yes_strong"}
+      ],
+      "parent_sun_signs": []
+    },
+    {
+      "name": "Steffi Graf",
+      "rodden": "AA",
+      "source": "https://www.astro.com/astro-databank/Graf,_Steffi",
+      "birth": {
+        "year": 1969, "month": 6, "day": 14,
+        "hour": 4, "minute": 40,
+        "lat": 49.4875, "lng": 8.4660,
+        "tz_str": "Europe/Berlin",
+        "city": "Mannheim, Germany"
+      },
+      "events": [
+        {"date": {"year": 1987, "month": 6, "day": 6}, "type": "career", "label": "First Grand Slam singles title (French Open)", "source": "https://en.wikipedia.org/wiki/Steffi_Graf"},
+        {"date": {"year": 1988, "month": 9, "day": 30}, "type": "career", "label": "Olympic gold medal (Seoul), completing the Golden Slam", "source": "https://en.wikipedia.org/wiki/Steffi_Graf", "type_detail": "fame"},
+        {"date": {"year": 1999, "month": 8, "day": 13}, "type": "career", "label": "Announced retirement from professional tennis", "source": "https://en.wikipedia.org/wiki/Steffi_Graf", "type_detail": "retirement"},
+        {"date": {"year": 2001, "month": 10, "day": 22}, "type": "relationship", "label": "Marriage to Andre Agassi", "source": "https://en.wikipedia.org/wiki/Steffi_Graf"},
+        {"date": {"year": 2001, "month": 10, "day": 26}, "type": "child", "label": "Birth of son Jaden Gil", "source": "https://en.wikipedia.org/wiki/Steffi_Graf"}
+      ],
+      "predispositions": [
+        {"key": "fame", "rating": "yes_strong"},
+        {"key": "wealth", "rating": "yes_strong"}
+      ],
+      "parent_sun_signs": []
+    },
+    {
+      "name": "Sigmund Freud",
+      "rodden": "AA",
+      "source": "https://www.astro.com/astro-databank/Freud,_Sigmund",
+      "birth": {
+        "year": 1856, "month": 5, "day": 6,
+        "hour": 18, "minute": 30,
+        "lat": 49.6417, "lng": 18.1467,
+        "tz_str": "Europe/Prague",
+        "city": "Freiberg (Pribor), Moravia, Czech Republic"
+      },
+      "events": [
+        {"date": {"year": 1886, "month": 9, "day": 14}, "type": "relationship", "label": "Marriage to Martha Bernays", "source": "https://en.wikipedia.org/wiki/Sigmund_Freud"},
+        {"date": {"year": 1895, "month": 12, "day": 3}, "type": "child", "label": "Birth of daughter Anna Freud", "source": "https://en.wikipedia.org/wiki/Anna_Freud"},
+        {"date": {"year": 1899, "month": 11, "day": 4}, "type": "career", "label": "Publication of The Interpretation of Dreams", "source": "https://en.wikipedia.org/wiki/Sigmund_Freud", "type_detail": "fame"},
+        {"date": {"year": 1938, "month": 6, "day": 4}, "type": "move", "label": "Fled Nazi-annexed Vienna for London", "source": "https://en.wikipedia.org/wiki/Sigmund_Freud", "type_detail": "emigration"},
+        {"date": {"year": 1939, "month": 9, "day": 23}, "type": "loss", "label": "Death of Sigmund Freud", "source": "https://en.wikipedia.org/wiki/Sigmund_Freud", "type_detail": "death"}
+      ],
+      "predispositions": [
+        {"key": "fame", "rating": "yes_strong"},
+        {"key": "emigration", "rating": "yes_strong"},
+        {"key": "manychildren", "rating": "yes"},
+        {"key": "illness", "rating": "yes"}
+      ],
+      "parent_sun_signs": []
+    },
+    {
+      "name": "Charles III",
+      "rodden": "AA",
+      "source": "https://www.astro.com/astro-databank/Charles_III,_King_of_the_United_Kingdom",
+      "birth": {
+        "year": 1948, "month": 11, "day": 14,
+        "hour": 21, "minute": 14,
+        "lat": 51.5014, "lng": -0.1419,
+        "tz_str": "Europe/London",
+        "city": "London (Buckingham Palace), England, UK"
+      },
+      "events": [
+        {"date": {"year": 1969, "month": 7, "day": 1}, "type": "career", "label": "Investiture as Prince of Wales", "source": "https://en.wikipedia.org/wiki/Charles_III"},
+        {"date": {"year": 1981, "month": 7, "day": 29}, "type": "relationship", "label": "Marriage to Lady Diana Spencer", "source": "https://en.wikipedia.org/wiki/Charles_III"},
+        {"date": {"year": 2005, "month": 4, "day": 9}, "type": "relationship", "label": "Marriage to Camilla Parker Bowles", "source": "https://en.wikipedia.org/wiki/Charles_III"},
+        {"date": {"year": 2022, "month": 9, "day": 8}, "type": "loss", "label": "Death of Queen Elizabeth II; accession to throne", "source": "https://en.wikipedia.org/wiki/Charles_III", "type_detail": "parentloss"},
+        {"date": {"year": 2023, "month": 5, "day": 6}, "type": "career", "label": "Coronation at Westminster Abbey", "source": "https://en.wikipedia.org/wiki/Charles_III", "type_detail": "fame"}
+      ],
+      "predispositions": [
+        {"key": "fame", "rating": "yes_strong"},
+        {"key": "wealth", "rating": "yes_strong"}
+      ],
+      "parent_sun_signs": []
+    },
+    {
+      "name": "Brigitte Bardot",
+      "rodden": "AA",
+      "source": "https://www.astro.com/astro-databank/Bardot,_Brigitte",
+      "birth": {
+        "year": 1934, "month": 9, "day": 28,
+        "hour": 13, "minute": 15,
+        "lat": 48.8566, "lng": 2.3522,
+        "tz_str": "Europe/Paris",
+        "city": "Paris, France"
+      },
+      "events": [
+        {"date": {"year": 1952, "month": 12, "day": 20}, "type": "relationship", "label": "Marriage to Roger Vadim", "source": "https://en.wikipedia.org/wiki/Brigitte_Bardot"},
+        {"date": {"year": 1959, "month": 6, "day": 18}, "type": "relationship", "label": "Marriage to Jacques Charrier", "source": "https://en.wikipedia.org/wiki/Brigitte_Bardot"},
+        {"date": {"year": 1960, "month": 1, "day": 11}, "type": "child", "label": "Birth of son Nicolas", "source": "https://en.wikipedia.org/wiki/Brigitte_Bardot"},
+        {"date": {"year": 1966, "month": 7, "day": 14}, "type": "relationship", "label": "Marriage to Gunter Sachs", "source": "https://en.wikipedia.org/wiki/Brigitte_Bardot"},
+        {"date": {"year": 1992, "month": 8, "day": 16}, "type": "relationship", "label": "Marriage to Bernard d'Ormale", "source": "https://en.wikipedia.org/wiki/Brigitte_Bardot"}
+      ],
+      "predispositions": [
+        {"key": "fame", "rating": "yes_strong"},
+        {"key": "art", "rating": "yes_strong"},
+        {"key": "wealth", "rating": "yes"}
+      ],
+      "parent_sun_signs": []
+    }
+  ]
+}
