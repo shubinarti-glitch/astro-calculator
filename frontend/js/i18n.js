@@ -540,7 +540,7 @@ const I18N = {
     // Юр-документы: Политика ПДн
     privacy_title: "Политика обработки персональных данных",
     privacy_p_intro: "Настоящая Политика разработана в соответствии с Федеральным законом от 27.07.2006 № 152-ФЗ «О персональных данных» и определяет порядок обработки данных пользователей сервиса «Project Artemisa» (далее — Сервис).",
-    privacy_p_operator: "<strong>Оператор.</strong> Обработку персональных данных осуществляет Шубин Артём Иванович, применяющий специальный налоговый режим «Налог на профессиональный доход» (самозанятый), ИНН 245010711934. Адрес для запросов по вопросам обработки персональных данных (удаление, отзыв согласия): [указать e-mail].",
+    privacy_p_operator: "<strong>Оператор.</strong> Обработку персональных данных осуществляет Шубин Артём Иванович, применяющий специальный налоговый режим «Налог на профессиональный доход» (самозанятый), ИНН 245010711934. Адрес для запросов по вопросам обработки персональных данных (удаление, отзыв согласия): astrosmap@gmail.com.",
     privacy_p1: "<strong>1. Какие данные обрабатываются.</strong> Имя пользователя и пароль (в зашифрованном виде); вводимые вами данные рождения (дата, время, место/координаты) и названия сохранённых карт. Сервис не запрашивает паспортных данных, контактов и платёжной информации.",
     privacy_p2: "<strong>2. Цель обработки.</strong> Регистрация и вход в личный кабинет, выполнение астрологических расчётов и сохранение ваших карт для повторного доступа.",
     privacy_p3: "<strong>3. Правовое основание.</strong> Согласие субъекта персональных данных, выражаемое путём отметки соответствующего поля при регистрации.",
@@ -1091,7 +1091,7 @@ const I18N = {
     // Legal: Privacy Policy
     privacy_title: "Personal Data Processing Policy",
     privacy_p_intro: "This Policy is drawn up in accordance with Federal Law No. 152-FZ of 27 July 2006 “On Personal Data” and defines how the data of users of the “Project Artemisa” service (the “Service”) are processed.",
-    privacy_p_operator: "<strong>Operator.</strong> Personal data are processed by Artyom Ivanovich Shubin, applying the special “Professional Income Tax” regime (self-employed), TIN 245010711934. Address for requests regarding data processing (deletion, withdrawal of consent): [specify e-mail].",
+    privacy_p_operator: "<strong>Operator.</strong> Personal data are processed by Artyom Ivanovich Shubin, applying the special “Professional Income Tax” regime (self-employed), TIN 245010711934. Address for requests regarding data processing (deletion, withdrawal of consent): astrosmap@gmail.com.",
     privacy_p1: "<strong>1. What data are processed.</strong> Your username and password (in encrypted form); the birth data you enter (date, time, place/coordinates) and the names of your saved charts. The Service does not request passport data, contacts or payment information.",
     privacy_p2: "<strong>2. Purpose of processing.</strong> Registration and sign-in to your personal account, performing astrological calculations and saving your charts for repeated access.",
     privacy_p3: "<strong>3. Legal basis.</strong> The consent of the personal-data subject, given by checking the corresponding box at registration.",
