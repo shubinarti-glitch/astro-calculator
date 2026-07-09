@@ -367,3 +367,8 @@ def test_consultation_credit():
     finally:
         with db.get_conn() as c:
             c.execute("DELETE FROM users WHERE id = ?", (u["id"],))
+
+
+def test_billing_consult_plan():
+    plans = client.get("/api/billing/plans").json()
+    assert plans["consult"]["price"] == 3500 and plans["consult"]["days"] == 0

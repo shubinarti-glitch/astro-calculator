@@ -282,7 +282,7 @@ def require_premium(uid: int = Depends(current_user_id)) -> int:
 #  Подписка (ЮKassa)
 # --------------------------------------------------------------------------- #
 class BillingCreate(BaseModel):
-    plan: str = Field(..., pattern="^(month|year|plus_month|plus_year)$")
+    plan: str = Field(..., pattern="^(month|year|plus_month|plus_year|consult)$")
 
 
 @app.get("/api/billing/plans")

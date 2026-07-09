@@ -2347,8 +2347,9 @@ async function checkPaymentReturn() {
   history.replaceState(null, "", window.location.pathname);
   try {
     const data = await postJSON("/api/billing/check", {});
-    if (data.premium) {
-      IS_PREMIUM = true;
+    if (data.activated) {
+      // подписка и/или консультация — при «только консультации» premium не включается
+      IS_PREMIUM = !!data.premium;
       PREMIUM_UNTIL = data.subscription && data.subscription.expires_at;
       HAS_CONSULT = !!data.consultation;
       alert(t("premium_activated"));

@@ -21,11 +21,21 @@ API = "https://api.yookassa.ru/v3/payments"
 
 # план -> (цена в рублях, дней подписки)
 # plus_* = подписка + разовая консультация астролога (+1500 ₽ к цене тарифа)
+# consult = только консультация, без подписки (0 дней)
 PLANS = {
     "month": (299, 30),
     "year": (1990, 365),
     "plus_month": (1799, 30),
     "plus_year": (3490, 365),
+    "consult": (3500, 0),
+}
+
+PLAN_TITLES = {
+    "month": "Подписка «Премиум», месяц",
+    "year": "Подписка «Премиум», год",
+    "plus_month": "Подписка «Премиум+» (месяц + консультация)",
+    "plus_year": "Подписка «Премиум+» (год + консультация)",
+    "consult": "Консультация астролога",
 }
 
 
@@ -55,7 +65,7 @@ def create_payment(user_id: int, plan: str, return_url: str) -> str:
             "amount": {"value": f"{price}.00", "currency": "RUB"},
             "capture": True,
             "confirmation": {"type": "redirect", "return_url": return_url},
-            "description": f"Подписка «Премиум» ({'месяц' if plan == 'month' else 'год'}), пользователь {user_id}",
+            "description": f"{PLAN_TITLES[plan]}, пользователь #{user_id}",
             "metadata": {"user_id": user_id, "plan": plan},
         },
         timeout=15,
@@ -77,8 +87,10 @@ def check_payments(user_id: int) -> dict:
         status = resp.json().get("status")
         if status == "succeeded":
             db.set_payment_status(p["payment_id"], "succeeded")
-            db.extend_subscription(user_id, p["plan"], PLANS[p["plan"]][1])
-            if p["plan"].startswith("plus_"):
+            days = PLANS[p["plan"]][1]
+            if days:
+                db.extend_subscription(user_id, p["plan"], days)
+            if p["plan"].startswith("plus_") or p["plan"] == "consult":
                 db.add_consultation(user_id)
             activated = True
         elif status == "canceled":
