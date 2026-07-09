@@ -20,9 +20,12 @@ CONFIG_FILE = Path(__file__).resolve().parent.parent / "data" / "yookassa.json"
 API = "https://api.yookassa.ru/v3/payments"
 
 # план -> (цена в рублях, дней подписки)
+# plus_* = подписка + разовая консультация астролога (+1500 ₽ к цене тарифа)
 PLANS = {
     "month": (299, 30),
     "year": (1990, 365),
+    "plus_month": (1799, 30),
+    "plus_year": (3490, 365),
 }
 
 
@@ -75,6 +78,8 @@ def check_payments(user_id: int) -> dict:
         if status == "succeeded":
             db.set_payment_status(p["payment_id"], "succeeded")
             db.extend_subscription(user_id, p["plan"], PLANS[p["plan"]][1])
+            if p["plan"].startswith("plus_"):
+                db.add_consultation(user_id)
             activated = True
         elif status == "canceled":
             db.set_payment_status(p["payment_id"], "canceled")

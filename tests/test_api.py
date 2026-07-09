@@ -351,3 +351,19 @@ def test_subscription_extend_and_expiry():
     finally:
         with db.get_conn() as c:
             c.execute("DELETE FROM users WHERE id = ?", (u["id"],))
+
+
+def test_billing_plus_plans():
+    plans = client.get("/api/billing/plans").json()
+    assert plans["plus_month"]["price"] == 1799 and plans["plus_year"]["price"] == 3490
+
+
+def test_consultation_credit():
+    u = db.create_user(_rnd("constest_"), "password123")
+    try:
+        assert db.has_consultation(u["id"]) is False
+        db.add_consultation(u["id"])
+        assert db.has_consultation(u["id"]) is True
+    finally:
+        with db.get_conn() as c:
+            c.execute("DELETE FROM users WHERE id = ?", (u["id"],))

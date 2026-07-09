@@ -96,6 +96,16 @@ def init_db() -> None:
                 FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
             )"""
         )
+        # Оплаченные консультации астролога (тарифы «Премиум+»): одна строка = один кредит.
+        c.execute(
+            """CREATE TABLE IF NOT EXISTS consultations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                status TEXT NOT NULL DEFAULT 'available',
+                created_at TEXT NOT NULL,
+                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+            )"""
+        )
         # Аудит правок текстов админами: кто, что, когда.
         c.execute(
             """CREATE TABLE IF NOT EXISTS text_audit (
@@ -283,6 +293,18 @@ def extend_subscription(user_id: int, plan: str, days: int) -> dict:
             (user_id, plan, expires),
         )
     return {"plan": plan, "expires_at": expires}
+
+
+def add_consultation(user_id: int) -> None:
+    with get_conn() as c:
+        c.execute("INSERT INTO consultations (user_id, created_at) VALUES (?, ?)", (user_id, _now_iso()))
+
+
+def has_consultation(user_id: int) -> bool:
+    with get_conn() as c:
+        r = c.execute("SELECT 1 FROM consultations WHERE user_id = ? AND status = 'available' LIMIT 1",
+                      (user_id,)).fetchone()
+    return r is not None
 
 
 def add_payment(payment_id: str, user_id: int, plan: str) -> None:

@@ -2285,6 +2285,9 @@ function authHeaders() {
 
 let IS_PREMIUM = false;
 let PREMIUM_UNTIL = null;
+let HAS_CONSULT = false;
+// Telegram астролога для оплаченных консультаций (тарифы «Премиум+»)
+const ASTROLOGER_TG = "https://t.me/ВАШ_НИК";
 
 function openPaywall(status) {
   if (!getToken()) {
@@ -2301,6 +2304,13 @@ function openPremiumModal() {
     st.classList.remove("hidden");
   } else {
     st.classList.add("hidden");
+  }
+  const cs = $("consult-status");
+  if (HAS_CONSULT) {
+    cs.innerHTML = `🔮 ${t("consult_ready")} <a href="${ASTROLOGER_TG}" target="_blank" rel="noopener">${t("consult_link")}</a>`;
+    cs.classList.remove("hidden");
+  } else {
+    cs.classList.add("hidden");
   }
   $("premium-error").classList.add("hidden");
   $("premium-modal").classList.remove("hidden");
@@ -2340,7 +2350,9 @@ async function checkPaymentReturn() {
     if (data.premium) {
       IS_PREMIUM = true;
       PREMIUM_UNTIL = data.subscription && data.subscription.expires_at;
+      HAS_CONSULT = !!data.consultation;
       alert(t("premium_activated"));
+      if (HAS_CONSULT) openPremiumModal(); // сразу показать контакт для консультации
     } else {
       alert(t("premium_pending"));
     }
@@ -2436,6 +2448,7 @@ $("auth-form").addEventListener("submit", async (e) => {
       const me = await (await fetch("/api/auth/me", { headers: authHeaders() })).json();
       IS_PREMIUM = !!me.premium;
       PREMIUM_UNTIL = me.premium_until;
+      HAS_CONSULT = !!me.consultation;
     } catch (e) {}
   } catch (ex) {
     showAuthError(ex.message);
@@ -2453,6 +2466,7 @@ $("logout-btn").addEventListener("click", async () => {
   clearToken();
   IS_PREMIUM = false;
   PREMIUM_UNTIL = null;
+  HAS_CONSULT = false;
   updateAuthUI(null);
 });
 
@@ -2701,6 +2715,7 @@ function escapeHtml(s) {
     const me = await r.json();
     IS_PREMIUM = !!me.premium;
     PREMIUM_UNTIL = me.premium_until;
+    HAS_CONSULT = !!me.consultation;
     updateAuthUI(me.username, me.is_admin);
     await loadProfiles();
     await checkPaymentReturn();

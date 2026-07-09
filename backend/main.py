@@ -268,7 +268,8 @@ def api_me(uid: int = Depends(current_user_id)):
     sub = db.get_subscription(uid)
     return {"username": user["username"], "is_admin": bool(user["is_admin"]),
             "premium": db.is_premium(uid),
-            "premium_until": sub["expires_at"] if sub else None}
+            "premium_until": sub["expires_at"] if sub else None,
+            "consultation": db.has_consultation(uid)}
 
 
 def require_premium(uid: int = Depends(current_user_id)) -> int:
@@ -281,7 +282,7 @@ def require_premium(uid: int = Depends(current_user_id)) -> int:
 #  Подписка (ЮKassa)
 # --------------------------------------------------------------------------- #
 class BillingCreate(BaseModel):
-    plan: str = Field(..., pattern="^(month|year)$")
+    plan: str = Field(..., pattern="^(month|year|plus_month|plus_year)$")
 
 
 @app.get("/api/billing/plans")
@@ -305,7 +306,9 @@ def api_billing_create(body: BillingCreate, request: Request, uid: int = Depends
 @app.post("/api/billing/check")
 def api_billing_check(uid: int = Depends(current_user_id)):
     try:
-        return payments.check_payments(uid)
+        result = payments.check_payments(uid)
+        result["consultation"] = db.has_consultation(uid)
+        return result
     except payments.NotConfiguredError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
     except Exception:
