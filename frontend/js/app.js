@@ -2287,7 +2287,7 @@ let IS_PREMIUM = false;
 let PREMIUM_UNTIL = null;
 let HAS_CONSULT = false;
 // Telegram астролога для оплаченных консультаций (тарифы «Премиум+»)
-const ASTROLOGER_TG = "https://t.me/ВАШ_НИК";
+const ASTROLOGER_TG = "https://t.me/Astrosmap";
 
 function openPaywall(status) {
   if (!getToken()) {
