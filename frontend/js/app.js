@@ -2316,6 +2316,17 @@ function openPremiumModal() {
   $("premium-modal").classList.remove("hidden");
 }
 
+function refreshPremiumBtn() {
+  const btn = $("premium-btn");
+  if (IS_PREMIUM && PREMIUM_UNTIL) {
+    btn.textContent = `✦ ${t("premium_until_btn")} ${formatDate(new Date(PREMIUM_UNTIL * 1000).toISOString().slice(0, 10))}`;
+    btn.classList.add("premium-on");
+  } else {
+    btn.textContent = t("premium_btn");
+    btn.classList.remove("premium-on");
+  }
+}
+
 $("premium-btn").addEventListener("click", openPremiumModal);
 $("premium-close").addEventListener("click", () => $("premium-modal").classList.add("hidden"));
 $("premium-modal").addEventListener("click", (e) => {
@@ -2352,6 +2363,7 @@ async function checkPaymentReturn() {
       IS_PREMIUM = !!data.premium;
       PREMIUM_UNTIL = data.subscription && data.subscription.expires_at;
       HAS_CONSULT = !!data.consultation;
+      refreshPremiumBtn();
       alert(t("premium_activated"));
       if (HAS_CONSULT) openPremiumModal(); // сразу показать контакт для консультации
     } else {
@@ -2450,6 +2462,7 @@ $("auth-form").addEventListener("submit", async (e) => {
       IS_PREMIUM = !!me.premium;
       PREMIUM_UNTIL = me.premium_until;
       HAS_CONSULT = !!me.consultation;
+      refreshPremiumBtn();
     } catch (e) {}
   } catch (ex) {
     showAuthError(ex.message);
@@ -2468,6 +2481,7 @@ $("logout-btn").addEventListener("click", async () => {
   IS_PREMIUM = false;
   PREMIUM_UNTIL = null;
   HAS_CONSULT = false;
+  refreshPremiumBtn();
   updateAuthUI(null);
 });
 
@@ -2718,6 +2732,7 @@ function escapeHtml(s) {
     PREMIUM_UNTIL = me.premium_until;
     HAS_CONSULT = !!me.consultation;
     updateAuthUI(me.username, me.is_admin);
+    refreshPremiumBtn();
     await loadProfiles();
     await checkPaymentReturn();
   } catch {
