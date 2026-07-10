@@ -2424,6 +2424,9 @@ document.addEventListener("click", (e) => {
   } else if (id === "terms-link" || id === "footer-terms") {
     e.preventDefault();
     $("terms-modal").classList.remove("hidden");
+  } else if (id === "footer-offer" || id === "premium-offer-link" || id === "terms-offer-link") {
+    e.preventDefault();
+    $("offer-modal").classList.remove("hidden");
   }
 });
 $("privacy-close").addEventListener("click", () => $("privacy-modal").classList.add("hidden"));
@@ -2433,6 +2436,10 @@ $("privacy-modal").addEventListener("click", (e) => {
 $("terms-close").addEventListener("click", () => $("terms-modal").classList.add("hidden"));
 $("terms-modal").addEventListener("click", (e) => {
   if (e.target.id === "terms-modal") $("terms-modal").classList.add("hidden");
+});
+$("offer-close").addEventListener("click", () => $("offer-modal").classList.add("hidden"));
+$("offer-modal").addEventListener("click", (e) => {
+  if (e.target.id === "offer-modal") $("offer-modal").classList.add("hidden");
 });
 
 $("auth-form").addEventListener("submit", async (e) => {
