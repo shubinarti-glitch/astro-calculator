@@ -1578,7 +1578,7 @@ function buildPrintFrame(srcId, title, extraHead) {
   const doc = frame.contentWindow.document;
   doc.open();
   doc.write(
-    `<!DOCTYPE html><html lang="${LANG}"><head><meta charset="utf-8">` +
+    `<!DOCTYPE html><html lang="${LANG}" data-theme="light"><head><meta charset="utf-8">` +
     `<title>${brandSub} — ${title || brandTitle}</title>` +
     `<link rel="stylesheet" href="${location.origin}/css/style.css">` +
     `<style>${PRINT_OVERRIDE}</style>${extraHead || ""}</head>` +
