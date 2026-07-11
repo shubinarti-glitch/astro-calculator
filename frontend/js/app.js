@@ -2169,7 +2169,6 @@ function renderVedic(data) {
      </div>
      <div class="vedic-actions">
        <button class="vedic-btn" id="vedic-csv">${t("vedic_download")}</button>
-       <button class="vedic-btn" id="vedic-print-btn">${t("vedic_print")}</button>
      </div>`;
 
   // Сетка: понедельник-первый
@@ -2193,7 +2192,6 @@ function renderVedic(data) {
     cell.addEventListener("click", () => showVedicDay(data.days[+cell.dataset.i]));
   });
   $("vedic-csv").addEventListener("click", () => downloadVedicCsv(data));
-  $("vedic-print-btn").addEventListener("click", () => printFrom("vedic-view", t("tab_vedic")));
 }
 
 function showVedicDay(d) {
