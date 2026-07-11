@@ -2557,6 +2557,16 @@ $("admin-btn").addEventListener("click", () => {
   loadTexts();
 });
 
+// Вкладки админки
+document.querySelectorAll(".adm-tab").forEach((tab) => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".adm-tab").forEach((x) => x.classList.remove("active"));
+    tab.classList.add("active");
+    document.querySelectorAll(".adm-pane").forEach((p) => p.classList.add("hidden"));
+    $("adm-pane-" + tab.dataset.atab).classList.remove("hidden");
+  });
+});
+
 // --- Админ: редактор текстов ---
 let textLimit = 60;
 function escAttr(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }

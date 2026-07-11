@@ -191,30 +191,43 @@
     <div class="modal modal-wide">
       <button class="modal-close" id="admin-close" aria-label="Закрыть">×</button>
       <h2 class="privacy-title" data-i18n="admin_panel">Админ-панель</h2>
-      <div id="admin-stats" class="admin-stats"></div>
-      <div class="table-wrap"><table id="admin-users"></table></div>
-
-      <h3 class="adm-section-title" data-i18n="admin_usage_title">Использование функций (30 дней / всего)</h3>
-      <div class="table-wrap"><table id="admin-usage"></table></div>
-
-      <h3 class="adm-section-title" data-i18n="admin_pay_title">Платежи</h3>
-      <div id="admin-pay-summary" class="admin-stats"></div>
-      <div class="table-wrap"><table id="admin-payments"></table></div>
-
-      <h3 class="adm-section-title" data-i18n="admin_texts_title">Редактор текстов</h3>
-      <p class="hint" data-i18n="admin_texts_hint">Найдите любой текст по словам или ключу и отредактируйте. Изменения применяются сразу ко всем расчётам.</p>
-      <div class="adm-text-controls">
-        <input type="text" id="admin-text-search" data-i18n-ph="admin_texts_search" placeholder="Поиск по тексту или ключу…" />
-        <label class="adm-text-onlyov"><input type="checkbox" id="admin-text-overridden" /> <span data-i18n="admin_texts_only">только изменённые</span></label>
+      <div class="tabs adm-tabs">
+        <button class="adm-tab active" data-atab="overview" type="button" data-i18n="admin_tab_overview">Обзор</button>
+        <button class="adm-tab" data-atab="users" type="button" data-i18n="admin_tab_users">Пользователи</button>
+        <button class="adm-tab" data-atab="pay" type="button" data-i18n="admin_tab_pay">Платежи</button>
+        <button class="adm-tab" data-atab="texts" type="button" data-i18n="admin_tab_texts">Тексты</button>
       </div>
-      <div id="admin-text-count" class="adm-text-count"></div>
-      <div id="admin-text-list"></div>
-      <button id="admin-text-more" class="vedic-btn hidden" data-i18n="admin_texts_more">Показать ещё</button>
 
-      <details class="adm-audit">
-        <summary data-i18n="admin_audit_title">История правок текстов</summary>
-        <div id="admin-audit-list"></div>
-      </details>
+      <div class="adm-pane" id="adm-pane-overview">
+        <div id="admin-stats" class="admin-stats"></div>
+        <h3 class="adm-section-title" data-i18n="admin_usage_title">Использование функций (30 дней / всего)</h3>
+        <div class="table-wrap"><table id="admin-usage"></table></div>
+      </div>
+
+      <div class="adm-pane hidden" id="adm-pane-users">
+        <div class="table-wrap"><table id="admin-users"></table></div>
+      </div>
+
+      <div class="adm-pane hidden" id="adm-pane-pay">
+        <div id="admin-pay-summary" class="admin-stats"></div>
+        <div class="table-wrap"><table id="admin-payments"></table></div>
+      </div>
+
+      <div class="adm-pane hidden" id="adm-pane-texts">
+        <p class="hint" data-i18n="admin_texts_hint">Найдите любой текст по словам или ключу и отредактируйте. Изменения применяются сразу ко всем расчётам.</p>
+        <div class="adm-text-controls">
+          <input type="text" id="admin-text-search" data-i18n-ph="admin_texts_search" placeholder="Поиск по тексту или ключу…" />
+          <label class="adm-text-onlyov"><input type="checkbox" id="admin-text-overridden" /> <span data-i18n="admin_texts_only">только изменённые</span></label>
+        </div>
+        <div id="admin-text-count" class="adm-text-count"></div>
+        <div id="admin-text-list"></div>
+        <button id="admin-text-more" class="vedic-btn hidden" data-i18n="admin_texts_more">Показать ещё</button>
+
+        <details class="adm-audit">
+          <summary data-i18n="admin_audit_title">История правок текстов</summary>
+          <div id="admin-audit-list"></div>
+        </details>
+      </div>
     </div>
   </div>
 
@@ -641,7 +654,7 @@
     <p class="footer-disclaimer info-disclaimer" data-i18n="footer_disclaimer">Сервис носит информационно-развлекательный характер, не гарантирует достоверность прогнозов и не заменяет консультацию специалиста. Оператор — Шубин Артём Иванович, самозанятый (НПД), ИНН 245010711934, e-mail: astrosmap@gmail.com.</p>
   </footer>
 
-  <script src="/js/i18n.js?v=11"></script>
-  <script src="/js/app.js?v=11"></script>
+  <script src="/js/i18n.js?v=12"></script>
+  <script src="/js/app.js?v=12"></script>
 </body>
 </html>
