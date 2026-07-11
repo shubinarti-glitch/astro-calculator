@@ -737,10 +737,55 @@ $("birth-form").addEventListener("submit", async (e) => {
     }
     lastData = data;
     lastMode = mode; // для перерисовки при смене языка
+    recordHistory(birth);
   } catch (ex) {
     showError(ex.message || t("v_calc_failed"));
   }
 });
+
+// ---------- История расчётов (для кабинета) ----------
+// Поля формы, которые нужно запомнить, чтобы повторить расчёт в один клик.
+const MODE_FIELDS = {
+  transit: ["transit-date", "transit-time"],
+  return: ["return-type", "return-year", "return-month"],
+  progression: ["prog-date", "prog-time"],
+  calendar: ["cal-start", "cal-end"],
+  forecast: ["fc-start", "fc-end"],
+  vedic: ["vedic-month", "vedic-personalize"],
+};
+
+function recordHistory(birth) {
+  if (!getToken()) return;
+  const fields = {};
+  (MODE_FIELDS[mode] || []).forEach((id) => {
+    const el = $(id);
+    if (el) fields[id] = el.type === "checkbox" ? el.checked : el.value;
+  });
+  const params = { birth, fields };
+  if (mode === "synastry") params.personB = getPersonB();
+  const who = birth.name && birth.name !== "Без имени" ? birth.name : (birth.city || "");
+  const label = mode === "synastry" && params.personB && params.personB.name
+    ? `${who} + ${params.personB.name}` : who;
+  fetch("/api/history", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ kind: mode, label, params }),
+  }).catch(() => {});
+}
+
+function repeatHistory(item) {
+  const p = item.params || {};
+  if (p.birth) fillBirthData(p.birth);
+  Object.entries(p.fields || {}).forEach(([id, v]) => {
+    const el = $(id);
+    if (el) { if (el.type === "checkbox") el.checked = !!v; else el.value = v; }
+  });
+  if (item.kind === "synastry" && p.personB) fillPersonB(p.personB);
+  const tab = document.querySelector(`.tab[data-mode="${item.kind}"]`);
+  if (tab) tab.click();
+  $("cabinet-modal").classList.add("hidden");
+  $("birth-form").requestSubmit();
+}
 
 // Карта режим → функция отрисовки (для смены языка)
 const RENDER_BY_MODE = {
@@ -2398,6 +2443,29 @@ async function checkPaymentReturn() {
   } catch (e) {}
 }
 
+// Ссылки из писем: /?email-token=… (подтверждение почты) и /?reset-token=… (сброс пароля).
+let RESET_TOKEN = "";
+async function checkEmailLinks() {
+  const params = new URLSearchParams(window.location.search);
+  const verify = params.get("email-token");
+  const reset = params.get("reset-token");
+  if (!verify && !reset) return;
+  history.replaceState(null, "", window.location.pathname);
+  if (verify) {
+    try {
+      await postJSON("/api/auth/verify-email", { token: verify });
+      alert(t("email_verified_ok"));
+    } catch (e) {
+      alert(t("email_verify_fail"));
+    }
+  }
+  if (reset) {
+    RESET_TOKEN = reset;
+    $("auth-modal").classList.remove("hidden");
+    setAuthMode("reset");
+  }
+}
+
 function updateAuthUI(username, isAdmin = false) {
   if (username) {
     $("login-btn").classList.add("hidden");
@@ -2429,15 +2497,31 @@ $("auth-modal").addEventListener("click", (e) => {
   if (e.target.id === "auth-modal") $("auth-modal").classList.add("hidden");
 });
 
+// Режимы окна авторизации: login / register / forgot (письмо со сбросом) / reset (новый пароль).
+function setAuthMode(mode) {
+  authMode = mode;
+  const isReg = mode === "register", isForgot = mode === "forgot", isReset = mode === "reset";
+  document.querySelectorAll(".auth-tab").forEach((tb) => tb.classList.toggle("active", tb.dataset.auth === mode));
+  $("auth-username-row").classList.toggle("hidden", isForgot || isReset);
+  $("auth-email-row").classList.toggle("hidden", !(isReg || isForgot));
+  $("auth-password-row").classList.toggle("hidden", isForgot);
+  // подпись поля пароля: в режиме сброса — «новый пароль»
+  const pwLabel = $("auth-password-row");
+  pwLabel.setAttribute("data-i18n", isReset ? "new_password_label" : "password");
+  $("auth-forgot").classList.toggle("hidden", mode !== "login");
+  $("consent-row").classList.toggle("hidden", !isReg);
+  $("auth-submit").setAttribute("data-i18n", isReg ? "do_register" : isForgot ? "do_forgot" : isReset ? "do_reset" : "do_login");
+  $("auth-error").classList.add("hidden");
+  applyI18n();
+}
+
 document.querySelectorAll(".auth-tab").forEach((tab) => {
-  tab.addEventListener("click", () => {
-    document.querySelectorAll(".auth-tab").forEach((t) => t.classList.remove("active"));
-    tab.classList.add("active");
-    authMode = tab.dataset.auth;
-    $("auth-submit").textContent = authMode === "register" ? t("do_register") : t("do_login");
-    $("consent-row").classList.toggle("hidden", authMode !== "register");
-    $("auth-error").classList.add("hidden");
-  });
+  tab.addEventListener("click", () => setAuthMode(tab.dataset.auth));
+});
+
+$("auth-forgot").addEventListener("click", (e) => {
+  e.preventDefault();
+  setAuthMode("forgot");
 });
 
 // Юридические документы (политика ПДн и пользовательское соглашение)
@@ -2472,8 +2556,30 @@ $("auth-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const username = $("auth-username").value.trim();
   const password = $("auth-password").value;
+  const email = $("auth-email").value.trim();
+  if (authMode === "forgot") {
+    if (!email.includes("@")) return showAuthError(t("email_need"));
+    try {
+      await postJSON("/api/auth/forgot", { email, lang: LANG });
+      showAuthError(t("forgot_sent"));
+    } catch (ex) { showAuthError(ex.message); }
+    return;
+  }
+  if (authMode === "reset") {
+    if (password.length < 8) return showAuthError(t("auth_short"));
+    try {
+      await postJSON("/api/auth/reset", { token: RESET_TOKEN, new_password: password });
+      alert(t("reset_done"));
+      $("auth-password").value = "";
+      setAuthMode("login");
+    } catch (ex) { showAuthError(ex.message); }
+    return;
+  }
   if (username.length < 2 || password.length < 4) {
     return showAuthError(t("auth_short"));
+  }
+  if (authMode === "register" && !email.includes("@")) {
+    return showAuthError(t("email_need"));
   }
   if (authMode === "register" && !$("terms-check").checked) {
     return showAuthError(t("auth_terms"));
@@ -2483,7 +2589,9 @@ $("auth-form").addEventListener("submit", async (e) => {
   }
   try {
     const url = authMode === "register" ? "/api/auth/register" : "/api/auth/login";
-    const data = await postJSON(url, { username, password });
+    const data = await postJSON(url, authMode === "register"
+      ? { username, password, email, lang: LANG }
+      : { username, password });
     setToken(data.token);
     updateAuthUI(data.username, data.is_admin);
     $("auth-modal").classList.add("hidden");
@@ -2516,6 +2624,143 @@ $("logout-btn").addEventListener("click", async () => {
   HAS_CONSULT = false;
   refreshPremiumBtn();
   updateAuthUI(null);
+});
+
+// --- Кабинет ---
+$("cabinet-btn").addEventListener("click", () => {
+  $("cabinet-modal").classList.remove("hidden");
+  loadCabinet();
+});
+$("cabinet-close").addEventListener("click", () => $("cabinet-modal").classList.add("hidden"));
+$("cabinet-modal").addEventListener("click", (e) => {
+  if (e.target.id === "cabinet-modal") $("cabinet-modal").classList.add("hidden");
+});
+
+async function loadCabinet() {
+  try {
+    const [meR, profR, histR, payR] = await Promise.all([
+      fetch("/api/auth/me", { headers: authHeaders() }),
+      fetch("/api/profiles", { headers: authHeaders() }),
+      fetch("/api/history", { headers: authHeaders() }),
+      fetch("/api/billing/my", { headers: authHeaders() }),
+    ]);
+    if (!meR.ok) throw new Error();
+    const me = await meR.json();
+    const profiles = profR.ok ? await profR.json() : [];
+    const history = histR.ok ? await histR.json() : [];
+    const pays = payR.ok ? (await payR.json()).items : [];
+
+    // Профиль: логин, почта (привязка/смена), смена пароля — кнопкой 🔑 в шапке
+    const emailLine = me.email
+      ? `<div class="cab-line"><b>${t("email_label")}:</b> ${escapeHtml(me.email)} ${me.email_verified ? "✓" : `<span class="cab-dim">${t("cab_email_unverified")}</span>`}</div>`
+      : `<div class="cab-line cab-warn">${t("cab_email_none")}</div>`;
+    $("cab-profile").innerHTML =
+      `<h4>${t("cab_profile")}</h4>
+       <div class="cab-line"><b>${t("username")}:</b> ${escapeHtml(me.username)}</div>
+       ${emailLine}
+       <div class="cab-email-form">
+         <input type="email" id="cab-email-input" placeholder="you@example.com" value="${me.email ? escapeHtml(me.email) : ""}" />
+         <button class="adm-mini" id="cab-email-save">${t("cab_email_attach")}</button>
+         <span id="cab-email-msg" class="cab-dim"></span>
+       </div>`;
+    $("cab-email-save").addEventListener("click", async () => {
+      const email = $("cab-email-input").value.trim();
+      if (!email.includes("@")) { $("cab-email-msg").textContent = t("email_need"); return; }
+      try {
+        const r = await postJSON("/api/auth/email", { email, lang: LANG });
+        $("cab-email-msg").textContent = r.sent ? t("cab_email_sent") : t("cab_email_saved");
+      } catch (ex) { $("cab-email-msg").textContent = ex.message; }
+    });
+
+    // Подписка
+    const subLine = me.premium && me.premium_until
+      ? `<div class="cab-line">✦ ${t("cab_sub_active")} ${formatDate(new Date(me.premium_until * 1000).toISOString().slice(0, 10))}</div>`
+      : `<div class="cab-line cab-dim">${t("cab_sub_none")}</div>`;
+    $("cab-sub").innerHTML =
+      `<h4>${t("cab_sub")}</h4>${subLine}
+       <button class="adm-mini" id="cab-sub-buy">${t("cab_sub_buy")}</button>`;
+    $("cab-sub-buy").addEventListener("click", () => {
+      $("cabinet-modal").classList.add("hidden");
+      openPremiumModal();
+    });
+
+    // Мои люди: заметка + запуск расчётов
+    if (!profiles.length) {
+      $("cab-people").innerHTML = `<div class="cab-dim">${t("cab_no_people")}</div>`;
+    } else {
+      $("cab-people").innerHTML = profiles.map((p) => {
+        const d = p.data;
+        const meta = `${d.day || "?"}.${d.month || "?"}.${d.year || "?"}${d.city ? " · " + escapeHtml(d.city) : ""}`;
+        return `<div class="cab-person" data-id="${p.id}">
+          <div class="cab-person-head"><b>${escapeHtml(p.label)}</b> <span class="cab-dim">${meta}</span></div>
+          <input class="cab-note" data-note="${p.id}" placeholder="${t("cab_note_ph")}" value="${escapeHtml(p.note || "")}" />
+          <div class="cab-person-actions">
+            <button class="adm-mini" data-run="natal" data-id="${p.id}">${t("cab_run_natal")}</button>
+            <button class="adm-mini" data-run="transit" data-id="${p.id}">${t("cab_run_transit")}</button>
+            <button class="adm-mini" data-run="synastry" data-id="${p.id}">${t("cab_run_synastry")}</button>
+            <button class="adm-mini" data-run="forecast" data-id="${p.id}">${t("cab_run_forecast")}</button>
+          </div>
+        </div>`;
+      }).join("");
+      $("cab-people")._profiles = profiles;
+    }
+
+    // История
+    $("cab-history").innerHTML = !history.length
+      ? `<div class="cab-dim">${t("cab_no_history")}</div>`
+      : history.map((it) => {
+          const when = formatDate(it.created_at.slice(0, 10));
+          return `<div class="cab-hist-row">
+            <span>${t("hist_kind_" + it.kind) || it.kind}</span>
+            <span class="cab-dim">${escapeHtml(it.label || "")}</span>
+            <span class="cab-dim">${when}</span>
+            <button class="adm-mini" data-hist="${it.id}">${t("cab_repeat")}</button>
+          </div>`;
+        }).join("");
+    $("cab-history")._items = history;
+
+    // Платежи
+    $("cab-payments").innerHTML = !pays.length
+      ? `<div class="cab-dim">${t("cab_no_payments")}</div>`
+      : `<table class="cab-pay-table">` + pays.map((p) =>
+          `<tr><td>${formatDate(p.created_at.slice(0, 10))}</td><td>${escapeHtml(p.plan)}</td><td>${p.amount} ₽</td><td>${escapeHtml(p.status)}</td></tr>`
+        ).join("") + `</table>`;
+  } catch (e) {
+    $("cab-profile").innerHTML = `<div class="cab-dim">${t("v_calc_failed")}</div>`;
+  }
+}
+
+// Делегирование: заметки, запуск расчётов от человека, повтор из истории
+$("cab-people").addEventListener("change", async (e) => {
+  const id = e.target && e.target.dataset && e.target.dataset.note;
+  if (!id) return;
+  try { await postJSON(`/api/profiles/${id}/note`, { note: e.target.value }); } catch (ex) {}
+});
+$("cab-people").addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-run]");
+  if (!btn) return;
+  const p = ($("cab-people")._profiles || []).find((x) => x.id === +btn.dataset.id);
+  if (!p) return;
+  const kind = btn.dataset.run;
+  if (kind === "synastry") {
+    // человек — вторым участником, себя вводит пользователь
+    fillPersonB(p.data);
+  } else {
+    fillBirthData(p.data);
+  }
+  if (kind === "transit" && !$("transit-date").value) {
+    $("transit-date").value = new Date().toISOString().slice(0, 10);
+  }
+  const tab = document.querySelector(`.tab[data-mode="${kind}"]`);
+  if (tab) tab.click();
+  $("cabinet-modal").classList.add("hidden");
+  if (kind !== "synastry") $("birth-form").requestSubmit();
+});
+$("cab-history").addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-hist]");
+  if (!btn) return;
+  const it = ($("cab-history")._items || []).find((x) => x.id === +btn.dataset.hist);
+  if (it) repeatHistory(it);
 });
 
 // --- Админ-панель ---
@@ -2847,6 +3092,7 @@ function escapeHtml(s) {
 
 // --- Инициализация при загрузке ---
 (async function initAuth() {
+  await checkEmailLinks(); // ссылки из писем работают и без входа
   if (!getToken()) return;
   try {
     const r = await fetch("/api/auth/me", { headers: authHeaders() });

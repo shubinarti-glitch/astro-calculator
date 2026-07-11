@@ -61,12 +61,41 @@ def init_db() -> None:
             c.execute("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0")
         if "is_banned" not in cols:
             c.execute("ALTER TABLE users ADD COLUMN is_banned INTEGER NOT NULL DEFAULT 0")
+        if "email" not in cols:
+            c.execute("ALTER TABLE users ADD COLUMN email TEXT")
+            c.execute("ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 0")
+        c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email) WHERE email IS NOT NULL")
         c.execute(
             """CREATE TABLE IF NOT EXISTS profiles (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL,
                 label TEXT NOT NULL,
                 data TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+            )"""
+        )
+        pcols = [r["name"] for r in c.execute("PRAGMA table_info(profiles)").fetchall()]
+        if "note" not in pcols:
+            c.execute("ALTER TABLE profiles ADD COLUMN note TEXT NOT NULL DEFAULT ''")
+        # Одноразовые токены писем (подтверждение email, сброс пароля) — храним хэш.
+        c.execute(
+            """CREATE TABLE IF NOT EXISTS email_tokens (
+                token_hash TEXT PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                kind TEXT NOT NULL,
+                exp INTEGER NOT NULL,
+                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+            )"""
+        )
+        # История расчётов: последние запуски пользователя для повтора в один клик.
+        c.execute(
+            """CREATE TABLE IF NOT EXISTS calc_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                kind TEXT NOT NULL,
+                label TEXT NOT NULL,
+                params TEXT NOT NULL,
                 created_at TEXT NOT NULL,
                 FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
             )"""
@@ -222,19 +251,81 @@ class UserExistsError(Exception):
     pass
 
 
-def create_user(username: str, password: str) -> dict:
+def create_user(username: str, password: str, email: Optional[str] = None) -> dict:
     username = username.strip()
+    email = email.strip().lower() if email else None
     with get_conn() as c:
         existing = c.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone()
         if existing:
             raise UserExistsError("Пользователь с таким именем уже существует")
+        if email and c.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone():
+            raise UserExistsError("Эта почта уже привязана к другому аккаунту")
         # Первый зарегистрированный пользователь становится администратором.
         is_first = c.execute("SELECT COUNT(*) AS n FROM users").fetchone()["n"] == 0
         cur = c.execute(
-            "INSERT INTO users (username, password_hash, created_at, is_admin) VALUES (?, ?, ?, ?)",
-            (username, hash_password(password), _now_iso(), 1 if is_first else 0),
+            "INSERT INTO users (username, password_hash, created_at, is_admin, email) VALUES (?, ?, ?, ?, ?)",
+            (username, hash_password(password), _now_iso(), 1 if is_first else 0, email),
         )
         return {"id": cur.lastrowid, "username": username, "is_admin": bool(is_first)}
+
+
+def get_user_by_email(email: str) -> Optional[sqlite3.Row]:
+    with get_conn() as c:
+        return c.execute("SELECT * FROM users WHERE email = ?", (email.strip().lower(),)).fetchone()
+
+
+def set_user_email(user_id: int, email: str) -> bool:
+    """Привязать/сменить почту; сбрасывает флаг подтверждения. False — почта занята."""
+    email = email.strip().lower()
+    with get_conn() as c:
+        taken = c.execute("SELECT id FROM users WHERE email = ? AND id != ?", (email, user_id)).fetchone()
+        if taken:
+            return False
+        c.execute("UPDATE users SET email = ?, email_verified = 0 WHERE id = ?", (email, user_id))
+        return True
+
+
+def mark_email_verified(user_id: int) -> None:
+    with get_conn() as c:
+        c.execute("UPDATE users SET email_verified = 1 WHERE id = ?", (user_id,))
+
+
+def set_password(user_id: int, new_password: str) -> None:
+    """Установить пароль без проверки старого (после сброса по ссылке из письма)."""
+    with get_conn() as c:
+        c.execute("UPDATE users SET password_hash = ? WHERE id = ?", (hash_password(new_password), user_id))
+
+
+# --------------------------------------------------------------------------- #
+#  Одноразовые токены писем (verify / reset)
+# --------------------------------------------------------------------------- #
+def _hash_email_token(token: str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+def create_email_token(user_id: int, kind: str, ttl_seconds: int) -> str:
+    token = secrets.token_urlsafe(32)
+    now = int(time.time())
+    with get_conn() as c:
+        c.execute("DELETE FROM email_tokens WHERE exp < ?", (now,))  # чистим истёкшие
+        c.execute("DELETE FROM email_tokens WHERE user_id = ? AND kind = ?", (user_id, kind))  # один активный
+        c.execute("INSERT INTO email_tokens (token_hash, user_id, kind, exp) VALUES (?, ?, ?, ?)",
+                  (_hash_email_token(token), user_id, kind, now + ttl_seconds))
+    return token
+
+
+def consume_email_token(token: str, kind: str) -> Optional[int]:
+    """Проверить и погасить токен. Возвращает user_id или None."""
+    h = _hash_email_token(token)
+    with get_conn() as c:
+        row = c.execute("SELECT user_id, exp FROM email_tokens WHERE token_hash = ? AND kind = ?",
+                        (h, kind)).fetchone()
+        if not row:
+            return None
+        c.execute("DELETE FROM email_tokens WHERE token_hash = ?", (h,))
+        if row["exp"] < time.time():
+            return None
+        return row["user_id"]
 
 
 def get_user_by_username(username: str) -> Optional[sqlite3.Row]:
@@ -279,11 +370,12 @@ def add_profile(user_id: int, label: str, data: dict) -> dict:
 def list_profiles(user_id: int) -> list[dict]:
     with get_conn() as c:
         rows = c.execute(
-            "SELECT id, label, data, created_at FROM profiles WHERE user_id = ? ORDER BY created_at DESC",
+            "SELECT id, label, data, note, created_at FROM profiles WHERE user_id = ? ORDER BY created_at DESC",
             (user_id,),
         ).fetchall()
     return [
-        {"id": r["id"], "label": r["label"], "data": json.loads(r["data"]), "created_at": r["created_at"]}
+        {"id": r["id"], "label": r["label"], "data": json.loads(r["data"]),
+         "note": r["note"], "created_at": r["created_at"]}
         for r in rows
     ]
 
@@ -292,6 +384,49 @@ def delete_profile(user_id: int, profile_id: int) -> bool:
     with get_conn() as c:
         cur = c.execute("DELETE FROM profiles WHERE id = ? AND user_id = ?", (profile_id, user_id))
         return cur.rowcount > 0
+
+
+def set_profile_note(user_id: int, profile_id: int, note: str) -> bool:
+    with get_conn() as c:
+        cur = c.execute("UPDATE profiles SET note = ? WHERE id = ? AND user_id = ?",
+                        (note, profile_id, user_id))
+        return cur.rowcount > 0
+
+
+# --------------------------------------------------------------------------- #
+#  История расчётов
+# --------------------------------------------------------------------------- #
+HISTORY_KEEP = 20
+
+
+def add_history(user_id: int, kind: str, label: str, params: dict) -> None:
+    with get_conn() as c:
+        c.execute("INSERT INTO calc_history (user_id, kind, label, params, created_at) VALUES (?, ?, ?, ?, ?)",
+                  (user_id, kind, label, json.dumps(params, ensure_ascii=False), _now_iso()))
+        c.execute(
+            "DELETE FROM calc_history WHERE user_id = ? AND id NOT IN "
+            "(SELECT id FROM calc_history WHERE user_id = ? ORDER BY id DESC LIMIT ?)",
+            (user_id, user_id, HISTORY_KEEP),
+        )
+
+
+def list_history(user_id: int) -> list[dict]:
+    with get_conn() as c:
+        rows = c.execute(
+            "SELECT id, kind, label, params, created_at FROM calc_history WHERE user_id = ? ORDER BY id DESC",
+            (user_id,),
+        ).fetchall()
+    return [{"id": r["id"], "kind": r["kind"], "label": r["label"],
+             "params": json.loads(r["params"]), "created_at": r["created_at"]} for r in rows]
+
+
+def list_user_payments(user_id: int) -> list[dict]:
+    with get_conn() as c:
+        rows = c.execute(
+            "SELECT payment_id, plan, status, created_at FROM payments WHERE user_id = ? ORDER BY created_at DESC LIMIT 50",
+            (user_id,),
+        ).fetchall()
+    return [dict(r) for r in rows]
 
 
 # --------------------------------------------------------------------------- #

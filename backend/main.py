@@ -16,7 +16,9 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 
-from . import astrology, constants, content_store, db, payments, seo, vedic
+import re
+
+from . import astrology, constants, content_store, db, emailer, payments, seo, vedic
 
 logger = logging.getLogger("astro")
 
@@ -211,9 +213,25 @@ class RectificationRequest(BaseModel):
     window_minutes: Optional[int] = Field(None, ge=1, le=180)  # полуширина окна уточнения (±мин, максимум ±3ч)
 
 
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
 class AuthRequest(BaseModel):
     username: str = Field(..., min_length=2, max_length=50)
     password: str = Field(..., min_length=8, max_length=200)
+
+
+class RegisterRequest(AuthRequest):
+    email: str = Field("", max_length=120)
+    lang: str = "ru"
+
+    @field_validator("email")
+    @classmethod
+    def _check_email(cls, v: str) -> str:
+        v = v.strip().lower()
+        if v and not EMAIL_RE.match(v):
+            raise ValueError("Некорректный адрес почты")
+        return v
 
 
 class ProfileIn(BaseModel):
@@ -236,16 +254,32 @@ def current_user_id(authorization: Optional[str] = Header(None)) -> int:
     return uid
 
 
+def _send_verify_email(request: Request, user_id: int, email: str, lang: str = "ru") -> None:
+    """Отправить письмо подтверждения; молча пропустить, если SMTP не настроен."""
+    if not emailer.is_configured():
+        return
+    token = db.create_email_token(user_id, "verify", 24 * 3600)
+    link = str(request.base_url).rstrip("/") + f"/?email-token={token}"
+    subject, body = emailer.verify_letter(link, lang)
+    try:
+        emailer.send(email, subject, body)
+    except Exception:
+        logger.exception("Не удалось отправить письмо подтверждения")
+
+
 @app.post("/api/auth/register")
-def api_register(req: AuthRequest, request: Request):
+def api_register(req: RegisterRequest, request: Request):
     ip = _client_ip(request)
     if _rate_limited(f"reg:{ip}", max_n=10, window=3600):
         raise HTTPException(status_code=429, detail="Слишком много регистраций. Попробуйте позже.")
+    if not req.email:
+        raise HTTPException(status_code=422, detail="Укажите почту — она нужна для чека об оплате и восстановления пароля")
     try:
-        user = db.create_user(req.username, req.password)
+        user = db.create_user(req.username, req.password, req.email)
     except db.UserExistsError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
     _rate_record(f"reg:{ip}")
+    _send_verify_email(request, user["id"], req.email, req.lang)
     return {"token": db.make_token(user["id"]), "username": user["username"], "is_admin": user.get("is_admin", False)}
 
 
@@ -255,7 +289,9 @@ def api_login(req: AuthRequest, request: Request):
     key = f"login:{ip}:{req.username.strip().lower()}"
     if _rate_limited(key, max_n=5, window=300):
         raise HTTPException(status_code=429, detail="Слишком много попыток входа. Попробуйте через несколько минут.")
-    user = db.get_user_by_username(req.username)
+    # Вход по имени пользователя или по почте — что ввели, то и ищем.
+    ident = req.username.strip()
+    user = db.get_user_by_email(ident) if "@" in ident else db.get_user_by_username(ident)
     if not user or not db.verify_password(req.password, user["password_hash"]):
         _rate_record(key)  # учитываем только НЕудачные попытки
         raise HTTPException(status_code=401, detail="Неверное имя пользователя или пароль")
@@ -265,6 +301,85 @@ def api_login(req: AuthRequest, request: Request):
     return {"token": db.make_token(user["id"]), "username": user["username"], "is_admin": bool(user["is_admin"])}
 
 
+class EmailAttach(BaseModel):
+    email: str = Field(..., min_length=5, max_length=120)
+    lang: str = "ru"
+
+    @field_validator("email")
+    @classmethod
+    def _check_email(cls, v: str) -> str:
+        v = v.strip().lower()
+        if not EMAIL_RE.match(v):
+            raise ValueError("Некорректный адрес почты")
+        return v
+
+
+@app.post("/api/auth/email")
+def api_attach_email(req: EmailAttach, request: Request, uid: int = Depends(current_user_id)):
+    """Привязать/сменить почту у существующего аккаунта."""
+    ip = _client_ip(request)
+    if _rate_limited(f"email:{ip}", max_n=5, window=3600):
+        raise HTTPException(status_code=429, detail="Слишком много запросов. Попробуйте позже.")
+    if not db.set_user_email(uid, req.email):
+        raise HTTPException(status_code=409, detail="Эта почта уже привязана к другому аккаунту")
+    _rate_record(f"email:{ip}")
+    _send_verify_email(request, uid, req.email, req.lang)
+    return {"ok": True, "sent": emailer.is_configured()}
+
+
+class EmailToken(BaseModel):
+    token: str = Field(..., min_length=10, max_length=200)
+
+
+@app.post("/api/auth/verify-email")
+def api_verify_email(req: EmailToken):
+    uid = db.consume_email_token(req.token, "verify")
+    if uid is None:
+        raise HTTPException(status_code=400, detail="Ссылка недействительна или устарела")
+    db.mark_email_verified(uid)
+    return {"ok": True}
+
+
+class ForgotRequest(BaseModel):
+    email: str = Field(..., min_length=5, max_length=120)
+    lang: str = "ru"
+
+
+@app.post("/api/auth/forgot")
+def api_forgot(req: ForgotRequest, request: Request):
+    """Запрос сброса пароля. Ответ всегда ok — не раскрываем, есть ли такая почта."""
+    ip = _client_ip(request)
+    if _rate_limited(f"forgot:{ip}", max_n=5, window=3600):
+        raise HTTPException(status_code=429, detail="Слишком много запросов. Попробуйте позже.")
+    _rate_record(f"forgot:{ip}")
+    if not emailer.is_configured():
+        raise HTTPException(status_code=503, detail="Отправка писем временно недоступна")
+    user = db.get_user_by_email(req.email)
+    if user:
+        token = db.create_email_token(user["id"], "reset", 3600)
+        link = str(request.base_url).rstrip("/") + f"/?reset-token={token}"
+        subject, body = emailer.reset_letter(link, req.lang)
+        try:
+            emailer.send(user["email"], subject, body)
+        except Exception:
+            logger.exception("Не удалось отправить письмо сброса пароля")
+    return {"ok": True}
+
+
+class ResetRequest(BaseModel):
+    token: str = Field(..., min_length=10, max_length=200)
+    new_password: str = Field(..., min_length=8, max_length=200)
+
+
+@app.post("/api/auth/reset")
+def api_reset(req: ResetRequest):
+    uid = db.consume_email_token(req.token, "reset")
+    if uid is None:
+        raise HTTPException(status_code=400, detail="Ссылка недействительна или устарела. Запросите сброс ещё раз.")
+    db.set_password(uid, req.new_password)
+    return {"ok": True}
+
+
 @app.get("/api/auth/me")
 def api_me(uid: int = Depends(current_user_id)):
     user = db.get_user_by_id(uid)
@@ -272,6 +387,7 @@ def api_me(uid: int = Depends(current_user_id)):
         raise HTTPException(status_code=401, detail="Пользователь не найден")
     sub = db.get_subscription(uid)
     return {"username": user["username"], "is_admin": bool(user["is_admin"]),
+            "email": user["email"], "email_verified": bool(user["email_verified"]),
             "premium": db.is_premium(uid),
             "premium_until": sub["expires_at"] if sub else None,
             "consultation": db.has_consultation(uid)}
@@ -468,6 +584,56 @@ def api_delete_profile(profile_id: int, uid: int = Depends(current_user_id)):
     if not db.delete_profile(uid, profile_id):
         raise HTTPException(status_code=404, detail="Карта не найдена")
     return {"ok": True}
+
+
+class NoteIn(BaseModel):
+    note: str = Field("", max_length=500)
+
+    @field_validator("note")
+    @classmethod
+    def _strip_markup(cls, v: str) -> str:
+        return v.replace("<", "").replace(">", "").replace("&", "").strip()
+
+
+@app.post("/api/profiles/{profile_id}/note")
+def api_profile_note(profile_id: int, body: NoteIn, uid: int = Depends(current_user_id)):
+    if not db.set_profile_note(uid, profile_id, body.note):
+        raise HTTPException(status_code=404, detail="Карта не найдена")
+    return {"ok": True}
+
+
+# --------------------------------------------------------------------------- #
+#  Кабинет: история расчётов и свои платежи
+# --------------------------------------------------------------------------- #
+class HistoryIn(BaseModel):
+    kind: str = Field(..., pattern="^(natal|transit|synastry|return|progression|calendar|forecast|rectification|vedic)$")
+    label: str = Field("", max_length=160)
+    params: dict
+
+    @field_validator("label")
+    @classmethod
+    def _strip_markup(cls, v: str) -> str:
+        return v.replace("<", "").replace(">", "").replace("&", "").strip()
+
+
+@app.post("/api/history")
+def api_add_history(body: HistoryIn, uid: int = Depends(current_user_id)):
+    db.add_history(uid, body.kind, body.label, body.params)
+    return {"ok": True}
+
+
+@app.get("/api/history")
+def api_list_history(uid: int = Depends(current_user_id)):
+    return db.list_history(uid)
+
+
+@app.get("/api/billing/my")
+def api_my_payments(uid: int = Depends(current_user_id)):
+    prices = {p: price for p, (price, _d) in payments.PLANS.items()}
+    items = db.list_user_payments(uid)
+    for it in items:
+        it["amount"] = prices.get(it["plan"], 0)
+    return {"items": items}
 
 
 # --------------------------------------------------------------------------- #

@@ -379,7 +379,8 @@ def test_billing_consult_plan():
 # --------------------------------------------------------------------------- #
 def _make_user(prefix="feat_"):
     name = _rnd(prefix)
-    r = client.post("/api/auth/register", json={"username": name, "password": "password123"})
+    r = client.post("/api/auth/register",
+                    json={"username": name, "password": "password123", "email": f"{name}@test.local"})
     assert r.status_code == 200
     return name, r.json()["token"]
 
@@ -462,5 +463,79 @@ def test_admin_endpoints_require_admin():
             assert client.get(path, headers=h).status_code == 403
         assert client.post("/api/admin/users/1/premium", headers=h, json={"days": 30}).status_code == 403
         assert client.post("/api/admin/users/1/ban", headers=h, json={"banned": True}).status_code == 403
+    finally:
+        _cleanup(name)
+
+
+# --------------------------------------------------------------------------- #
+#  Email-авторизация, сброс пароля, кабинет
+# --------------------------------------------------------------------------- #
+def test_register_requires_email():
+    name = _rnd("noemail_")
+    r = client.post("/api/auth/register", json={"username": name, "password": "password123"})
+    assert r.status_code == 422
+    r = client.post("/api/auth/register",
+                    json={"username": name, "password": "password123", "email": "not-an-email"})
+    assert r.status_code == 422
+
+
+def test_email_unique_and_login_by_email():
+    name, token = _make_user("em_")
+    try:
+        # почта занята — второй аккаунт с той же почтой не создаётся
+        other = _rnd("em2_")
+        r = client.post("/api/auth/register",
+                        json={"username": other, "password": "password123", "email": f"{name}@test.local"})
+        assert r.status_code == 409
+        # вход по почте
+        r = client.post("/api/auth/login",
+                        json={"username": f"{name}@test.local", "password": "password123"})
+        assert r.status_code == 200 and r.json()["username"] == name
+        # /me отдаёт почту
+        me = client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"}).json()
+        assert me["email"] == f"{name}@test.local" and me["email_verified"] is False
+    finally:
+        _cleanup(name)
+
+
+def test_verify_and_reset_tokens():
+    name, token = _make_user("tok_")
+    try:
+        u = db.get_user_by_username(name)
+        # подтверждение почты
+        t = db.create_email_token(u["id"], "verify", 3600)
+        assert client.post("/api/auth/verify-email", json={"token": t}).status_code == 200
+        assert client.post("/api/auth/verify-email", json={"token": t}).status_code == 400  # одноразовый
+        assert db.get_user_by_id(u["id"])["email_verified"] == 1
+        # сброс пароля
+        t = db.create_email_token(u["id"], "reset", 3600)
+        r = client.post("/api/auth/reset", json={"token": t, "new_password": "newpassword1"})
+        assert r.status_code == 200
+        r = client.post("/api/auth/login", json={"username": name, "password": "newpassword1"})
+        assert r.status_code == 200
+        # токен не того типа не подходит
+        t = db.create_email_token(u["id"], "verify", 3600)
+        assert client.post("/api/auth/reset", json={"token": t, "new_password": "newpassword2"}).status_code == 400
+    finally:
+        _cleanup(name)
+
+
+def test_history_and_profile_note():
+    name, token = _make_user("hist_")
+    try:
+        h = {"Authorization": f"Bearer {token}"}
+        r = client.post("/api/history", headers=h,
+                        json={"kind": "natal", "label": "Тест <b>x</b>", "params": {"a": 1}})
+        assert r.status_code == 200
+        items = client.get("/api/history", headers=h).json()
+        assert len(items) == 1 and items[0]["kind"] == "natal" and "<" not in items[0]["label"]
+        # заметка к сохранённой карте
+        p = client.post("/api/profiles", headers=h, json={"label": "Мама", "data": {"y": 1960}}).json()
+        r = client.post(f"/api/profiles/{p['id']}/note", headers=h, json={"note": "заметка"})
+        assert r.status_code == 200
+        profs = client.get("/api/profiles", headers=h).json()
+        assert profs[0]["note"] == "заметка"
+        # свои платежи (пусто, но эндпоинт живой)
+        assert client.get("/api/billing/my", headers=h).json()["items"] == []
     finally:
         _cleanup(name)

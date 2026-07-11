@@ -800,6 +800,26 @@ input::placeholder { color: #5a5878; }
 
 .data-grids { display: grid; grid-template-columns: minmax(0, 1fr); gap: 26px; }
 
+.auth-forgot { display: inline-block; font-size: 12.5px; color: var(--accent-2); margin: -4px 0 10px; text-decoration: none; }
+.auth-forgot:hover { text-decoration: underline; }
+
+/* Кабинет */
+.cabinet-modal { max-width: 640px; width: 94%; max-height: 88vh; overflow-y: auto; }
+.cab-section { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--panel-border); }
+.cab-section h4 { font-family: "Cormorant Garamond", serif; font-size: 18px; color: var(--accent); margin-bottom: 8px; }
+.cab-line { font-size: 13.5px; margin: 4px 0; }
+.cab-dim { color: var(--text-dim); font-size: 12.5px; }
+.cab-warn { color: var(--bad); font-size: 13px; }
+.cab-email-form { display: flex; gap: 8px; align-items: center; margin-top: 6px; flex-wrap: wrap; }
+.cab-email-form input { flex: 1; min-width: 180px; margin: 0; padding: 8px 10px; }
+.cab-person { background: var(--inset); border: 1px solid var(--panel-border); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
+.cab-person-head { font-size: 13.5px; margin-bottom: 6px; }
+.cab-note { width: 100%; margin: 0 0 8px; padding: 7px 10px; font-size: 12.5px; }
+.cab-person-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.cab-hist-row { display: grid; grid-template-columns: minmax(0,auto) minmax(0,1fr) auto auto; gap: 10px; align-items: center; font-size: 13px; padding: 6px 0; border-bottom: 1px dashed var(--panel-border); }
+.cab-pay-table { width: 100%; font-size: 13px; border-collapse: collapse; }
+.cab-pay-table td { padding: 5px 8px; border-bottom: 1px dashed var(--panel-border); }
+
 /* Сворачиваемые секции результатов */
 .data-section.collapsible > summary {
   list-style: none;

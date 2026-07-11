@@ -41,6 +41,7 @@
         <span class="user-name" id="user-name"></span>
         <button id="premium-btn" class="auth-btn" data-i18n="premium_btn">✦ Премиум</button>
         <button id="admin-btn" class="auth-btn hidden" data-i18n="admin_panel">⚙ Админ</button>
+        <button id="cabinet-btn" class="auth-btn ghost" data-i18n-title="cabinet_title" title="Кабинет" aria-label="Кабинет">👤</button>
         <button id="passwd-btn" class="auth-btn ghost" data-i18n-title="passwd_title" title="Сменить пароль" aria-label="Сменить пароль">🔑</button>
         <button id="logout-btn" class="auth-btn ghost" data-i18n="logout">Выйти</button>
       </div>
@@ -55,12 +56,16 @@
         <button class="auth-tab" data-auth="register" type="button" data-i18n="auth_register">Регистрация</button>
       </div>
       <form id="auth-form" autocomplete="off">
-        <label data-i18n="username">Имя пользователя
+        <label id="auth-username-row" data-i18n="username_or_email">Имя пользователя или почта
           <input type="text" id="auth-username" autocomplete="username" />
         </label>
-        <label data-i18n="password">Пароль
+        <label id="auth-email-row" class="hidden" data-i18n="email_label">Почта
+          <input type="email" id="auth-email" autocomplete="email" />
+        </label>
+        <label id="auth-password-row" data-i18n="password">Пароль
           <input type="password" id="auth-password" autocomplete="current-password" />
         </label>
+        <a href="#" id="auth-forgot" class="auth-forgot" data-i18n="forgot_link">Забыли пароль?</a>
         <div class="consent-row hidden" id="consent-row">
           <label class="consent-item">
             <input type="checkbox" id="terms-check" />
@@ -74,6 +79,27 @@
         <div class="auth-error hidden" id="auth-error"></div>
         <button type="submit" class="btn-primary" id="auth-submit" data-i18n="do_login">Войти</button>
       </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="cabinet-modal">
+    <div class="modal cabinet-modal">
+      <button class="modal-close" id="cabinet-close" aria-label="Закрыть">×</button>
+      <h3 data-i18n="cabinet_title">Кабинет</h3>
+      <div id="cab-profile" class="cab-section"></div>
+      <div id="cab-sub" class="cab-section"></div>
+      <div class="cab-section">
+        <h4 data-i18n="cab_people">Мои люди</h4>
+        <div id="cab-people"></div>
+      </div>
+      <div class="cab-section">
+        <h4 data-i18n="cab_history">История расчётов</h4>
+        <div id="cab-history"></div>
+      </div>
+      <div class="cab-section">
+        <h4 data-i18n="cab_payments">Платежи</h4>
+        <div id="cab-payments"></div>
+      </div>
     </div>
   </div>
 
