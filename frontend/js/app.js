@@ -2746,3 +2746,8 @@ function escapeHtml(s) {
     /* offline */
   }
 })();
+
+// PWA: регистрация service worker (установка на главный экран)
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
