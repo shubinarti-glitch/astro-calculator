@@ -271,7 +271,7 @@ body {
 
 .layout {
   display: grid;
-  grid-template-columns: 360px 1fr;
+  grid-template-columns: 360px minmax(0, 1fr); /* minmax(0,…): широкие таблицы не распирают колонку */
   gap: 24px;
   padding: 16px 40px 40px;
   align-items: start;
@@ -798,7 +798,7 @@ input::placeholder { color: #5a5878; }
 .info-body strong { color: var(--text); }
 .info-disclaimer { font-style: italic; opacity: .85; border-top: 1px solid var(--panel-border); padding-top: 10px; }
 
-.data-grids { display: grid; gap: 26px; }
+.data-grids { display: grid; grid-template-columns: minmax(0, 1fr); gap: 26px; }
 
 /* Сворачиваемые секции результатов */
 .data-section.collapsible > summary {
@@ -1345,7 +1345,7 @@ html[data-theme="light"] .adm-tab.active { background: rgba(139,123,216,0.14); }
   border-radius: 6px; padding: 2px 8px;
 }
 
-.interp-list { display: grid; gap: 12px; }
+.interp-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 .interp-card {
   background: var(--inset);
   border: 1px solid var(--panel-border);
@@ -1406,7 +1406,7 @@ html[data-theme="light"] .adm-tab.active { background: rgba(139,123,216,0.14); }
 .hidden { display: none !important; }
 
 @media (max-width: 960px) {
-  .layout { grid-template-columns: 1fr; }
+  .layout { grid-template-columns: minmax(0, 1fr); }
   .chart-area { grid-template-columns: 1fr; }
 }
 

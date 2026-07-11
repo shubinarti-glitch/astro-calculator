@@ -203,6 +203,8 @@ document.querySelectorAll(".tab").forEach((tab) => {
     $("birth-time").required = mode !== "vedic";
     if (mode === "synastry") populateBSaved();
     if (mode === "return") setupReturnForm();
+    // Пример считает именно натал — на других вкладках кнопка сбивает с толку
+    $("sample-btn").classList.toggle("hidden", mode !== "natal");
     updateCalcBtn();
   });
 });
@@ -787,6 +789,7 @@ function showError(msg) {
   $("results").classList.add("hidden");
   $("error").textContent = "⚠ " + msg;
   $("error").classList.remove("hidden");
+  $("result-toolbar").classList.add("hidden"); // нечего печатать при ошибке
   $("calc-btn").disabled = false;
 }
 function showResults() {
