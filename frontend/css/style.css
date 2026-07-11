@@ -185,6 +185,8 @@ body {
 .consent-row a { color: var(--accent-2); text-decoration: underline; }
 
 .modal-wide { width: 560px; max-width: 92vw; max-height: 86vh; overflow-y: auto; }
+/* Админка — рабочее место: почти весь экран, данных много */
+#admin-modal .modal-wide { width: 1200px; max-width: 96vw; height: 92vh; max-height: 92vh; }
 .privacy-title {
   font-family: "Cormorant Garamond", serif;
   font-size: 24px; color: var(--accent); margin-bottom: 14px; padding-right: 24px;
