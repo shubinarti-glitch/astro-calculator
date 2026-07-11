@@ -1523,7 +1523,7 @@ const PRINT_OVERRIDE = `
   html, body { background: #fff !important; margin: 0; padding: 18px; }
   /* Скрыть интерактив и служебное */
   button, .result-toolbar, .lang-switch, .tabs, .modal-close, .report-actions,
-  .vedic-actions, #deep-report-btn, .bt-tip, .save-btn { display: none !important; }
+  .vedic-actions, #deep-report-btn, .bt-tip, .save-btn, .simple-toggle { display: none !important; }
   .hidden { display: none !important; }
   /* Раскрыть свёрнутые секции для печати */
   details > summary { list-style: none; }
@@ -1555,6 +1555,23 @@ const PRINT_OVERRIDE = `
 // Собрать печатный документ во временном iframe. Одна раскладка на два сценария:
 // системная печать (printFrom) и одноклик-экспорт в PDF (downloadPdf).
 // extraHead — доп. содержимое <head> (например, подключение html2pdf для PDF).
+// html2canvas не понимает width/height:100% у SVG — задаём явные пиксели по viewBox.
+// Вызывается и при сборке фрейма, и перед рендером PDF: внешний скрипт в <head>
+// блокирует парсер, и на момент сборки тело документа может быть ещё пустым.
+function fixPrintSvg(doc) {
+  try {
+    doc.querySelectorAll(".chart-svg svg").forEach((svg) => {
+      const vb = (svg.getAttribute("viewBox") || "").split(/\s+/).map(Number);
+      const w = 480;
+      const h = vb.length === 4 && vb[2] > 0 ? Math.round((w * vb[3]) / vb[2]) : w;
+      svg.setAttribute("width", w);
+      svg.setAttribute("height", h);
+      svg.style.width = w + "px";
+      svg.style.height = h + "px";
+    });
+  } catch (e) {}
+}
+
 function buildPrintFrame(srcId, title, extraHead) {
   const src = document.getElementById(srcId);
   if (!src) return null;
@@ -1590,6 +1607,7 @@ function buildPrintFrame(srcId, title, extraHead) {
   doc.close();
   // Раскрыть все свёрнутые блоки, чтобы в вывод попало всё содержимое.
   try { doc.querySelectorAll("details").forEach((d) => (d.open = true)); } catch (e) {}
+  fixPrintSvg(doc);
   return { frame, doc, brandTitle, dateStr };
 }
 
@@ -1646,6 +1664,11 @@ function downloadPdf(srcId, title, btn) {
     done = true;
     const win = frame.contentWindow;
     try { doc.querySelectorAll("details").forEach((d) => (d.open = true)); } catch (e) {}
+    fixPrintSvg(doc);
+    // html2canvas рисует position:fixed футер посреди страницы — в PDF он не нужен
+    try { doc.querySelectorAll(".print-footer").forEach((el) => el.remove()); } catch (e) {}
+    // В iframe 0×0 html2canvas обрезает SVG-колесо: даём фрейму реальный размер за экраном
+    frame.style.cssText = "position:fixed;left:-9999px;top:0;width:820px;height:1160px;border:0;";
     const opt = {
       margin: 10,
       filename: fname,
