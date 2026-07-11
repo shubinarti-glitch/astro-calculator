@@ -8,7 +8,7 @@ import json
 import secrets
 import sqlite3
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -55,10 +55,12 @@ def init_db() -> None:
                 is_admin INTEGER NOT NULL DEFAULT 0
             )"""
         )
-        # Миграция для существующих БД: добавить колонку is_admin, если её нет.
+        # Миграции для существующих БД: добавить недостающие колонки.
         cols = [r["name"] for r in c.execute("PRAGMA table_info(users)").fetchall()]
         if "is_admin" not in cols:
             c.execute("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0")
+        if "is_banned" not in cols:
+            c.execute("ALTER TABLE users ADD COLUMN is_banned INTEGER NOT NULL DEFAULT 0")
         c.execute(
             """CREATE TABLE IF NOT EXISTS profiles (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -104,6 +106,15 @@ def init_db() -> None:
                 status TEXT NOT NULL DEFAULT 'available',
                 created_at TEXT NOT NULL,
                 FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+            )"""
+        )
+        # Счётчики использования функций: строка = (день, эндпоинт).
+        c.execute(
+            """CREATE TABLE IF NOT EXISTS usage_stats (
+                date TEXT NOT NULL,
+                endpoint TEXT NOT NULL,
+                count INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (date, endpoint)
             )"""
         )
         # Аудит правок текстов админами: кто, что, когда.
@@ -236,6 +247,23 @@ def get_user_by_id(user_id: int) -> Optional[sqlite3.Row]:
         return c.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
 
 
+def change_password(user_id: int, old_password: str, new_password: str) -> bool:
+    """Сменить пароль, если старый верен. Выданные ранее токены остаются
+    действительны до истечения срока (stateless), отзывается только предъявленный."""
+    u = get_user_by_id(user_id)
+    if not u or not verify_password(old_password, u["password_hash"]):
+        return False
+    with get_conn() as c:
+        c.execute("UPDATE users SET password_hash = ? WHERE id = ?",
+                  (hash_password(new_password), user_id))
+    return True
+
+
+def is_banned(user_id: int) -> bool:
+    u = get_user_by_id(user_id)
+    return bool(u and u["is_banned"])
+
+
 # --------------------------------------------------------------------------- #
 #  Сохранённые карты
 # --------------------------------------------------------------------------- #
@@ -330,6 +358,32 @@ def set_payment_status(payment_id: str, status: str) -> None:
 
 
 # --------------------------------------------------------------------------- #
+#  Статистика использования функций
+# --------------------------------------------------------------------------- #
+def record_usage(endpoint: str) -> None:
+    day = datetime.now(timezone.utc).date().isoformat()
+    with get_conn() as c:
+        c.execute(
+            "INSERT INTO usage_stats (date, endpoint, count) VALUES (?, ?, 1) "
+            "ON CONFLICT(date, endpoint) DO UPDATE SET count = count + 1",
+            (day, endpoint),
+        )
+
+
+def usage_summary(days: int = 30) -> list[dict]:
+    since = (datetime.now(timezone.utc).date() - timedelta(days=days)).isoformat()
+    with get_conn() as c:
+        rows = c.execute(
+            """SELECT endpoint,
+                      SUM(CASE WHEN date >= ? THEN count ELSE 0 END) AS recent,
+                      SUM(count) AS total
+               FROM usage_stats GROUP BY endpoint ORDER BY total DESC""",
+            (since,),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+# --------------------------------------------------------------------------- #
 #  Администрирование
 # --------------------------------------------------------------------------- #
 def is_admin(user_id: int) -> bool:
@@ -347,15 +401,51 @@ def admin_stats() -> dict:
 def list_all_users() -> list[dict]:
     with get_conn() as c:
         rows = c.execute(
-            """SELECT u.id, u.username, u.created_at, u.is_admin,
-                      (SELECT COUNT(*) FROM profiles p WHERE p.user_id = u.id) AS charts
+            """SELECT u.id, u.username, u.created_at, u.is_admin, u.is_banned,
+                      (SELECT COUNT(*) FROM profiles p WHERE p.user_id = u.id) AS charts,
+                      (SELECT expires_at FROM subscriptions s WHERE s.user_id = u.id) AS premium_until
                FROM users u ORDER BY u.id"""
         ).fetchall()
+    now = time.time()
     return [
         {"id": r["id"], "username": r["username"], "created_at": r["created_at"],
-         "is_admin": bool(r["is_admin"]), "charts": r["charts"]}
+         "is_admin": bool(r["is_admin"]), "is_banned": bool(r["is_banned"]),
+         "charts": r["charts"],
+         "premium_until": r["premium_until"] if r["premium_until"] and r["premium_until"] > now else None}
         for r in rows
     ]
+
+
+def admin_set_premium(user_id: int, days: int) -> bool:
+    """days > 0 — продлить подписку; days == 0 — снять."""
+    if not get_user_by_id(user_id):
+        return False
+    with get_conn() as c:
+        if days == 0:
+            c.execute("DELETE FROM subscriptions WHERE user_id = ?", (user_id,))
+            return True
+    extend_subscription(user_id, "admin", days)
+    return True
+
+
+def admin_set_banned(user_id: int, banned: bool) -> bool:
+    with get_conn() as c:
+        u = c.execute("SELECT is_admin FROM users WHERE id = ?", (user_id,)).fetchone()
+        if not u or u["is_admin"]:  # админа забанить нельзя
+            return False
+        c.execute("UPDATE users SET is_banned = ? WHERE id = ?", (1 if banned else 0, user_id))
+        return True
+
+
+def list_payments(limit: int = 200) -> dict:
+    with get_conn() as c:
+        rows = c.execute(
+            """SELECT p.payment_id, p.user_id, u.username, p.plan, p.status, p.created_at
+               FROM payments p LEFT JOIN users u ON u.id = p.user_id
+               ORDER BY p.created_at DESC LIMIT ?""",
+            (limit,),
+        ).fetchall()
+    return {"items": [dict(r) for r in rows]}
 
 
 def admin_delete_user(user_id: int) -> bool:

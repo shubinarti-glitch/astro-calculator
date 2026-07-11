@@ -372,3 +372,95 @@ def test_consultation_credit():
 def test_billing_consult_plan():
     plans = client.get("/api/billing/plans").json()
     assert plans["consult"]["price"] == 3500 and plans["consult"]["days"] == 0
+
+
+# --------------------------------------------------------------------------- #
+#  Админ-функции: премиум, бан, платежи, статистика; смена пароля
+# --------------------------------------------------------------------------- #
+def _make_user(prefix="feat_"):
+    name = _rnd(prefix)
+    r = client.post("/api/auth/register", json={"username": name, "password": "password123"})
+    assert r.status_code == 200
+    return name, r.json()["token"]
+
+
+def _cleanup(username):
+    u = db.get_user_by_username(username)
+    if u:
+        with db.get_conn() as c:
+            c.execute("DELETE FROM users WHERE id = ?", (u["id"],))
+
+
+def test_change_password():
+    name, token = _make_user("pwd_")
+    try:
+        h = {"Authorization": f"Bearer {token}"}
+        # неверный старый пароль
+        r = client.post("/api/auth/password", headers=h,
+                        json={"old_password": "wrong", "new_password": "newpassword1"})
+        assert r.status_code == 400
+        # верный
+        r = client.post("/api/auth/password", headers=h,
+                        json={"old_password": "password123", "new_password": "newpassword1"})
+        assert r.status_code == 200
+        assert client.post("/api/auth/login", json={"username": name, "password": "newpassword1"}).status_code == 200
+        assert client.post("/api/auth/login", json={"username": name, "password": "password123"}).status_code == 401
+    finally:
+        _cleanup(name)
+
+
+def test_ban_blocks_login_and_token():
+    name, token = _make_user("ban_")
+    try:
+        u = db.get_user_by_username(name)
+        assert db.admin_set_banned(u["id"], True)
+        # вход отклоняется
+        r = client.post("/api/auth/login", json={"username": name, "password": "password123"})
+        assert r.status_code == 403
+        # старый токен тоже не работает
+        r = client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
+        assert r.status_code == 403
+        # разбан возвращает доступ
+        assert db.admin_set_banned(u["id"], False)
+        assert client.post("/api/auth/login", json={"username": name, "password": "password123"}).status_code == 200
+    finally:
+        _cleanup(name)
+
+
+def test_admin_cannot_be_banned():
+    admins = [u for u in db.list_all_users() if u["is_admin"]]
+    if admins:
+        assert db.admin_set_banned(admins[0]["id"], True) is False
+
+
+def test_admin_premium_grant_and_revoke():
+    name, _ = _make_user("gift_")
+    try:
+        u = db.get_user_by_username(name)
+        assert db.admin_set_premium(u["id"], 30)
+        assert db.is_premium(u["id"])
+        assert db.admin_set_premium(u["id"], 0)
+        assert not db.is_premium(u["id"])
+        assert db.admin_set_premium(999999, 30) is False
+    finally:
+        _cleanup(name)
+
+
+def test_usage_stats_recorded():
+    before = {r["endpoint"]: r["total"] for r in db.usage_summary()}
+    db.record_usage("natal")
+    db.record_usage("natal")
+    after = {r["endpoint"]: r["total"] for r in db.usage_summary()}
+    assert after.get("natal", 0) == before.get("natal", 0) + 2
+
+
+def test_admin_endpoints_require_admin():
+    name, token = _make_user("plain_")
+    try:
+        h = {"Authorization": f"Bearer {token}"}
+        for path in ("/api/admin/payments", "/api/admin/usage"):
+            assert client.get(path, headers=h).status_code == 403
+        assert client.post("/api/admin/users/1/premium", headers=h, json={"days": 30}).status_code == 403
+        assert client.post("/api/admin/users/1/ban", headers=h, json={"banned": True}).status_code == 403
+    finally:
+        _cleanup(name)

@@ -2495,9 +2495,11 @@ $("logout-btn").addEventListener("click", async () => {
 // --- Админ-панель ---
 async function loadAdmin() {
   try {
-    const [statsR, usersR] = await Promise.all([
+    const [statsR, usersR, usageR, payR] = await Promise.all([
       fetch("/api/admin/stats", { headers: authHeaders() }),
       fetch("/api/admin/users", { headers: authHeaders() }),
+      fetch("/api/admin/usage", { headers: authHeaders() }),
+      fetch("/api/admin/payments", { headers: authHeaders() }),
     ]);
     if (!statsR.ok || !usersR.ok) throw new Error();
     const stats = await statsR.json();
@@ -2505,15 +2507,44 @@ async function loadAdmin() {
     $("admin-stats").innerHTML =
       `<div class="admin-stat"><div class="as-num">${stats.users}</div><div class="as-label">${t("admin_users_total")}</div></div>
        <div class="admin-stat"><div class="as-num">${stats.profiles}</div><div class="as-label">${t("admin_charts_total")}</div></div>`;
-    let rows = `<tr><th>#</th><th>${t("admin_col_user")}</th><th>${t("admin_col_registered")}</th><th>${t("admin_col_charts")}</th><th>${t("admin_col_role")}</th><th></th></tr>`;
+    let rows = `<tr><th>#</th><th>${t("admin_col_user")}</th><th>${t("admin_col_registered")}</th><th>${t("admin_col_charts")}</th><th>${t("admin_col_premium")}</th><th>${t("admin_col_role")}</th><th></th></tr>`;
     for (const u of users) {
       const role = u.is_admin
         ? `<span class="adm-badge">${t("admin_role_admin")}</span>`
-        : t("admin_role_user");
-      const del = u.is_admin ? "" : `<button class="adm-del" data-del="${u.id}">${t("admin_delete")}</button>`;
-      rows += `<tr><td>${u.id}</td><td>${escapeHtml(u.username)}</td><td>${formatDate(u.created_at.slice(0, 10))}</td><td>${u.charts}</td><td>${role}</td><td>${del}</td></tr>`;
+        : (u.is_banned ? `<span class="adm-badge adm-banned">${t("admin_role_banned")}</span>` : t("admin_role_user"));
+      const prem = u.premium_until
+        ? `${formatDate(new Date(u.premium_until * 1000).toISOString().slice(0, 10))}`
+        : "—";
+      const premBtns =
+        `<button class="adm-mini" data-prem="${u.id}" data-days="30" title="+30">+30</button>` +
+        `<button class="adm-mini" data-prem="${u.id}" data-days="365" title="+365">+365</button>` +
+        (u.premium_until ? `<button class="adm-mini" data-prem="${u.id}" data-days="0">×</button>` : "");
+      let actions = "";
+      if (!u.is_admin) {
+        actions = `<button class="adm-del" data-ban="${u.id}" data-banned="${u.is_banned ? 1 : 0}">${u.is_banned ? t("admin_unban") : t("admin_ban")}</button> ` +
+                  `<button class="adm-del" data-del="${u.id}">${t("admin_delete")}</button>`;
+      }
+      rows += `<tr><td>${u.id}</td><td>${escapeHtml(u.username)}</td><td>${formatDate(u.created_at.slice(0, 10))}</td><td>${u.charts}</td><td>${prem} ${premBtns}</td><td>${role}</td><td>${actions}</td></tr>`;
     }
     $("admin-users").innerHTML = rows;
+
+    if (usageR.ok) {
+      const usage = await usageR.json();
+      $("admin-usage").innerHTML = usage.length
+        ? `<tr><th>${t("admin_usage_fn")}</th><th>${t("admin_usage_30d")}</th><th>${t("admin_usage_total")}</th></tr>` +
+          usage.map((u) => `<tr><td>${escapeHtml(u.endpoint)}</td><td>${u.recent}</td><td>${u.total}</td></tr>`).join("")
+        : `<tr><td class="section-note">${t("admin_usage_empty")}</td></tr>`;
+    }
+    if (payR.ok) {
+      const pay = await payR.json();
+      $("admin-pay-summary").innerHTML =
+        `<div class="admin-stat"><div class="as-num">${pay.revenue_total} ₽</div><div class="as-label">${t("admin_pay_total")}</div></div>
+         <div class="admin-stat"><div class="as-num">${pay.revenue_30d} ₽</div><div class="as-label">${t("admin_pay_30d")}</div></div>`;
+      $("admin-payments").innerHTML = pay.items.length
+        ? `<tr><th>${t("admin_col_user")}</th><th>${t("admin_pay_plan")}</th><th>${t("admin_pay_amount")}</th><th>${t("admin_pay_status")}</th><th>${t("admin_col_registered")}</th></tr>` +
+          pay.items.map((p) => `<tr><td>${escapeHtml(p.username || "#" + p.user_id)}</td><td>${escapeHtml(p.plan)}</td><td>${p.amount} ₽</td><td>${escapeHtml(p.status)}</td><td>${formatDate(p.created_at.slice(0, 10))}</td></tr>`).join("")
+        : `<tr><td class="section-note">${t("admin_pay_empty")}</td></tr>`;
+    }
   } catch {
     $("admin-stats").innerHTML = `<p class="section-note">${LANG === "en" ? "Failed to load admin data." : "Не удалось загрузить данные админки."}</p>`;
   }
@@ -2629,11 +2660,64 @@ $("admin-modal").addEventListener("click", (e) => {
   if (e.target.id === "admin-modal") $("admin-modal").classList.add("hidden");
 });
 $("admin-users").addEventListener("click", async (e) => {
-  const del = e.target.closest(".adm-del");
+  const prem = e.target.closest("[data-prem]");
+  if (prem) {
+    const days = Number(prem.dataset.days);
+    if (days === 0 && !confirm(LANG === "en" ? "Remove premium from this user?" : "Снять премиум у пользователя?")) return;
+    await fetch(`/api/admin/users/${prem.dataset.prem}/premium`, {
+      method: "POST",
+      headers: { ...authHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ days }),
+    });
+    loadAdmin();
+    return;
+  }
+  const ban = e.target.closest("[data-ban]");
+  if (ban) {
+    const banned = ban.dataset.banned !== "1";
+    if (banned && !confirm(LANG === "en" ? "Block this user? They won't be able to log in." : "Заблокировать пользователя? Он не сможет войти.")) return;
+    await fetch(`/api/admin/users/${ban.dataset.ban}/ban`, {
+      method: "POST",
+      headers: { ...authHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ banned }),
+    });
+    loadAdmin();
+    return;
+  }
+  const del = e.target.closest(".adm-del[data-del]");
   if (!del) return;
   if (!confirm(LANG === "en" ? "Delete this user and all their charts?" : "Удалить пользователя и все его карты?")) return;
   await fetch(`/api/admin/users/${del.dataset.del}`, { method: "DELETE", headers: authHeaders() });
   loadAdmin();
+});
+
+// --- Смена пароля ---
+$("passwd-btn").addEventListener("click", () => {
+  $("passwd-form").reset();
+  $("passwd-msg").classList.add("hidden");
+  $("passwd-modal").classList.remove("hidden");
+});
+$("passwd-close").addEventListener("click", () => $("passwd-modal").classList.add("hidden"));
+$("passwd-modal").addEventListener("click", (e) => {
+  if (e.target.id === "passwd-modal") $("passwd-modal").classList.add("hidden");
+});
+$("passwd-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const msg = $("passwd-msg");
+  try {
+    const r = await fetch("/api/auth/password", {
+      method: "POST",
+      headers: { ...authHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify({ old_password: $("passwd-old").value, new_password: $("passwd-new").value }),
+    });
+    const data = await r.json().catch(() => ({}));
+    msg.textContent = r.ok ? t("passwd_done") : (data.detail || t("passwd_fail"));
+    msg.classList.remove("hidden");
+    if (r.ok) setTimeout(() => $("passwd-modal").classList.add("hidden"), 1200);
+  } catch {
+    msg.textContent = t("passwd_fail");
+    msg.classList.remove("hidden");
+  }
 });
 
 // --- Сохранённые карты ---

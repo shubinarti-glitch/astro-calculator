@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import time
 from collections import defaultdict
+from datetime import datetime, timedelta, timezone
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
@@ -230,6 +231,8 @@ def current_user_id(authorization: Optional[str] = Header(None)) -> int:
     uid = db.verify_token(token)
     if uid is None:
         raise HTTPException(status_code=401, detail="Сессия истекла, войдите снова")
+    if db.is_banned(uid):
+        raise HTTPException(status_code=403, detail="Аккаунт заблокирован")
     return uid
 
 
@@ -256,6 +259,8 @@ def api_login(req: AuthRequest, request: Request):
     if not user or not db.verify_password(req.password, user["password_hash"]):
         _rate_record(key)  # учитываем только НЕудачные попытки
         raise HTTPException(status_code=401, detail="Неверное имя пользователя или пароль")
+    if user["is_banned"]:
+        raise HTTPException(status_code=403, detail="Аккаунт заблокирован")
     _RATE.pop(key, None)  # успешный вход — сбрасываем счётчик
     return {"token": db.make_token(user["id"]), "username": user["username"], "is_admin": bool(user["is_admin"])}
 
@@ -316,6 +321,18 @@ def api_billing_check(uid: int = Depends(current_user_id)):
         raise HTTPException(status_code=502, detail="Платёжный сервис недоступен. Попробуйте позже.")
 
 
+class PasswordChange(BaseModel):
+    old_password: str = Field(..., min_length=1, max_length=200)
+    new_password: str = Field(..., min_length=8, max_length=200)
+
+
+@app.post("/api/auth/password")
+def api_change_password(req: PasswordChange, uid: int = Depends(current_user_id)):
+    if not db.change_password(uid, req.old_password, req.new_password):
+        raise HTTPException(status_code=400, detail="Текущий пароль неверен")
+    return {"ok": True}
+
+
 @app.post("/api/auth/logout")
 def api_logout(authorization: Optional[str] = Header(None)):
     # Реальный выход: отзываем предъявленный токен (до истечения срока он больше не примется).
@@ -345,6 +362,46 @@ def api_admin_delete_user(user_id: int, uid: int = Depends(require_admin)):
     if not db.admin_delete_user(user_id):
         raise HTTPException(status_code=400, detail="Нельзя удалить этого пользователя")
     return {"ok": True}
+
+
+class PremiumGrant(BaseModel):
+    days: int = Field(..., ge=0, le=3650)  # 0 = снять подписку
+
+
+@app.post("/api/admin/users/{user_id}/premium")
+def api_admin_premium(user_id: int, body: PremiumGrant, uid: int = Depends(require_admin)):
+    if not db.admin_set_premium(user_id, body.days):
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    return {"ok": True}
+
+
+class BanRequest(BaseModel):
+    banned: bool
+
+
+@app.post("/api/admin/users/{user_id}/ban")
+def api_admin_ban(user_id: int, body: BanRequest, uid: int = Depends(require_admin)):
+    if not db.admin_set_banned(user_id, body.banned):
+        raise HTTPException(status_code=400, detail="Нельзя заблокировать этого пользователя")
+    return {"ok": True}
+
+
+@app.get("/api/admin/payments")
+def api_admin_payments(uid: int = Depends(require_admin)):
+    data = db.list_payments()
+    prices = {p: price for p, (price, _d) in payments.PLANS.items()}
+    for it in data["items"]:
+        it["amount"] = prices.get(it["plan"], 0)
+    ok = [it for it in data["items"] if it["status"] == "succeeded"]
+    month_ago = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+    data["revenue_total"] = sum(it["amount"] for it in ok)
+    data["revenue_30d"] = sum(it["amount"] for it in ok if it["created_at"] >= month_ago)
+    return data
+
+
+@app.get("/api/admin/usage")
+def api_admin_usage(uid: int = Depends(require_admin)):
+    return db.usage_summary(days=30)
 
 
 class TextOverride(BaseModel):
@@ -418,6 +475,7 @@ def api_delete_profile(profile_id: int, uid: int = Depends(current_user_id)):
 # --------------------------------------------------------------------------- #
 @app.post("/api/natal")
 def api_natal(birth: BirthData):
+    db.record_usage("natal")
     try:
         return astrology.natal_report(birth.model_dump())
     except ValueError as exc:
@@ -431,6 +489,7 @@ def api_natal(birth: BirthData):
 
 @app.post("/api/transit")
 def api_transit(req: TransitRequest):
+    db.record_usage("transit")
     try:
         return astrology.transit_report(
             natal_params=req.natal.model_dump(),
@@ -501,6 +560,7 @@ def api_calendar(req: CalendarRequest):
 
 @app.post("/api/forecast")
 def api_forecast(req: ForecastRequest, uid: int = Depends(require_premium)):
+    db.record_usage("forecast")
     try:
         return astrology.forecast_report(
             natal_params=req.natal.model_dump(),
@@ -519,6 +579,7 @@ def api_forecast(req: ForecastRequest, uid: int = Depends(require_premium)):
 
 @app.post("/api/rectification")
 def api_rectification(req: RectificationRequest, request: Request, uid: int = Depends(require_premium)):
+    db.record_usage("rectification")
     # Самый тяжёлый расчёт (до ~1440 карт за запрос) — лимитируем per-IP от CPU-DoS.
     ip = _client_ip(request)
     if _rate_limited(f"rect:{ip}", max_n=10, window=60):
@@ -576,6 +637,7 @@ def api_vedic(req: VedicRequest):
 
 @app.post("/api/synastry")
 def api_synastry(req: SynastryRequest, uid: int = Depends(require_premium)):
+    db.record_usage("synastry")
     try:
         return astrology.synastry_report(
             person_a=req.person_a.model_dump(),

@@ -1014,6 +1014,13 @@ tr:hover td { background: rgba(139,123,216,0.06); }
 }
 #admin-users .adm-del:hover { background: rgba(224,113,111,0.14); }
 .adm-badge { font-size: 11px; padding: 2px 7px; border-radius: 6px; background: rgba(201,168,106,0.16); color: var(--accent); }
+.adm-badge.adm-banned { background: rgba(224,113,111,0.16); color: var(--bad); }
+#admin-users .adm-mini {
+  background: none; border: 1px solid rgba(201,168,106,0.4); color: var(--accent);
+  border-radius: 6px; padding: 2px 6px; font-size: 11px; cursor: pointer; font-family: inherit;
+}
+#admin-users .adm-mini:hover { background: rgba(201,168,106,0.14); }
+#passwd-form { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
 
 /* Админ: редактор текстов */
 .adm-section-title { margin: 26px 0 4px; font-size: 18px; color: var(--accent); font-family: "Cormorant Garamond", serif; }
