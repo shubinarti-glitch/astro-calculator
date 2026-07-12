@@ -667,7 +667,7 @@ def admin_set_banned(user_id: int, banned: bool) -> bool:
 def list_payments(limit: int = 200) -> dict:
     with get_conn() as c:
         rows = c.execute(
-            """SELECT p.payment_id, p.user_id, u.username, p.plan, p.status, p.created_at
+            """SELECT p.payment_id, p.user_id, u.username, u.email, p.plan, p.status, p.created_at
                FROM payments p LEFT JOIN users u ON u.id = p.user_id
                ORDER BY p.created_at DESC LIMIT ?""",
             (limit,),

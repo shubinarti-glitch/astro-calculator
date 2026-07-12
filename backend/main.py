@@ -512,6 +512,7 @@ def api_admin_payments(uid: int = Depends(require_admin)):
     prices = {p: price for p, (price, _d) in payments.PLANS.items()}
     for it in data["items"]:
         it["amount"] = prices.get(it["plan"], 0)
+        it["plan_title"] = payments.PLAN_TITLES.get(it["plan"], it["plan"])
     ok = [it for it in data["items"] if it["status"] == "succeeded"]
     month_ago = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
     data["revenue_total"] = sum(it["amount"] for it in ok)

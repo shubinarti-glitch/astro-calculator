@@ -2995,8 +2995,12 @@ async function loadAdmin() {
         `<div class="admin-stat"><div class="as-num">${pay.revenue_total} ₽</div><div class="as-label">${t("admin_pay_total")}</div></div>
          <div class="admin-stat"><div class="as-num">${pay.revenue_30d} ₽</div><div class="as-label">${t("admin_pay_30d")}</div></div>`;
       $("admin-payments").innerHTML = pay.items.length
-        ? `<tr><th>${t("admin_col_user")}</th><th>${t("admin_pay_plan")}</th><th>${t("admin_pay_amount")}</th><th>${t("admin_pay_status")}</th><th>${t("admin_col_registered")}</th></tr>` +
-          pay.items.map((p) => `<tr><td>${escapeHtml(p.username || "#" + p.user_id)}</td><td>${escapeHtml(p.plan)}</td><td>${p.amount} ₽</td><td>${escapeHtml(p.status)}</td><td>${formatDate(p.created_at.slice(0, 10))}</td></tr>`).join("")
+        ? `<tr><th>${t("admin_col_registered")}</th><th>${t("admin_pay_email")}</th><th>${t("admin_pay_plan")}</th><th>${t("admin_pay_amount")}</th><th>${t("admin_pay_status")}</th></tr>` +
+          pay.items.map((p) => {
+            const paid = p.status === "succeeded";
+            const email = p.email ? escapeHtml(p.email) : `<span class="cab-dim">${escapeHtml(p.username || "#" + p.user_id)}</span>`;
+            return `<tr class="${paid ? "pay-paid" : ""}"><td>${formatDate(p.created_at.slice(0, 10))}</td><td>${email}</td><td>${escapeHtml(p.plan_title || p.plan)}</td><td>${p.amount} ₽</td><td>${paid ? "✓ " : ""}${escapeHtml(p.status)}</td></tr>`;
+          }).join("")
         : `<tr><td class="section-note">${t("admin_pay_empty")}</td></tr>`;
     }
   } catch {
