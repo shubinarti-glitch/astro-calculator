@@ -4,7 +4,8 @@ const I18N = {
   ru: {
     title: "Астрокалькулятор",
     brand: "Project Artemisa",
-    tagline: "Составлено практикующими астрологами",
+    hero_title: "Натальная карта",
+    tagline: "Астрокалькулятор · составлено практикующими астрологами",
     expand_hint: "нажмите, чтобы развернуть",
     scroll_top_title: "Наверх",
     support_title: "Написать в поддержку",
@@ -725,7 +726,8 @@ const I18N = {
   en: {
     title: "Astro Calculator",
     brand: "Project Artemisa",
-    tagline: "Created by practicing astrologers",
+    hero_title: "Natal chart",
+    tagline: "Astrocalculator · created by practicing astrologers",
     expand_hint: "click to expand",
     scroll_top_title: "Back to top",
     support_title: "Contact support",
