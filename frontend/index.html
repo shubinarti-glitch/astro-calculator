@@ -13,21 +13,22 @@
   <meta property="og:description" content="Натальная карта, транзиты, синастрия, прогноз и Панчанг на точных эфемеридах — с понятными интерпретациями." />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary" />
-  <script>(function(){try{var t=localStorage.getItem('astro_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+  <script>(function(){try{var t=localStorage.getItem('astro_theme')||'light';document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
   <div class="stars" id="stars"></div>
+  <div class="sun-rays" aria-hidden="true"></div>
 
   <header class="site-header">
     <div class="logo">
       <span class="logo-glyph">☉</span>
       <div>
-        <h1 data-i18n="title">Астрокалькулятор</h1>
-        <p class="brand" data-i18n="brand">Project Artemisa</p>
-        <p class="tagline" data-i18n="tagline">Натальная карта и транзиты на базе Swiss Ephemeris</p>
+        <p class="kicker" data-i18n="title">Астрокалькулятор</p>
+        <h1 class="brand-main" data-i18n="brand">Project Artemisa</h1>
+        <p class="tagline" data-i18n="tagline">Составлено практикующими астрологами</p>
       </div>
     </div>
     <div class="auth-area">
@@ -35,14 +36,21 @@
         <button class="lang-opt" data-lang="ru">RU</button>
         <button class="lang-opt" data-lang="en">EN</button>
       </div>
-      <button id="theme-toggle" class="theme-btn" aria-label="Сменить тему" data-i18n-title="theme_title" title="Светлая / тёмная тема">🌙</button>
+      <div class="theme-switch" id="theme-switch" data-i18n-title="theme_title" title="Светлая / тёмная тема">
+        <button class="theme-opt" data-theme-set="light" aria-label="Светлая тема" title="Светлая">☀️</button>
+        <button class="theme-opt" data-theme-set="dark" aria-label="Тёмная тема" title="Тёмная">🌙</button>
+      </div>
       <button id="login-btn" class="auth-btn" data-i18n="login">Войти / Регистрация</button>
       <div id="user-box" class="user-box hidden">
-        <span class="user-name" id="user-name"></span>
-        <button id="premium-btn" class="auth-btn" data-i18n="premium_btn">✦ Премиум</button>
+        <div class="user-id">
+          <span class="user-name" id="user-name"></span>
+          <button id="lock-status" class="lock-btn" aria-label="Статус подписки" title="Статус подписки">🔒</button>
+          <div id="lock-popover" class="lock-popover hidden"></div>
+        </div>
+        <button id="premium-btn" class="auth-btn header-only" data-i18n="premium_btn">✦ Премиум</button>
         <button id="admin-btn" class="auth-btn hidden" data-i18n="admin_panel">⚙ Админ</button>
         <button id="cabinet-btn" class="auth-btn ghost" data-i18n-title="cabinet_title" title="Кабинет" aria-label="Кабинет">👤</button>
-        <button id="passwd-btn" class="auth-btn ghost" data-i18n-title="passwd_title" title="Сменить пароль" aria-label="Сменить пароль">🔑</button>
+        <button id="passwd-btn" class="auth-btn ghost header-only" data-i18n-title="passwd_title" title="Сменить пароль" aria-label="Сменить пароль">🔑</button>
         <button id="logout-btn" class="auth-btn ghost" data-i18n="logout">Выйти</button>
       </div>
     </div>
@@ -631,13 +639,13 @@
             <div id="interp-list" class="interp-list"></div>
           </div>
 
-          <details class="data-section collapsible" open>
-            <summary><h3 id="planets-title" data-i18n="sec_planets">Положения планет</h3></summary>
+          <details class="data-section collapsible">
+            <summary><h3 id="planets-title" data-i18n="sec_planets">Положения планет</h3><span class="expand-hint" data-i18n="expand_hint">нажмите, чтобы развернуть</span></summary>
             <div class="table-wrap"><table id="planets-table"></table></div>
           </details>
 
-          <details class="data-section collapsible" id="houses-section" open>
-            <summary><h3 id="houses-section-title" data-i18n="sec_houses">Дома</h3></summary>
+          <details class="data-section collapsible" id="houses-section">
+            <summary><h3 id="houses-section-title" data-i18n="sec_houses">Дома</h3><span class="expand-hint" data-i18n="expand_hint">нажмите, чтобы развернуть</span></summary>
             <div class="table-wrap"><table id="houses-table"></table></div>
           </details>
 
@@ -646,6 +654,18 @@
             <p class="section-note" id="aspects-note" data-i18n="aspects_note">Наведите на строку аспекта, чтобы увидеть трактовку.</p>
             <div class="table-wrap"><table id="aspects-table"></table></div>
           </details>
+        </div>
+
+        <div id="guest-teaser" class="guest-teaser hidden">
+          <h3 data-i18n="teaser_title">Что ещё расскажут ваши звёзды</h3>
+          <p class="teaser-sub" data-i18n="teaser_sub">Натальная карта — только начало. С бесплатным аккаунтом откроется больше.</p>
+          <div class="teaser-grid">
+            <div class="teaser-card"><span class="teaser-ic">🪐</span><b data-i18n="teaser_transit_t">Транзиты и прогноз</b><span data-i18n="teaser_transit_d">Что происходит с вами сейчас и что впереди</span></div>
+            <div class="teaser-card"><span class="teaser-ic">❤️</span><b data-i18n="teaser_syn_t">Синастрия</b><span data-i18n="teaser_syn_d">Совместимость с партнёром по картам двоих</span></div>
+            <div class="teaser-card"><span class="teaser-ic">🌗</span><b data-i18n="teaser_ret_t">Соляр и прогрессии</b><span data-i18n="teaser_ret_d">Тема года и долгосрочные тенденции</span></div>
+            <div class="teaser-card"><span class="teaser-ic">💾</span><b data-i18n="teaser_save_t">Сохранение карт</b><span data-i18n="teaser_save_d">Свои и близких — всегда под рукой в кабинете</span></div>
+          </div>
+          <button id="teaser-register" class="btn-primary" data-i18n="teaser_cta">Зарегистрироваться бесплатно</button>
         </div>
       </div>
     </section>
@@ -697,7 +717,9 @@
     <p class="footer-disclaimer info-disclaimer" data-i18n="footer_disclaimer">Сервис носит информационно-развлекательный характер, не гарантирует достоверность прогнозов и не заменяет консультацию специалиста. Оператор — Шубин Артём Иванович, самозанятый (НПД), ИНН 245010711934, e-mail: astrosmap@gmail.com.</p>
   </footer>
 
-  <script src="/js/i18n.js?v=12"></script>
-  <script src="/js/app.js?v=12"></script>
+  <button id="scroll-top" class="scroll-top hidden" aria-label="Наверх" data-i18n-title="scroll_top_title" title="Наверх">↑</button>
+
+  <script src="/js/i18n.js?v=13"></script>
+  <script src="/js/app.js?v=13"></script>
 </body>
 </html>

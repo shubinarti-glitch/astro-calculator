@@ -58,8 +58,8 @@ def main() -> int:
         try:
             events = week_events(params)
             unsub = f"{BASE_URL}/api/unsubscribe?token={sub['unsub_token']}"
-            subject, body = emailer.digest_letter(primary["label"], events, unsub)
-            emailer.send(sub["email"], subject, body)
+            subject, body, html = emailer.digest_letter(primary["label"], events, unsub)
+            emailer.send(sub["email"], subject, body, html)
             sent += 1
             time.sleep(SEND_PAUSE_SEC)
         except Exception as exc:  # одно упавшее письмо не должно ронять всю рассылку

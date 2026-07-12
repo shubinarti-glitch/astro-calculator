@@ -31,7 +31,7 @@ FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 # style-src 'unsafe-inline' нужен из-за массовых inline style="..." в разметке и SVG.
 CSP_POLICY = (
     "default-src 'self'; "
-    "script-src 'self' 'sha256-2L7jEbKJgxbMdp7zMlk3HkAKXazyKLdNzE+aD8DoxXs='; "
+    "script-src 'self' 'sha256-KjK3Wt2+9ybbK9W/LL5ICjwaSgZmiEjQhTh5+xrBeEA='; "
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
     "font-src 'self' https://fonts.gstatic.com; "
     "img-src 'self' data: blob:; "

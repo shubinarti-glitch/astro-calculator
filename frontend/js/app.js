@@ -78,21 +78,32 @@ function applyTheme(theme) {
   try {
     localStorage.setItem("astro_theme", theme);
   } catch (e) {}
-  const btn = $("theme-toggle");
-  if (btn) btn.textContent = theme === "light" ? "☀️" : "🌙";
+  document.querySelectorAll(".theme-opt").forEach((b) =>
+    b.classList.toggle("active", b.dataset.themeSet === theme)
+  );
   applyChartTheme(); // переключаем уже показанную карту
 }
 (function initTheme() {
-  let saved = "dark";
+  let saved = "light";
   try {
-    saved = localStorage.getItem("astro_theme") || "dark";
+    saved = localStorage.getItem("astro_theme") || "light";
   } catch (e) {}
   applyTheme(saved);
 })();
-$("theme-toggle").addEventListener("click", () => {
-  const current = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
-  applyTheme(current === "light" ? "dark" : "light");
+$("theme-switch").addEventListener("click", (e) => {
+  const opt = e.target.closest(".theme-opt");
+  if (opt) applyTheme(opt.dataset.themeSet);
 });
+
+// ---------- Кнопка «наверх» ----------
+(function scrollTopBtn() {
+  const btn = $("scroll-top");
+  if (!btn) return;
+  const onScroll = () => btn.classList.toggle("hidden", window.scrollY < 400);
+  window.addEventListener("scroll", onScroll, { passive: true });
+  btn.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+  onScroll();
+})();
 
 // Справочник архетипов знаков — ленивая загрузка при раскрытии
 $("archetypes-details").addEventListener("toggle", async function () {
@@ -867,6 +878,7 @@ function showResults() {
   $("spheres").classList.add("hidden");
   $("deep-report-btn").classList.add("hidden");
   $("simple-toggle-row").classList.add("hidden"); // переключатель показывает только натал
+  $("guest-teaser").classList.add("hidden"); // тизер — только под наталом гостю
 }
 
 // Переключатель «простыми словами» — перерисовывает натал в упрощённом виде.
@@ -1400,6 +1412,7 @@ let lastNatalData = null;
 function renderNatal(data) {
   lastNatalData = data;
   showResults();
+  $("guest-teaser").classList.toggle("hidden", !!getToken()); // гостю — тизер платных разделов
   $("simple-toggle-row").classList.remove("hidden"); // переключатель «Просто о себе» только в натале
   const simple = simpleMode;
   renderChart(data);
@@ -2479,7 +2492,39 @@ function refreshPremiumBtn() {
     btn.textContent = t("premium_btn");
     btn.classList.remove("premium-on");
   }
+  refreshLock();
 }
+
+// Замок у имени: 🔓 = премиум активен, 🔒 = бесплатный доступ. Клик → подсказка.
+function refreshLock() {
+  const lock = $("lock-status");
+  const pop = $("lock-popover");
+  if (!lock || !pop) return;
+  if (IS_PREMIUM && PREMIUM_UNTIL) {
+    lock.textContent = "🔓";
+    lock.classList.add("unlocked");
+    pop.innerHTML = `<b>${t("lock_prem_title")}</b><p>${t("lock_prem_until").replace(
+      "{d}", formatDate(new Date(PREMIUM_UNTIL * 1000).toISOString().slice(0, 10)))}</p>`;
+  } else {
+    lock.textContent = "🔒";
+    lock.classList.remove("unlocked");
+    pop.innerHTML = `<b>${t("lock_free_title")}</b><p>${t("lock_free_text")}</p>` +
+      `<button class="adm-mini" id="lock-buy">${t("premium_btn")}</button>`;
+  }
+}
+$("lock-status").addEventListener("click", (e) => {
+  e.stopPropagation();
+  $("lock-popover").classList.toggle("hidden");
+});
+$("lock-popover").addEventListener("click", (e) => {
+  if (e.target.id === "lock-buy") {
+    $("lock-popover").classList.add("hidden");
+    openPremiumModal();
+  }
+});
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".user-id")) $("lock-popover").classList.add("hidden");
+});
 
 $("premium-btn").addEventListener("click", openPremiumModal);
 $("premium-close").addEventListener("click", () => $("premium-modal").classList.add("hidden"));
@@ -2626,6 +2671,10 @@ function renderDaily(d) {
 $("login-btn").addEventListener("click", () => {
   $("auth-modal").classList.remove("hidden");
   $("auth-error").classList.add("hidden");
+});
+$("teaser-register").addEventListener("click", () => {
+  $("auth-modal").classList.remove("hidden");
+  setAuthMode("register");
 });
 $("modal-close").addEventListener("click", () => $("auth-modal").classList.add("hidden"));
 $("auth-modal").addEventListener("click", (e) => {
@@ -2821,7 +2870,12 @@ async function loadCabinet() {
          <input type="email" id="cab-email-input" placeholder="you@example.com" value="${me.email ? escapeHtml(me.email) : ""}" />
          <button class="adm-mini" id="cab-email-save">${t("cab_email_attach")}</button>
          <span id="cab-email-msg" class="cab-dim"></span>
-       </div>`;
+       </div>
+       <button class="adm-mini" id="cab-passwd">${t("passwd_title")}</button>`;
+    $("cab-passwd").addEventListener("click", () => {
+      $("cabinet-modal").classList.add("hidden");
+      $("passwd-btn").click();
+    });
     $("cab-email-save").addEventListener("click", async () => {
       const email = $("cab-email-input").value.trim();
       if (!email.includes("@")) { $("cab-email-msg").textContent = t("email_need"); return; }
@@ -3247,6 +3301,13 @@ $("saved-list").addEventListener("click", async (e) => {
 });
 
 $("save-current").addEventListener("click", async () => {
+  if (!getToken()) {
+    $("auth-modal").classList.remove("hidden");
+    setAuthMode("register");
+    $("auth-error").textContent = t("save_need_auth");
+    $("auth-error").classList.remove("hidden");
+    return;
+  }
   const birth = getBirthData();
   const err = validate(birth);
   if (err) return alert(err);
