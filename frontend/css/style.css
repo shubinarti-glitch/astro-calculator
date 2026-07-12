@@ -354,34 +354,31 @@ html[data-theme="light"] .sun-rays { display: block; }
 .logo-glyph {
   font-size: 42px;
   color: var(--accent);
-  text-shadow: 0 0 24px rgba(201, 168, 106, 0.6);
-  animation: glyph-glow 4s ease-in-out infinite;
+  text-shadow: 0 0 24px rgba(201, 168, 106, 0.55);
 }
-@keyframes glyph-glow {
-  0%, 100% { text-shadow: 0 0 18px rgba(201, 168, 106, 0.45); transform: scale(1); }
-  50%      { text-shadow: 0 0 34px rgba(201, 168, 106, 0.85); transform: scale(1.05); }
-}
+/* Светлая тема — солнце, тёмная — луна */
+.logo-glyph::before { content: "\2609"; }                 /* ☉ */
+html[data-theme="dark"] .logo-glyph::before { content: "\263D"; }  /* ☽ */
+html[data-theme="dark"] .logo-glyph { text-shadow: 0 0 24px rgba(139, 123, 216, 0.55); }
 
-/* Уважаем настройку «меньше движения» — отключаем все анимации */
+/* Уважаем настройку «меньше движения» — отключаем анимации появления */
 @media (prefers-reduced-motion: reduce) {
-  .title-main, .logo, .logo-glyph, .stars span, .scroll-top, .support-btn { animation: none !important; }
+  .logo, .logo-glyph, .logo-text > * { animation: none !important; }
+  .stars span { animation: none !important; }
 }
-/* Большие буквы — «Натальная карта»: градиент с мягким переливом */
+/* Большие буквы — «Натальная карта»: спокойный градиент без мерцания */
 .site-header h1.title-main {
   font-family: "Cormorant Garamond", serif;
   font-size: 50px;
   font-weight: 700;
   letter-spacing: 1.5px;
   line-height: 1.02;
-  background: linear-gradient(95deg, var(--accent), var(--accent-2), var(--accent));
-  background-size: 220% auto;
+  background: linear-gradient(95deg, var(--accent), var(--accent-2));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   text-shadow: 0 2px 18px rgba(201, 168, 106, 0.18);
-  animation: title-shimmer 9s ease-in-out infinite;
 }
-@keyframes title-shimmer { 0%,100% { background-position: 0% center; } 50% { background-position: 100% center; } }
 /* Средние буквы — «Project Artemisa» */
 .brand {
   font-family: "Cormorant Garamond", serif;
@@ -395,9 +392,13 @@ html[data-theme="light"] .sun-rays { display: block; }
 /* Маленькие буквы — подпись */
 .tagline { color: var(--text-dim); font-size: 13.5px; margin-top: 4px; }
 
-/* Появление шапки при загрузке */
-.logo { animation: hero-in 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
-@keyframes hero-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+/* Плавное появление при загрузке: глиф и три строки по очереди (opacity+transform — без «дёрганья») */
+.logo-glyph, .logo-text > * { animation: hero-in 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.logo-glyph  { animation-delay: 0s; }
+.title-main  { animation-delay: 0.09s; }
+.brand       { animation-delay: 0.18s; }
+.tagline     { animation-delay: 0.27s; }
+@keyframes hero-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
 .layout {
   display: grid;
@@ -957,6 +958,29 @@ input::placeholder { color: #5a5878; }
 .daily-week-btn.locked { border-color: var(--panel-border); color: var(--text-dim); background: var(--inset); }
 .daily-cabinet-link { margin-top: 10px; background: none; border: none; color: var(--accent-2); cursor: pointer; font-size: 13px; text-decoration: underline; padding: 0; }
 .cab-person.is-primary { border-color: var(--accent); }
+/* Базовая кнопка кабинета/админки — аккуратная «таблетка» */
+.adm-mini {
+  padding: 9px 16px;
+  background: var(--inset);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, transform 0.1s;
+}
+.adm-mini:hover { background: rgba(139,123,216,0.14); border-color: var(--accent-2); }
+.adm-mini:active { transform: translateY(1px); }
+/* Главное действие — «Оформить / продлить»: заметная золотисто-фиолетовая кнопка */
+#cab-sub-buy {
+  width: 100%; margin-top: 4px;
+  background: linear-gradient(95deg, var(--accent), var(--accent-2));
+  border: none; color: #fff; font-size: 14px; padding: 11px 16px;
+  box-shadow: 0 4px 14px rgba(139, 123, 216, 0.28);
+}
+#cab-sub-buy:hover { filter: brightness(1.07); background: linear-gradient(95deg, var(--accent), var(--accent-2)); }
+/* «Сменить пароль» — на всю ширину, отдельной строкой */
+#cab-passwd { width: 100%; margin-top: 10px; }
 .adm-mini.primary-on { background: rgba(201,168,106,0.18); border-color: var(--accent); color: var(--accent); }
 .cab-notify-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 13.5px; cursor: pointer; }
 .cab-notify-row input { width: auto; flex: 0 0 auto; margin: 0; } /* иначе глобальное input{width:100%} растягивает чекбокс */
