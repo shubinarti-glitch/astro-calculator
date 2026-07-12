@@ -1362,6 +1362,14 @@ function formatDate(dateStr) {
   return `${+d} ${MONTHS_RU[+mo - 1]} ${y}`;
 }
 
+// Дата + время платежа в местном поясе (created_at хранится в UTC с офсетом).
+function formatDateTime(iso) {
+  const dt = new Date(iso);
+  if (isNaN(dt)) return formatDate(iso);
+  const loc = LANG === "en" ? "en-GB" : "ru-RU";
+  return `${dt.toLocaleDateString(loc)} ${dt.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" })}`;
+}
+
 // ---------- Рендер: натальная карта ----------
 // «Просто о себе» — тематический рассказ без терминов.
 function buildStory(story) {
@@ -2995,11 +3003,11 @@ async function loadAdmin() {
         `<div class="admin-stat"><div class="as-num">${pay.revenue_total} ₽</div><div class="as-label">${t("admin_pay_total")}</div></div>
          <div class="admin-stat"><div class="as-num">${pay.revenue_30d} ₽</div><div class="as-label">${t("admin_pay_30d")}</div></div>`;
       $("admin-payments").innerHTML = pay.items.length
-        ? `<tr><th>${t("admin_col_registered")}</th><th>${t("admin_pay_email")}</th><th>${t("admin_pay_plan")}</th><th>${t("admin_pay_amount")}</th><th>${t("admin_pay_status")}</th></tr>` +
+        ? `<tr><th>${t("admin_pay_datetime")}</th><th>${t("admin_pay_email")}</th><th>${t("admin_pay_plan")}</th><th>${t("admin_pay_amount")}</th><th>${t("admin_pay_status")}</th></tr>` +
           pay.items.map((p) => {
             const paid = p.status === "succeeded";
             const email = p.email ? escapeHtml(p.email) : `<span class="cab-dim">${escapeHtml(p.username || "#" + p.user_id)}</span>`;
-            return `<tr class="${paid ? "pay-paid" : ""}"><td>${formatDate(p.created_at.slice(0, 10))}</td><td>${email}</td><td>${escapeHtml(p.plan_title || p.plan)}</td><td>${p.amount} ₽</td><td>${paid ? "✓ " : ""}${escapeHtml(p.status)}</td></tr>`;
+            return `<tr class="${paid ? "pay-paid" : ""}"><td>${formatDateTime(p.created_at)}</td><td>${email}</td><td>${escapeHtml(p.plan_title || p.plan)}</td><td>${p.amount} ₽</td><td>${paid ? "✓ " : ""}${escapeHtml(p.status)}</td></tr>`;
           }).join("")
         : `<tr><td class="section-note">${t("admin_pay_empty")}</td></tr>`;
     }
