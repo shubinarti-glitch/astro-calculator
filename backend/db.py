@@ -628,14 +628,16 @@ def admin_stats() -> dict:
 def list_all_users() -> list[dict]:
     with get_conn() as c:
         rows = c.execute(
-            """SELECT u.id, u.username, u.created_at, u.is_admin, u.is_banned,
+            """SELECT u.id, u.username, u.email, u.email_verified, u.created_at, u.is_admin, u.is_banned,
                       (SELECT COUNT(*) FROM profiles p WHERE p.user_id = u.id) AS charts,
                       (SELECT expires_at FROM subscriptions s WHERE s.user_id = u.id) AS premium_until
                FROM users u ORDER BY u.id"""
         ).fetchall()
     now = time.time()
     return [
-        {"id": r["id"], "username": r["username"], "created_at": r["created_at"],
+        {"id": r["id"], "username": r["username"],
+         "email": r["email"], "email_verified": bool(r["email_verified"]),
+         "created_at": r["created_at"],
          "is_admin": bool(r["is_admin"]), "is_banned": bool(r["is_banned"]),
          "charts": r["charts"],
          "premium_until": r["premium_until"] if r["premium_until"] and r["premium_until"] > now else None}

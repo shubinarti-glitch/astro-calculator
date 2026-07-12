@@ -1603,9 +1603,34 @@ html[data-theme="light"] .adm-tab.active { background: rgba(139,123,216,0.14); }
 }
 
 /* --- Подписка «Премиум» --- */
-.premium-plans { display: flex; gap: 12px; margin: 16px 0; flex-wrap: wrap; }
-.premium-plans .btn-primary { flex: 1; min-width: 160px; }
-.premium-plans small { display: block; font-weight: normal; opacity: .8; }
+.premium-benefits { list-style: none; margin: 8px 0 4px; padding: 0; }
+.premium-benefits li {
+  position: relative; padding: 4px 0 4px 26px;
+  font-size: 13.5px; color: var(--text); line-height: 1.45;
+}
+.premium-benefits li::before {
+  content: "✦"; position: absolute; left: 4px; top: 4px; color: var(--accent);
+}
+.premium-plans { display: flex; flex-direction: column; gap: 8px; margin: 16px 0; }
+.plan-group-label {
+  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px;
+  color: var(--text-dim); margin: 12px 0 2px;
+}
+.plan-group-label:first-child { margin-top: 0; }
+.premium-plans .plan-btn {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  width: 100%; text-align: left; position: relative;
+}
+.plan-name { font-weight: 600; }
+.plan-price { font-weight: 700; white-space: nowrap; }
+.plan-price small { display: block; font-weight: 400; font-size: 11px; opacity: .8; text-align: right; }
+.plan-btn.plan-best { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.plan-badge {
+  position: absolute; top: -9px; left: 14px;
+  background: var(--accent); color: #1a1408;
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.3px;
+  padding: 2px 8px; border-radius: 20px; text-transform: uppercase;
+}
 .premium-status { margin: 10px 0; padding: 10px 14px; border-radius: 8px;
   background: rgba(232, 198, 111, .12); color: var(--accent, #e8c66f); }
 .auth-btn.premium-on { color: #e8c66f; border-color: rgba(232, 198, 111, .5); }

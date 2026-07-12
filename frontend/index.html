@@ -50,7 +50,6 @@
         <button id="premium-btn" class="auth-btn header-only" data-i18n="premium_btn">✦ Премиум</button>
         <button id="admin-btn" class="auth-btn hidden" data-i18n="admin_panel">⚙ Админ</button>
         <button id="cabinet-btn" class="auth-btn ghost" data-i18n-title="cabinet_title" title="Кабинет" aria-label="Кабинет">👤</button>
-        <button id="passwd-btn" class="auth-btn ghost header-only" data-i18n-title="passwd_title" title="Сменить пароль" aria-label="Сменить пароль">🔑</button>
         <button id="logout-btn" class="auth-btn ghost" data-i18n="logout">Выйти</button>
       </div>
     </div>
@@ -127,25 +126,40 @@
       <button class="modal-close" id="premium-close" aria-label="Закрыть">×</button>
       <h3 data-i18n="premium_title">Подписка «Премиум»</h3>
       <p class="section-note" data-i18n="premium_desc">Глубокий отчёт, ректификация, синастрия, прогнозы и PDF-экспорт.</p>
+      <ul class="premium-benefits">
+        <li data-i18n="premium_ben_1">Транзиты, синастрия, соляр/лунар, прогрессии и прогноз</li>
+        <li data-i18n="premium_ben_2">Подробный разбор личности и ректификация времени рождения</li>
+        <li data-i18n="premium_ben_3">Экспорт отчёта в PDF и еженедельный прогноз на почту</li>
+      </ul>
       <div class="premium-status hidden" id="premium-status"></div>
       <div class="premium-plans" id="premium-plans">
-        <button class="btn-primary" data-plan="month" type="button">
-          <span data-i18n="plan_month">Месяц</span> — 299 ₽
+        <div class="plan-group-label" data-i18n="plan_group_sub">Подписка</div>
+        <button class="btn-primary plan-btn" data-plan="month" type="button">
+          <span class="plan-name" data-i18n="plan_month">Месяц</span>
+          <span class="plan-price">299 ₽<small data-i18n="plan_month_note">/месяц</small></span>
         </button>
-        <button class="btn-primary" data-plan="year" type="button">
-          <span data-i18n="plan_year">Год</span> — 1990 ₽ <small data-i18n="plan_year_note">(экономия 45%)</small>
+        <button class="btn-primary plan-btn plan-best" data-plan="year" type="button">
+          <span class="plan-badge" data-i18n="plan_year_badge">Выгодно −45%</span>
+          <span class="plan-name" data-i18n="plan_year">Год</span>
+          <span class="plan-price">1990 ₽<small data-i18n="plan_year_note2">≈166 ₽/месяц</small></span>
         </button>
-        <button class="btn-primary" data-plan="plus_month" type="button">
-          <span data-i18n="plan_plus_month">Месяц + консультация</span> — 1799 ₽ <small data-i18n="plan_plus_note">(личный разбор карты астрологом)</small>
+        <div class="plan-group-label" data-i18n="plan_group_consult">Подписка + личная консультация астролога</div>
+        <button class="btn-primary plan-btn" data-plan="plus_month" type="button">
+          <span class="plan-name" data-i18n="plan_plus_month">Месяц + консультация</span>
+          <span class="plan-price">1799 ₽</span>
         </button>
-        <button class="btn-primary" data-plan="plus_year" type="button">
-          <span data-i18n="plan_plus_year">Год + консультация</span> — 3490 ₽ <small data-i18n="plan_plus_note2">(личный разбор карты астрологом)</small>
+        <button class="btn-primary plan-btn" data-plan="plus_year" type="button">
+          <span class="plan-name" data-i18n="plan_plus_year">Год + консультация</span>
+          <span class="plan-price">3490 ₽</span>
         </button>
-        <button class="btn-primary" data-plan="consult" type="button">
-          <span data-i18n="plan_consult">Только консультация</span> — 3500 ₽ <small data-i18n="plan_consult_note">(без подписки, личный разбор карты)</small>
+        <div class="plan-group-label" data-i18n="plan_group_once">Разово, без подписки</div>
+        <button class="btn-primary plan-btn" data-plan="consult" type="button">
+          <span class="plan-name" data-i18n="plan_consult">Только консультация</span>
+          <span class="plan-price">3500 ₽<small data-i18n="plan_consult_note2">личный разбор карты</small></span>
         </button>
-        <button class="btn-primary plan-report" data-plan="report" type="button">
-          <span data-i18n="plan_report">Разовый PDF-отчёт</span> — 149 ₽ <small data-i18n="plan_report_note">(один отчёт в PDF, без подписки)</small>
+        <button class="btn-primary plan-btn plan-report" data-plan="report" type="button">
+          <span class="plan-name" data-i18n="plan_report">Разовый PDF-отчёт</span>
+          <span class="plan-price">149 ₽<small data-i18n="plan_report_note2">один отчёт в PDF</small></span>
         </button>
       </div>
       <div class="premium-status hidden" id="consult-status"></div>
@@ -719,7 +733,7 @@
 
   <button id="scroll-top" class="scroll-top hidden" aria-label="Наверх" data-i18n-title="scroll_top_title" title="Наверх">↑</button>
 
-  <script src="/js/i18n.js?v=13"></script>
-  <script src="/js/app.js?v=13"></script>
+  <script src="/js/i18n.js?v=14"></script>
+  <script src="/js/app.js?v=14"></script>
 </body>
 </html>

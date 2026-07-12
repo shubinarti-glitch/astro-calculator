@@ -2874,7 +2874,7 @@ async function loadCabinet() {
        <button class="adm-mini" id="cab-passwd">${t("passwd_title")}</button>`;
     $("cab-passwd").addEventListener("click", () => {
       $("cabinet-modal").classList.add("hidden");
-      $("passwd-btn").click();
+      openPasswdModal();
     });
     $("cab-email-save").addEventListener("click", async () => {
       const email = $("cab-email-input").value.trim();
@@ -3023,7 +3023,7 @@ async function loadAdmin() {
     $("admin-stats").innerHTML =
       `<div class="admin-stat"><div class="as-num">${stats.users}</div><div class="as-label">${t("admin_users_total")}</div></div>
        <div class="admin-stat"><div class="as-num">${stats.profiles}</div><div class="as-label">${t("admin_charts_total")}</div></div>`;
-    let rows = `<tr><th>#</th><th>${t("admin_col_user")}</th><th>${t("admin_col_registered")}</th><th>${t("admin_col_charts")}</th><th>${t("admin_col_premium")}</th><th>${t("admin_col_role")}</th><th></th></tr>`;
+    let rows = `<tr><th>#</th><th>${t("admin_col_user")}</th><th>${t("admin_col_email")}</th><th>${t("admin_col_registered")}</th><th>${t("admin_col_charts")}</th><th>${t("admin_col_premium")}</th><th>${t("admin_col_role")}</th><th></th></tr>`;
     for (const u of users) {
       const role = u.is_admin
         ? `<span class="adm-badge">${t("admin_role_admin")}</span>`
@@ -3040,7 +3040,10 @@ async function loadAdmin() {
         actions = `<button class="adm-del" data-ban="${u.id}" data-banned="${u.is_banned ? 1 : 0}">${u.is_banned ? t("admin_unban") : t("admin_ban")}</button> ` +
                   `<button class="adm-del" data-del="${u.id}">${t("admin_delete")}</button>`;
       }
-      rows += `<tr><td>${u.id}</td><td>${escapeHtml(u.username)}</td><td>${formatDate(u.created_at.slice(0, 10))}</td><td>${u.charts}</td><td>${prem} ${premBtns}</td><td>${role}</td><td>${actions}</td></tr>`;
+      const email = u.email
+        ? `${escapeHtml(u.email)} ${u.email_verified ? "✓" : `<span class="cab-dim">?</span>`}`
+        : `<span class="cab-dim">—</span>`;
+      rows += `<tr><td>${u.id}</td><td>${escapeHtml(u.username)}</td><td>${email}</td><td>${formatDate(u.created_at.slice(0, 10))}</td><td>${u.charts}</td><td>${prem} ${premBtns}</td><td>${role}</td><td>${actions}</td></tr>`;
     }
     $("admin-users").innerHTML = rows;
 
@@ -3221,12 +3224,12 @@ $("admin-users").addEventListener("click", async (e) => {
   loadAdmin();
 });
 
-// --- Смена пароля ---
-$("passwd-btn").addEventListener("click", () => {
+// --- Смена пароля (только из кабинета) ---
+function openPasswdModal() {
   $("passwd-form").reset();
   $("passwd-msg").classList.add("hidden");
   $("passwd-modal").classList.remove("hidden");
-});
+}
 $("passwd-close").addEventListener("click", () => $("passwd-modal").classList.add("hidden"));
 $("passwd-modal").addEventListener("click", (e) => {
   if (e.target.id === "passwd-modal") $("passwd-modal").classList.add("hidden");
