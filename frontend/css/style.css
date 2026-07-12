@@ -677,6 +677,12 @@ input::placeholder { color: #5a5878; }
 .syn-sphere.quiet .syn-sphere-tag { background: var(--menu-bg); color: var(--text-dim); }
 .syn-sphere-text { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
 .syn-sphere-advice { font-size: 12px; color: var(--accent-2); line-height: 1.5; margin-top: 7px; padding-top: 7px; border-top: 1px dashed var(--panel-border); }
+/* Тизер синастрии (бесплатный): замок вместо текста разбора */
+.syn-sphere-locked { font-size: 11.5px; color: var(--text-dim); font-style: italic; opacity: .8; }
+.syn-teaser-lock { margin-top: 16px; text-align: center; background: var(--inset); border: 1px solid var(--panel-border); border-radius: 12px; padding: 18px 16px; }
+.syn-teaser-counts { font-size: 14px; color: var(--text); font-weight: 600; margin-bottom: 8px; }
+.syn-teaser-hint { font-size: 12.5px; color: var(--text-dim); line-height: 1.55; margin-bottom: 14px; }
+.syn-teaser-lock .btn-primary { width: auto; padding: 11px 22px; }
 .syn-sub { font-size: 12.5px; color: var(--text-dim); line-height: 1.55; margin: 0 0 9px; }
 .syn-comp {
   background: var(--inset); border: 1px solid var(--panel-border);

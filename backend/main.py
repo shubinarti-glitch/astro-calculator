@@ -899,6 +899,43 @@ def api_synastry(req: SynastryRequest, uid: int = Depends(require_premium)):
         raise HTTPException(status_code=400, detail="Не удалось выполнить расчёт. Проверьте корректность введённых данных.")
 
 
+@app.post("/api/synastry/preview")
+def api_synastry_preview(req: SynastryRequest, request: Request):
+    """Бесплатный тизер совместимости: индекс + тон по сферам, без детального разбора.
+    Детальный разбор, композит, аспекты и карта остаются в «Премиуме» (/api/synastry)."""
+    ip = _client_ip(request)
+    if _rate_limited(f"synprev:{ip}", max_n=20, window=3600):
+        raise HTTPException(status_code=429, detail="Слишком много запросов. Попробуйте позже.")
+    _rate_record(f"synprev:{ip}")
+    db.record_usage("synastry_preview")
+    try:
+        full = astrology.synastry_report(
+            person_a=req.person_a.model_dump(),
+            person_b=req.person_b.model_dump(),
+            with_svg=False,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception:
+        logger.exception("Ошибка расчёта")
+        raise HTTPException(status_code=400, detail="Не удалось выполнить расчёт. Проверьте корректность введённых данных.")
+    couple = full.get("couple", {})
+    return {
+        "a_name": full["a_meta"]["name"],
+        "b_name": full["b_meta"]["name"],
+        "score": {
+            "value": full["score"]["value"],
+            "description_ru": full["score"]["description_ru"],
+            "is_destiny_sign": full["score"]["is_destiny_sign"],
+        },
+        # Только ярлык и тон по сферам — текст разбора и советы прячем под подписку.
+        "spheres": [{"key": s["key"], "label": s["label"], "tone": s["tone"]}
+                    for s in couple.get("spheres", [])],
+        "strength_count": len(couple.get("strengths", [])),
+        "challenge_count": len(couple.get("challenges", [])),
+    }
+
+
 @app.get("/api/geocode")
 def api_geocode(q: str = Query(..., min_length=2), request: Request = None):
     """Поиск города через OpenStreetMap Nominatim (бесплатно, без ключа)."""

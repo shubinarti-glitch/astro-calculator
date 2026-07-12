@@ -634,6 +634,12 @@ $("birth-form").addEventListener("submit", async (e) => {
       const personB = getPersonB();
       const errB = validate(personB, t("second_person_v"));
       if (errB) throw new Error(errB);
+      // Не-премиум видит бесплатный тизер (индекс + сферы), а не глухой пейволл.
+      if (!IS_PREMIUM) {
+        const prev = await postJSON("/api/synastry/preview", { person_a: birth, person_b: personB });
+        renderSynastryTeaser(prev);
+        return; // тизер — не полноценный расчёт: не пишем в историю и lastData
+      }
       data = await postJSON("/api/synastry", { person_a: birth, person_b: personB });
       renderSynastry(data);
     } else if (mode === "return") {
@@ -850,6 +856,7 @@ function showResults() {
   $("interp-section").classList.add("hidden"); // показываем только для натала
   // По умолчанию — раскладка «карта + таблицы»; календарь переключит сам.
   $("chart-area").classList.remove("hidden");
+  $("chart-svg").classList.remove("hidden"); // сбрасываем скрытие колеса (тизер синастрии его прячет)
   $("data-grids").classList.remove("hidden");
   $("calendar-view").classList.add("hidden");
   $("forecast-view").classList.add("hidden");
@@ -1994,6 +2001,48 @@ function renderSynastry(data) {
     t("t_syn_analysis"),
     `<p class="section-note">${MODE_INTRO.synastry}</p>` + aspectInterpCards(data.aspects)
   );
+}
+
+// ---------- Рендер: тизер синастрии (бесплатный) ----------
+// Показываем индекс совместимости и тон по сферам; детальный разбор — под подпиской.
+function renderSynastryTeaser(d) {
+  showResults();
+  // #summary лежит внутри #chart-area — саму область оставляем, прячем только колесо.
+  $("chart-svg").classList.add("hidden");
+  $("chart-png-btn").classList.add("hidden");
+  $("data-grids").classList.add("hidden");
+  $("interp-section").classList.add("hidden");
+  $("result-toolbar").classList.add("hidden"); // печатать/PDF тизер незачем
+
+  const s = d.score;
+  const SYN_TONE = { good: "good", mixed: "neutral", challenging: "bad", quiet: "quiet" };
+  const SYN_TONE_LBL = {
+    good: t("syn_tone_good"), mixed: t("syn_tone_mixed"),
+    challenging: t("syn_tone_bad"), quiet: t("syn_tone_quiet"),
+  };
+  const spheres = (d.spheres || []).map((sp) => `
+    <div class="syn-sphere ${SYN_TONE[sp.tone] || "neutral"}">
+      <div class="syn-sphere-top">
+        <span class="syn-sphere-name">${sp.label}</span>
+        <span class="syn-sphere-tag">${SYN_TONE_LBL[sp.tone] || ""}</span>
+      </div>
+      <div class="syn-sphere-locked">🔒 ${t("syn_teaser_locked")}</div>
+    </div>`).join("");
+  const counts = t("syn_teaser_counts")
+    .replace("{s}", d.strength_count).replace("{c}", d.challenge_count);
+
+  $("summary").innerHTML =
+    `<h3>${t("t_compat")}: ${escAttr(d.a_name)} & ${escAttr(d.b_name)}</h3>` +
+    `<div class="score-big"><span class="score-num">${s.value}</span><span class="score-desc">${s.description_ru}</span></div>` +
+    (s.is_destiny_sign ? `<div class="destiny">${t("t_destiny")}</div>` : "") +
+    `<div class="syn-block"><h4 class="syn-h">🧭 ${t("syn_spheres_title")}</h4>` +
+    `<div class="syn-spheres">${spheres}</div></div>` +
+    `<div class="syn-teaser-lock">
+       <p class="syn-teaser-counts">${counts}</p>
+       <p class="syn-teaser-hint">${t("syn_teaser_intro")}</p>
+       <button class="btn-primary" id="syn-teaser-cta">${t("syn_teaser_cta")}</button>
+     </div>`;
+  $("syn-teaser-cta").addEventListener("click", () => openPaywall(getToken() ? 402 : 401));
 }
 
 // ---------- Рендер: ректификация ----------

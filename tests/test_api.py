@@ -604,3 +604,18 @@ def test_weekly_subscribers_filter():
         assert any(s["id"] == u["id"] for s in db.weekly_subscribers())
     finally:
         _cleanup(name)
+
+
+def test_synastry_preview_free_and_hides_details():
+    # Тизер доступен без премиума и без входа
+    r = client.post("/api/synastry/preview",
+                    json={"person_a": NATAL, "person_b": dict(NATAL, year=1988)})
+    assert r.status_code == 200
+    d = r.json()
+    # раскрыто: индекс + тон по сферам + счётчики
+    assert isinstance(d["score"]["value"], int)
+    assert d["spheres"] and all(set(s) == {"key", "label", "tone"} for s in d["spheres"])
+    assert "strength_count" in d and "challenge_count" in d
+    # спрятано: ни детального текста разбора, ни аспектов, ни карты
+    assert "text" not in str(d.get("spheres"))
+    assert "aspects" not in d and "couple" not in d and "chart_svg" not in d
