@@ -390,7 +390,9 @@ def api_me(uid: int = Depends(current_user_id)):
             "email": user["email"], "email_verified": bool(user["email_verified"]),
             "premium": db.is_premium(uid),
             "premium_until": sub["expires_at"] if sub else None,
-            "consultation": db.has_consultation(uid)}
+            "consultation": db.has_consultation(uid),
+            "primary_profile_id": user["primary_profile_id"],
+            "notify_weekly": bool(user["notify_weekly"])}
 
 
 def require_premium(uid: int = Depends(current_user_id)) -> int:
@@ -634,6 +636,85 @@ def api_my_payments(uid: int = Depends(current_user_id)):
     for it in items:
         it["amount"] = prices.get(it["plan"], 0)
     return {"items": items}
+
+
+# --------------------------------------------------------------------------- #
+#  Транзит дня и еженедельная рассылка
+# --------------------------------------------------------------------------- #
+def daily_top_aspects(natal_params: dict, when: datetime, limit: int = 3) -> list[dict]:
+    """Топ-N самых точных транзитов к натальной карте на дату (для карточки «Ваш день»)."""
+    rep = astrology.transit_report(
+        natal_params=natal_params,
+        transit_dt={"year": when.year, "month": when.month, "day": when.day, "hour": 12, "minute": 0},
+        with_svg=False,
+    )
+    asp = [a for a in rep.get("aspects", []) if a.get("interp")]
+    asp.sort(key=lambda a: a.get("orbit", 99))
+    keep = ("p1_ru", "p1_symbol", "p2_ru", "p2_symbol", "aspect_ru", "aspect_symbol",
+            "nature", "nature_label", "orbit", "interp")
+    return [{k: a.get(k) for k in keep} for a in asp[:limit]]
+
+
+@app.get("/api/daily")
+def api_daily(uid: int = Depends(current_user_id)):
+    """Транзит дня для основного человека. Free-функция; премиуму открыт прогноз вперёд."""
+    primary = db.get_primary_profile(uid)
+    if not primary:
+        return {"has_primary": False, "premium": db.is_premium(uid)}
+    params = dict(primary["data"])
+    params["lang"] = "ru"
+    try:
+        aspects = daily_top_aspects(params, datetime.now(timezone.utc))
+    except Exception:
+        logger.exception("Ошибка расчёта транзита дня")
+        raise HTTPException(status_code=400, detail="Не удалось рассчитать транзит дня")
+    return {
+        "has_primary": True,
+        "person": primary["label"],
+        "date": datetime.now(timezone.utc).date().isoformat(),
+        "aspects": aspects,
+        "premium": db.is_premium(uid),
+    }
+
+
+class PrimaryIn(BaseModel):
+    profile_id: Optional[int] = None
+
+
+@app.post("/api/profiles/primary")
+def api_set_primary(body: PrimaryIn, uid: int = Depends(current_user_id)):
+    if not db.set_primary_profile(uid, body.profile_id):
+        raise HTTPException(status_code=404, detail="Карта не найдена")
+    return {"ok": True}
+
+
+class NotifyIn(BaseModel):
+    weekly: bool
+
+
+@app.post("/api/notify")
+def api_set_notify(body: NotifyIn, uid: int = Depends(current_user_id)):
+    user = db.get_user_by_id(uid)
+    if body.weekly and not (user and user["email"] and user["email_verified"]):
+        raise HTTPException(status_code=400, detail="Сначала подтвердите почту в кабинете")
+    db.set_notify_weekly(uid, body.weekly)
+    return {"ok": True}
+
+
+@app.get("/api/unsubscribe")
+def api_unsubscribe(token: str = Query("", max_length=100)):
+    """Отписка по ссылке из письма — без входа. Всегда отвечаем страницей-подтверждением."""
+    db.unsubscribe_by_token(token)
+    html = ("<!DOCTYPE html><html lang='ru'><head><meta charset='utf-8'>"
+            "<meta name='viewport' content='width=device-width,initial-scale=1'>"
+            "<title>Отписка</title></head>"
+            "<body style='font-family:system-ui,sans-serif;max-width:520px;margin:60px auto;padding:0 20px;text-align:center'>"
+            "<h2>Вы отписались от еженедельного дайджеста</h2>"
+            "<p>Больше писем с прогнозом мы присылать не будем. "
+            "Включить рассылку снова можно в кабинете на "
+            "<a href='https://astrosmap.ru'>astrosmap.ru</a>.</p></body></html>")
+    from fastapi.responses import HTMLResponse
+    return HTMLResponse(content=html)
 
 
 # --------------------------------------------------------------------------- #

@@ -66,6 +66,25 @@ def verify_letter(link: str, lang: str = "ru") -> tuple[str, str]:
             "Ссылка действует 24 часа. Если вы не регистрировались — просто удалите это письмо.")
 
 
+def digest_letter(person: str, events: list[dict], unsub_link: str, lang: str = "ru") -> tuple[str, str]:
+    """Еженедельный дайджест: person — имя основного человека, events — список {date, title, text}."""
+    if not events:
+        body_events = ("На этой неделе крупных транзитов нет — спокойный фон, "
+                       "хорошее время для рутины и накопленных дел.")
+    else:
+        lines = []
+        for e in events:
+            lines.append(f"• {e['date']} — {e['title']}\n  {e['text']}")
+        body_events = "\n\n".join(lines)
+    subject = f"Ваш астропрогноз на неделю — {person}"
+    body = (f"Здравствуйте!\n\nКлючевые транзиты недели для натальной карты «{person}»:\n\n"
+            f"{body_events}\n\n"
+            "Подробный прогноз с точными датами — на astrosmap.ru, вкладка «Прогноз».\n\n"
+            "———\n"
+            f"Чтобы отписаться от еженедельных писем: {unsub_link}")
+    return subject, body
+
+
 def reset_letter(link: str, lang: str = "ru") -> tuple[str, str]:
     if lang == "en":
         return ("Password reset — Astrocalculator",

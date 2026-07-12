@@ -539,3 +539,68 @@ def test_history_and_profile_note():
         assert client.get("/api/billing/my", headers=h).json()["items"] == []
     finally:
         _cleanup(name)
+
+
+# --------------------------------------------------------------------------- #
+#  Транзит дня, основной человек, еженедельная рассылка
+# --------------------------------------------------------------------------- #
+def test_primary_and_daily():
+    name, token = _make_user("daily_")
+    try:
+        h = {"Authorization": f"Bearer {token}"}
+        # без основного человека — daily говорит has_primary=false
+        r = client.get("/api/daily", headers=h)
+        assert r.status_code == 200 and r.json()["has_primary"] is False
+        # сохранить человека и назначить основным
+        p = client.post("/api/profiles", headers=h,
+                        json={"label": "Я", "data": {"name": "Я", "year": 1987, "month": 7, "day": 10,
+                                                      "hour": 11, "minute": 11, "lat": 56.0091, "lng": 92.8726,
+                                                      "tz_str": "Asia/Krasnoyarsk", "city": "Красноярск"}}).json()
+        assert client.post("/api/profiles/primary", headers=h, json={"profile_id": p["id"]}).status_code == 200
+        r = client.get("/api/daily", headers=h)
+        assert r.status_code == 200
+        d = r.json()
+        assert d["has_primary"] is True and d["person"] == "Я" and isinstance(d["aspects"], list)
+        # чужую карту основным назначить нельзя
+        assert client.post("/api/profiles/primary", headers=h, json={"profile_id": 999999}).status_code == 404
+        # снять отметку
+        assert client.post("/api/profiles/primary", headers=h, json={"profile_id": None}).status_code == 200
+        assert client.get("/api/daily", headers=h).json()["has_primary"] is False
+    finally:
+        _cleanup(name)
+
+
+def test_notify_requires_verified_email():
+    name, token = _make_user("notif_")
+    try:
+        h = {"Authorization": f"Bearer {token}"}
+        # почта есть (из _make_user), но не подтверждена → включить нельзя
+        assert client.post("/api/notify", headers=h, json={"weekly": True}).status_code == 400
+        # подтверждаем и включаем
+        u = db.get_user_by_username(name)
+        db.mark_email_verified(u["id"])
+        assert client.post("/api/notify", headers=h, json={"weekly": True}).status_code == 200
+        assert db.get_user_by_id(u["id"])["notify_weekly"] == 1
+        # отписка по токену — без входа
+        tok = db.get_user_by_id(u["id"])["unsub_token"]
+        assert tok
+        r = client.get(f"/api/unsubscribe?token={tok}")
+        assert r.status_code == 200
+        assert db.get_user_by_id(u["id"])["notify_weekly"] == 0
+    finally:
+        _cleanup(name)
+
+
+def test_weekly_subscribers_filter():
+    name, token = _make_user("wsub_")
+    try:
+        u = db.get_user_by_username(name)
+        db.mark_email_verified(u["id"])
+        db.set_notify_weekly(u["id"], True)
+        # без основного человека в список не попадает
+        assert all(s["id"] != u["id"] for s in db.weekly_subscribers())
+        p = db.add_profile(u["id"], "Я", {"year": 1987, "month": 7, "day": 10, "lat": 56.0, "lng": 92.8})
+        db.set_primary_profile(u["id"], p["id"])
+        assert any(s["id"] == u["id"] for s in db.weekly_subscribers())
+    finally:
+        _cleanup(name)

@@ -825,12 +825,14 @@ function showLoader() {
   $("placeholder").classList.add("hidden");
   $("error").classList.add("hidden");
   $("results").classList.add("hidden");
+  $("daily-block").classList.add("hidden");
   $("loader").classList.remove("hidden");
   $("calc-btn").disabled = true;
 }
 function showError(msg) {
   $("loader").classList.add("hidden");
   $("placeholder").classList.add("hidden");
+  $("daily-block").classList.add("hidden");
   $("results").classList.add("hidden");
   $("error").textContent = "⚠ " + msg;
   $("error").classList.remove("hidden");
@@ -841,6 +843,7 @@ function showResults() {
   $("loader").classList.add("hidden");
   $("error").classList.add("hidden");
   $("placeholder").classList.add("hidden");
+  $("daily-block").classList.add("hidden");
   $("results").classList.remove("hidden");
   $("result-toolbar").classList.toggle("hidden", !getToken()); // печать — для вошедших
   $("calc-btn").disabled = false;
@@ -2473,6 +2476,7 @@ function updateAuthUI(username, isAdmin = false) {
     $("admin-btn").classList.toggle("hidden", !isAdmin);
     // показать кнопку печати, если результат уже на экране
     $("result-toolbar").classList.toggle("hidden", $("results").classList.contains("hidden"));
+    loadDaily();
   } else {
     $("login-btn").classList.remove("hidden");
     $("user-box").classList.add("hidden");
@@ -2482,7 +2486,57 @@ function updateAuthUI(username, isAdmin = false) {
     $("admin-btn").classList.add("hidden");
     $("result-toolbar").classList.add("hidden");
     $("b-saved-wrap").classList.add("hidden");
+    $("daily-block").classList.add("hidden");
   }
+}
+
+// --- Транзит дня («Ваш день») — карточка на главной для вошедших ---
+async function loadDaily() {
+  const block = $("daily-block");
+  if (!getToken()) { block.classList.add("hidden"); return; }
+  // Показываем только в «покойном» состоянии, когда результата на экране нет.
+  if ($("results").classList.contains("hidden") === false) { block.classList.add("hidden"); return; }
+  try {
+    const r = await fetch("/api/daily", { headers: authHeaders() });
+    if (!r.ok) { block.classList.add("hidden"); return; }
+    const d = await r.json();
+    renderDaily(d);
+    block.classList.remove("hidden");
+    $("placeholder").classList.add("hidden");
+  } catch { block.classList.add("hidden"); }
+}
+
+function renderDaily(d) {
+  const block = $("daily-block");
+  if (!d.has_primary) {
+    block.innerHTML =
+      `<div class="daily-head"><span class="daily-glyph">☀</span><h3>${t("daily_title")}</h3></div>
+       <p class="daily-hint">${t("daily_no_primary")}</p>
+       <button class="daily-cabinet-link" id="daily-open-cabinet">${t("daily_pick_primary")}</button>`;
+    $("daily-open-cabinet").addEventListener("click", () => { $("cabinet-modal").classList.remove("hidden"); loadCabinet(); });
+    return;
+  }
+  const dateStr = formatDate(d.date);
+  const items = d.aspects.length
+    ? d.aspects.map((a) =>
+        `<div class="daily-aspect ${a.nature}">
+           <div class="daily-aspect-head">${a.p2_symbol} ${a.p2_ru} ${a.aspect_symbol} ${a.p1_symbol} ${a.p1_ru}</div>
+           <div class="daily-aspect-text">${escapeHtml(a.interp || "")}</div>
+         </div>`).join("")
+    : `<p class="daily-hint">${t("daily_calm")}</p>`;
+  const cta = d.premium
+    ? `<button class="daily-week-btn" id="daily-week">${t("daily_week_cta")}</button>`
+    : `<button class="daily-week-btn locked" id="daily-week">🔒 ${t("daily_week_locked")}</button>`;
+  block.innerHTML =
+    `<div class="daily-head"><span class="daily-glyph">☀</span>
+       <h3>${t("daily_title")} · ${escapeHtml(d.person)}</h3><span class="daily-date">${dateStr}</span></div>
+     <div class="daily-aspects">${items}</div>
+     ${cta}`;
+  $("daily-week").addEventListener("click", () => {
+    if (!d.premium) { openPaywall(402); return; }
+    const tab = document.querySelector('.tab[data-mode="forecast"]');
+    if (tab) tab.click();
+  });
 }
 
 // --- Модальное окно ---
@@ -2670,29 +2724,49 @@ async function loadCabinet() {
       } catch (ex) { $("cab-email-msg").textContent = ex.message; }
     });
 
-    // Подписка
+    // Подписка + переключатель еженедельного дайджеста
     const subLine = me.premium && me.premium_until
       ? `<div class="cab-line">✦ ${t("cab_sub_active")} ${formatDate(new Date(me.premium_until * 1000).toISOString().slice(0, 10))}</div>`
       : `<div class="cab-line cab-dim">${t("cab_sub_none")}</div>`;
+    const canNotify = me.email && me.email_verified;
+    const notifyRow = me.premium
+      ? `<label class="cab-notify-row ${canNotify ? "" : "disabled"}">
+           <input type="checkbox" id="cab-notify" ${me.notify_weekly ? "checked" : ""} ${canNotify ? "" : "disabled"} />
+           <span>${t("cab_notify")}</span>
+         </label>
+         <div class="cab-dim">${canNotify ? t("cab_notify_hint") : t("cab_notify_need_email")}</div>`
+      : "";
     $("cab-sub").innerHTML =
       `<h4>${t("cab_sub")}</h4>${subLine}
-       <button class="adm-mini" id="cab-sub-buy">${t("cab_sub_buy")}</button>`;
+       <button class="adm-mini" id="cab-sub-buy">${t("cab_sub_buy")}</button>
+       ${notifyRow}`;
     $("cab-sub-buy").addEventListener("click", () => {
       $("cabinet-modal").classList.add("hidden");
       openPremiumModal();
     });
+    if ($("cab-notify")) {
+      $("cab-notify").addEventListener("change", async function () {
+        try { await postJSON("/api/notify", { weekly: this.checked }); }
+        catch (ex) { this.checked = !this.checked; alert(ex.message); }
+      });
+    }
 
-    // Мои люди: заметка + запуск расчётов
+    // Мои люди: ★основной + заметка + запуск расчётов
     if (!profiles.length) {
       $("cab-people").innerHTML = `<div class="cab-dim">${t("cab_no_people")}</div>`;
     } else {
       $("cab-people").innerHTML = profiles.map((p) => {
         const d = p.data;
         const meta = `${d.day || "?"}.${d.month || "?"}.${d.year || "?"}${d.city ? " · " + escapeHtml(d.city) : ""}`;
-        return `<div class="cab-person" data-id="${p.id}">
+        const isPrimary = p.id === me.primary_profile_id;
+        const star = isPrimary
+          ? `<button class="adm-mini primary-on" data-primary="${p.id}" data-on="1">${t("cab_is_primary")}</button>`
+          : `<button class="adm-mini" data-primary="${p.id}" data-on="0">${t("cab_primary")}</button>`;
+        return `<div class="cab-person ${isPrimary ? "is-primary" : ""}" data-id="${p.id}">
           <div class="cab-person-head"><b>${escapeHtml(p.label)}</b> <span class="cab-dim">${meta}</span></div>
           <input class="cab-note" data-note="${p.id}" placeholder="${t("cab_note_ph")}" value="${escapeHtml(p.note || "")}" />
           <div class="cab-person-actions">
+            ${star}
             <button class="adm-mini" data-run="natal" data-id="${p.id}">${t("cab_run_natal")}</button>
             <button class="adm-mini" data-run="transit" data-id="${p.id}">${t("cab_run_transit")}</button>
             <button class="adm-mini" data-run="synastry" data-id="${p.id}">${t("cab_run_synastry")}</button>
@@ -2734,7 +2808,19 @@ $("cab-people").addEventListener("change", async (e) => {
   if (!id) return;
   try { await postJSON(`/api/profiles/${id}/note`, { note: e.target.value }); } catch (ex) {}
 });
-$("cab-people").addEventListener("click", (e) => {
+$("cab-people").addEventListener("click", async (e) => {
+  const star = e.target.closest("[data-primary]");
+  if (star) {
+    // Клик по звёздочке: назначить основным, повторный клик по основному — снять.
+    const id = +star.dataset.primary;
+    const turnOff = star.dataset.on === "1";
+    try {
+      await postJSON("/api/profiles/primary", { profile_id: turnOff ? null : id });
+      await loadCabinet();
+      loadDaily();
+    } catch (ex) { alert(ex.message); }
+    return;
+  }
   const btn = e.target.closest("[data-run]");
   if (!btn) return;
   const p = ($("cab-people")._profiles || []).find((x) => x.id === +btn.dataset.id);

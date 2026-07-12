@@ -64,6 +64,10 @@ def init_db() -> None:
         if "email" not in cols:
             c.execute("ALTER TABLE users ADD COLUMN email TEXT")
             c.execute("ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 0")
+        if "primary_profile_id" not in cols:
+            c.execute("ALTER TABLE users ADD COLUMN primary_profile_id INTEGER")  # «это я» для транзита дня
+            c.execute("ALTER TABLE users ADD COLUMN notify_weekly INTEGER NOT NULL DEFAULT 0")
+            c.execute("ALTER TABLE users ADD COLUMN unsub_token TEXT")  # стабильный токен отписки
         c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email) WHERE email IS NOT NULL")
         c.execute(
             """CREATE TABLE IF NOT EXISTS profiles (
@@ -418,6 +422,72 @@ def list_history(user_id: int) -> list[dict]:
         ).fetchall()
     return [{"id": r["id"], "kind": r["kind"], "label": r["label"],
              "params": json.loads(r["params"]), "created_at": r["created_at"]} for r in rows]
+
+
+# --------------------------------------------------------------------------- #
+#  Транзит дня: основной человек, еженедельная рассылка
+# --------------------------------------------------------------------------- #
+def set_primary_profile(user_id: int, profile_id: Optional[int]) -> bool:
+    """Отметить сохранённого человека как «это я». None — снять отметку."""
+    with get_conn() as c:
+        if profile_id is not None:
+            own = c.execute("SELECT 1 FROM profiles WHERE id = ? AND user_id = ?",
+                            (profile_id, user_id)).fetchone()
+            if not own:
+                return False
+        c.execute("UPDATE users SET primary_profile_id = ? WHERE id = ?", (profile_id, user_id))
+        return True
+
+
+def get_primary_profile(user_id: int) -> Optional[dict]:
+    """Данные основного человека или None (в т.ч. если карту удалили)."""
+    with get_conn() as c:
+        u = c.execute("SELECT primary_profile_id FROM users WHERE id = ?", (user_id,)).fetchone()
+        if not u or u["primary_profile_id"] is None:
+            return None
+        r = c.execute("SELECT id, label, data FROM profiles WHERE id = ? AND user_id = ?",
+                      (u["primary_profile_id"], user_id)).fetchone()
+    if not r:
+        return None
+    return {"id": r["id"], "label": r["label"], "data": json.loads(r["data"])}
+
+
+def _ensure_unsub_token(c, user_id: int) -> str:
+    row = c.execute("SELECT unsub_token FROM users WHERE id = ?", (user_id,)).fetchone()
+    if row and row["unsub_token"]:
+        return row["unsub_token"]
+    token = secrets.token_urlsafe(24)
+    c.execute("UPDATE users SET unsub_token = ? WHERE id = ?", (token, user_id))
+    return token
+
+
+def set_notify_weekly(user_id: int, on: bool) -> str:
+    """Вкл/выкл еженедельный дайджест. Возвращает токен отписки (создаётся при первом вкл)."""
+    with get_conn() as c:
+        token = _ensure_unsub_token(c, user_id)
+        c.execute("UPDATE users SET notify_weekly = ? WHERE id = ?", (1 if on else 0, user_id))
+    return token
+
+
+def unsubscribe_by_token(token: str) -> bool:
+    """Отписка по ссылке из письма — без входа."""
+    if not token:
+        return False
+    with get_conn() as c:
+        cur = c.execute("UPDATE users SET notify_weekly = 0 WHERE unsub_token = ?", (token,))
+        return cur.rowcount > 0
+
+
+def weekly_subscribers() -> list[dict]:
+    """Кому слать дайджест: включили рассылку, подтвердили почту, не забанены."""
+    with get_conn() as c:
+        rows = c.execute(
+            """SELECT id, email, unsub_token, primary_profile_id
+               FROM users
+               WHERE notify_weekly = 1 AND email_verified = 1 AND is_banned = 0
+                 AND email IS NOT NULL AND primary_profile_id IS NOT NULL"""
+        ).fetchall()
+    return [dict(r) for r in rows]
 
 
 def list_user_payments(user_id: int) -> list[dict]:

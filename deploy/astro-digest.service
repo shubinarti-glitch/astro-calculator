@@ -1,0 +1,8 @@
+[Unit]
+Description=Astrosmap weekly transit digest
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/astro
+ExecStart=/opt/astro/venv/bin/python /opt/astro/scripts/weekly_digest.py
