@@ -379,6 +379,7 @@ def test_billing_consult_plan():
 # --------------------------------------------------------------------------- #
 def _make_user(prefix="feat_"):
     name = _rnd(prefix)
+    main_module._RATE.clear()  # сброс in-memory лимитера: тесты регистрируют многих с одного IP
     r = client.post("/api/auth/register",
                     json={"username": name, "password": "password123", "email": f"{name}@test.local"})
     assert r.status_code == 200
@@ -619,3 +620,26 @@ def test_synastry_preview_free_and_hides_details():
     # спрятано: ни детального текста разбора, ни аспектов, ни карты
     assert "text" not in str(d.get("spheres"))
     assert "aspects" not in d and "couple" not in d and "chart_svg" not in d
+
+
+def test_report_credits_flow():
+    name, token = _make_user("rep_")
+    try:
+        h = {"Authorization": f"Bearer {token}"}
+        u = db.get_user_by_username(name)
+        # изначально кредитов нет — consume даёт 402
+        assert client.post("/api/report/consume", headers=h).status_code == 402
+        # выдаём кредит (как после успешной оплаты plan=report)
+        db.add_report_credit(u["id"])
+        me = client.get("/api/auth/me", headers=h).json()
+        assert me["report_credits"] == 1
+        # списываем — остаётся 0
+        r = client.post("/api/report/consume", headers=h)
+        assert r.status_code == 200 and r.json()["report_credits"] == 0
+        # повторно уже нельзя
+        assert client.post("/api/report/consume", headers=h).status_code == 402
+        # план report валиден для создания платежа (проверяем схему, не сам платёж)
+        from backend import payments
+        assert payments.PLANS["report"] == (149, 0)
+    finally:
+        _cleanup(name)

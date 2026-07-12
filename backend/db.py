@@ -68,6 +68,8 @@ def init_db() -> None:
             c.execute("ALTER TABLE users ADD COLUMN primary_profile_id INTEGER")  # «это я» для транзита дня
             c.execute("ALTER TABLE users ADD COLUMN notify_weekly INTEGER NOT NULL DEFAULT 0")
             c.execute("ALTER TABLE users ADD COLUMN unsub_token TEXT")  # стабильный токен отписки
+        if "report_credits" not in cols:
+            c.execute("ALTER TABLE users ADD COLUMN report_credits INTEGER NOT NULL DEFAULT 0")  # разовые PDF-отчёты
         c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email) WHERE email IS NOT NULL")
         c.execute(
             """CREATE TABLE IF NOT EXISTS profiles (
@@ -526,6 +528,26 @@ def extend_subscription(user_id: int, plan: str, days: int) -> dict:
             (user_id, plan, expires),
         )
     return {"plan": plan, "expires_at": expires}
+
+
+def add_report_credit(user_id: int, n: int = 1) -> None:
+    with get_conn() as c:
+        c.execute("UPDATE users SET report_credits = report_credits + ? WHERE id = ?", (n, user_id))
+
+
+def get_report_credits(user_id: int) -> int:
+    u = get_user_by_id(user_id)
+    return u["report_credits"] if u else 0
+
+
+def consume_report_credit(user_id: int) -> bool:
+    """Списать один кредит, если он есть. Атомарно (условие в UPDATE)."""
+    with get_conn() as c:
+        cur = c.execute(
+            "UPDATE users SET report_credits = report_credits - 1 WHERE id = ? AND report_credits > 0",
+            (user_id,),
+        )
+        return cur.rowcount > 0
 
 
 def add_consultation(user_id: int) -> None:

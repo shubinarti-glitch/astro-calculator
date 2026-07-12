@@ -391,6 +391,7 @@ def api_me(uid: int = Depends(current_user_id)):
             "premium": db.is_premium(uid),
             "premium_until": sub["expires_at"] if sub else None,
             "consultation": db.has_consultation(uid),
+            "report_credits": db.get_report_credits(uid),
             "primary_profile_id": user["primary_profile_id"],
             "notify_weekly": bool(user["notify_weekly"])}
 
@@ -405,7 +406,7 @@ def require_premium(uid: int = Depends(current_user_id)) -> int:
 #  Подписка (ЮKassa)
 # --------------------------------------------------------------------------- #
 class BillingCreate(BaseModel):
-    plan: str = Field(..., pattern="^(month|year|plus_month|plus_year|consult)$")
+    plan: str = Field(..., pattern="^(month|year|plus_month|plus_year|consult|report)$")
 
 
 @app.get("/api/billing/plans")
@@ -431,6 +432,7 @@ def api_billing_check(uid: int = Depends(current_user_id)):
     try:
         result = payments.check_payments(uid)
         result["consultation"] = db.has_consultation(uid)
+        result["report_credits"] = db.get_report_credits(uid)
         return result
     except payments.NotConfiguredError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
@@ -636,6 +638,17 @@ def api_my_payments(uid: int = Depends(current_user_id)):
     for it in items:
         it["amount"] = prices.get(it["plan"], 0)
     return {"items": items}
+
+
+@app.post("/api/report/consume")
+def api_report_consume(uid: int = Depends(current_user_id)):
+    """Списать один разовый PDF-кредит (после успешного скачивания отчёта).
+    Премиуму кредиты не нужны — у него PDF безлимитный, ничего не списываем."""
+    if db.is_premium(uid):
+        return {"ok": True, "premium": True, "report_credits": db.get_report_credits(uid)}
+    if not db.consume_report_credit(uid):
+        raise HTTPException(status_code=402, detail="Нет доступных отчётов")
+    return {"ok": True, "premium": False, "report_credits": db.get_report_credits(uid)}
 
 
 # --------------------------------------------------------------------------- #

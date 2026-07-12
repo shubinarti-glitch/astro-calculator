@@ -28,6 +28,7 @@ PLANS = {
     "plus_month": (1799, 30),
     "plus_year": (3490, 365),
     "consult": (3500, 0),
+    "report": (149, 0),  # разовый PDF-отчёт, без подписки (0 дней)
 }
 
 PLAN_TITLES = {
@@ -36,6 +37,7 @@ PLAN_TITLES = {
     "plus_month": "Подписка «Премиум+» (месяц + консультация)",
     "plus_year": "Подписка «Премиум+» (год + консультация)",
     "consult": "Консультация астролога",
+    "report": "Разовый PDF-отчёт",
 }
 
 
@@ -92,6 +94,8 @@ def check_payments(user_id: int) -> dict:
                 db.extend_subscription(user_id, p["plan"], days)
             if p["plan"].startswith("plus_") or p["plan"] == "consult":
                 db.add_consultation(user_id)
+            if p["plan"] == "report":
+                db.add_report_credit(user_id)
             activated = True
         elif status == "canceled":
             db.set_payment_status(p["payment_id"], "canceled")

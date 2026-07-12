@@ -85,19 +85,30 @@
   <div class="modal-overlay hidden" id="cabinet-modal">
     <div class="modal cabinet-modal">
       <button class="modal-close" id="cabinet-close" aria-label="Закрыть">×</button>
-      <h3 data-i18n="cabinet_title">Кабинет</h3>
-      <div id="cab-profile" class="cab-section"></div>
-      <div id="cab-sub" class="cab-section"></div>
-      <div class="cab-section">
-        <h4 data-i18n="cab_people">Мои люди</h4>
+      <div class="cab-head">
+        <div class="cab-avatar" id="cab-avatar">👤</div>
+        <div class="cab-head-info">
+          <div class="cab-head-name" id="cab-head-name"></div>
+          <div class="cab-badges" id="cab-badges"></div>
+        </div>
+      </div>
+      <div class="cab-tabs" id="cab-tabs" role="tablist">
+        <button class="cab-tab active" data-cab="profile" type="button" data-i18n="cab_tab_profile">Профиль</button>
+        <button class="cab-tab" data-cab="people" type="button" data-i18n="cab_tab_people">Мои люди</button>
+        <button class="cab-tab" data-cab="history" type="button" data-i18n="cab_tab_history">История</button>
+        <button class="cab-tab" data-cab="payments" type="button" data-i18n="cab_tab_payments">Платежи</button>
+      </div>
+      <div class="cab-panel" id="cab-panel-profile">
+        <div id="cab-profile" class="cab-card"></div>
+        <div id="cab-sub" class="cab-card"></div>
+      </div>
+      <div class="cab-panel hidden" id="cab-panel-people">
         <div id="cab-people"></div>
       </div>
-      <div class="cab-section">
-        <h4 data-i18n="cab_history">История расчётов</h4>
+      <div class="cab-panel hidden" id="cab-panel-history">
         <div id="cab-history"></div>
       </div>
-      <div class="cab-section">
-        <h4 data-i18n="cab_payments">Платежи</h4>
+      <div class="cab-panel hidden" id="cab-panel-payments">
         <div id="cab-payments"></div>
       </div>
     </div>
@@ -125,8 +136,12 @@
         <button class="btn-primary" data-plan="consult" type="button">
           <span data-i18n="plan_consult">Только консультация</span> — 3500 ₽ <small data-i18n="plan_consult_note">(без подписки, личный разбор карты)</small>
         </button>
+        <button class="btn-primary plan-report" data-plan="report" type="button">
+          <span data-i18n="plan_report">Разовый PDF-отчёт</span> — 149 ₽ <small data-i18n="plan_report_note">(один отчёт в PDF, без подписки)</small>
+        </button>
       </div>
       <div class="premium-status hidden" id="consult-status"></div>
+      <div class="premium-status hidden" id="report-status"></div>
       <div class="auth-error hidden" id="premium-error"></div>
       <p class="section-note" data-i18n-html="premium_note">Оплата через ЮKassa. Подписка активируется сразу после оплаты. Нажимая «Оплатить», вы принимаете условия <a href="#" id="premium-offer-link">Публичной оферты</a>.</p>
     </div>

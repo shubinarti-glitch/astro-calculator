@@ -829,24 +829,43 @@ input::placeholder { color: #5a5878; }
 .cab-person.is-primary { border-color: var(--accent); }
 .adm-mini.primary-on { background: rgba(201,168,106,0.18); border-color: var(--accent); color: var(--accent); }
 .cab-notify-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 13.5px; cursor: pointer; }
+.cab-notify-row input { width: auto; flex: 0 0 auto; margin: 0; } /* иначе глобальное input{width:100%} растягивает чекбокс */
 .cab-notify-row.disabled { opacity: 0.6; cursor: default; }
 
 /* Кабинет */
-.cabinet-modal { max-width: 640px; width: 94%; max-height: 88vh; overflow-y: auto; }
-.cab-section { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--panel-border); }
-.cab-section h4 { font-family: "Cormorant Garamond", serif; font-size: 18px; color: var(--accent); margin-bottom: 8px; }
-.cab-line { font-size: 13.5px; margin: 4px 0; }
+.cabinet-modal { max-width: 660px; width: 94%; max-height: 90vh; overflow-y: auto; }
+/* Шапка: аватар + имя + бейджи статуса */
+.cab-head { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+.cab-avatar { width: 52px; height: 52px; flex: 0 0 52px; border-radius: 50%; display: grid; place-items: center; font-size: 26px; background: rgba(139,123,216,0.14); border: 1px solid var(--panel-border); }
+.cab-head-info { min-width: 0; }
+.cab-head-name { font-family: "Cormorant Garamond", serif; font-size: 24px; font-weight: 700; color: var(--text); line-height: 1.1; }
+.cab-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.cab-badge { font-size: 11.5px; font-weight: 600; padding: 3px 10px; border-radius: 20px; white-space: nowrap; }
+.cab-badge-prem { background: rgba(201,168,106,0.16); color: var(--accent); }
+.cab-badge-free { background: var(--inset); color: var(--text-dim); }
+.cab-badge-report { background: rgba(139,123,216,0.14); color: var(--accent-2); }
+/* Вкладки */
+.cab-tabs { display: flex; gap: 4px; background: var(--inset); border-radius: 12px; padding: 4px; margin-bottom: 16px; }
+.cab-tab { flex: 1; padding: 9px 6px; border: none; background: none; color: var(--text-dim); font-size: 13px; font-weight: 600; border-radius: 9px; cursor: pointer; transition: background .15s, color .15s; }
+.cab-tab:hover { color: var(--text); }
+.cab-tab.active { background: var(--menu-bg); color: var(--accent-2); box-shadow: 0 1px 4px rgba(0,0,0,0.12); }
+.cab-panel { display: flex; flex-direction: column; gap: 14px; }
+/* Карточки внутри профиля */
+.cab-card { background: var(--inset); border: 1px solid var(--panel-border); border-radius: 12px; padding: 15px 16px; }
+.cab-card h4 { font-family: "Cormorant Garamond", serif; font-size: 18px; color: var(--accent); margin-bottom: 10px; }
+.cab-line { font-size: 13.5px; margin: 5px 0; }
 .cab-dim { color: var(--text-dim); font-size: 12.5px; }
 .cab-warn { color: var(--bad); font-size: 13px; }
-.cab-email-form { display: flex; gap: 8px; align-items: center; margin-top: 6px; flex-wrap: wrap; }
+.cab-email-form { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
 .cab-email-form input { flex: 1; min-width: 180px; margin: 0; padding: 8px 10px; }
-.cab-person { background: var(--inset); border: 1px solid var(--panel-border); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
-.cab-person-head { font-size: 13.5px; margin-bottom: 6px; }
-.cab-note { width: 100%; margin: 0 0 8px; padding: 7px 10px; font-size: 12.5px; }
+.cab-person { background: var(--inset); border: 1px solid var(--panel-border); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
+.cab-person-head { font-size: 14px; margin-bottom: 8px; }
+.cab-note { width: 100%; margin: 0 0 9px; padding: 8px 11px; font-size: 12.5px; }
 .cab-person-actions { display: flex; gap: 6px; flex-wrap: wrap; }
-.cab-hist-row { display: grid; grid-template-columns: minmax(0,auto) minmax(0,1fr) auto auto; gap: 10px; align-items: center; font-size: 13px; padding: 6px 0; border-bottom: 1px dashed var(--panel-border); }
+.cab-hist-row { display: grid; grid-template-columns: minmax(0,auto) minmax(0,1fr) auto auto; gap: 10px; align-items: center; font-size: 13px; padding: 9px 2px; border-bottom: 1px dashed var(--panel-border); }
 .cab-pay-table { width: 100%; font-size: 13px; border-collapse: collapse; }
-.cab-pay-table td { padding: 5px 8px; border-bottom: 1px dashed var(--panel-border); }
+.cab-pay-table td { padding: 7px 8px; border-bottom: 1px dashed var(--panel-border); }
+@media (max-width: 480px) { .cab-tab { font-size: 12px; padding: 8px 4px; } .cab-head-name { font-size: 21px; } }
 
 /* Сворачиваемые секции результатов */
 .data-section.collapsible > summary {

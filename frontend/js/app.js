@@ -1691,7 +1691,7 @@ function printFrom(srcId, title) {
 // Одноклик-экспорт активного отчёта в готовый PDF-файл — без системного диалога.
 // Рендер идёт в том же печатном iframe (та же вёрстка, что и «Печать»), а html2pdf
 // подключается локально (script-src 'self') и работает внутри iframe.
-function downloadPdf(srcId, title, btn) {
+function downloadPdf(srcId, title, btn, onDone) {
   const extraHead =
     `<script src="${location.origin}/js/vendor/html2pdf.bundle.min.js"></script>`;
   const built = buildPrintFrame(srcId, title, extraHead);
@@ -1704,6 +1704,7 @@ function downloadPdf(srcId, title, btn) {
   if (btn) { btn.disabled = true; btn.textContent = (typeof t === "function" ? t("pdf_wait") : "…"); }
   const cleanup = () => {
     if (btn) { btn.disabled = false; btn.textContent = label; }
+    if (typeof onDone === "function") onDone(); // списываем кредит только после успешного экспорта
     setTimeout(() => frame.remove(), 500);
   };
   const fail = () => {
@@ -1764,9 +1765,23 @@ $("result-print").addEventListener("click", () => printFrom("results", activeToo
 // Кнопка скачивания результата готовым PDF-файлом.
 if ($("result-pdf")) {
   $("result-pdf").addEventListener("click", (e) => {
-    if (!premiumGate()) return;
-    downloadPdf("results", activeToolTitle(), e.currentTarget);
+    const btn = e.currentTarget;
+    if (IS_PREMIUM) { downloadPdf("results", activeToolTitle(), btn); return; }
+    if (REPORT_CREDITS > 0) {
+      // Разовый отчёт: качаем и списываем кредит только по факту успешного экспорта.
+      downloadPdf("results", activeToolTitle(), btn, consumeReportCredit);
+      return;
+    }
+    openPaywall(getToken() ? 402 : 401); // нет ни подписки, ни разового отчёта
   });
+}
+
+async function consumeReportCredit() {
+  try {
+    const r = await postJSON("/api/report/consume", {});
+    REPORT_CREDITS = r.report_credits;
+    refreshPremiumBtn();
+  } catch (e) { /* кредит не списался — не критично, отчёт уже скачан */ }
 }
 
 // ---------- Рендер: транзиты ----------
@@ -2407,6 +2422,7 @@ function authHeaders() {
 let IS_PREMIUM = false;
 let PREMIUM_UNTIL = null;
 let HAS_CONSULT = false;
+let REPORT_CREDITS = 0; // разовые PDF-отчёты (без подписки)
 // Telegram астролога для оплаченных консультаций (тарифы «Премиум+»)
 const ASTROLOGER_TG = "https://t.me/Astrosmap";
 
@@ -2432,6 +2448,15 @@ function openPremiumModal() {
     cs.classList.remove("hidden");
   } else {
     cs.classList.add("hidden");
+  }
+  const rc = $("report-status");
+  if (rc) {
+    if (!IS_PREMIUM && REPORT_CREDITS > 0) {
+      rc.textContent = `📄 ${t("report_credits_have").replace("{n}", REPORT_CREDITS)}`;
+      rc.classList.remove("hidden");
+    } else {
+      rc.classList.add("hidden");
+    }
   }
   $("premium-error").classList.add("hidden");
   $("premium-modal").classList.remove("hidden");
@@ -2484,6 +2509,7 @@ async function checkPaymentReturn() {
       IS_PREMIUM = !!data.premium;
       PREMIUM_UNTIL = data.subscription && data.subscription.expires_at;
       HAS_CONSULT = !!data.consultation;
+      REPORT_CREDITS = data.report_credits || 0;
       refreshPremiumBtn();
       alert(t("premium_activated"));
       if (HAS_CONSULT) openPremiumModal(); // сразу показать контакт для консультации
@@ -2704,6 +2730,7 @@ $("auth-form").addEventListener("submit", async (e) => {
       IS_PREMIUM = !!me.premium;
       PREMIUM_UNTIL = me.premium_until;
       HAS_CONSULT = !!me.consultation;
+      REPORT_CREDITS = me.report_credits || 0;
       refreshPremiumBtn();
     } catch (e) {}
   } catch (ex) {
@@ -2723,6 +2750,7 @@ $("logout-btn").addEventListener("click", async () => {
   IS_PREMIUM = false;
   PREMIUM_UNTIL = null;
   HAS_CONSULT = false;
+  REPORT_CREDITS = 0;
   refreshPremiumBtn();
   updateAuthUI(null);
 });
@@ -2730,12 +2758,21 @@ $("logout-btn").addEventListener("click", async () => {
 // --- Кабинет ---
 $("cabinet-btn").addEventListener("click", () => {
   $("cabinet-modal").classList.remove("hidden");
+  cabinetTab("profile"); // всегда открываем на «Профиле»
   loadCabinet();
 });
 $("cabinet-close").addEventListener("click", () => $("cabinet-modal").classList.add("hidden"));
 $("cabinet-modal").addEventListener("click", (e) => {
   if (e.target.id === "cabinet-modal") $("cabinet-modal").classList.add("hidden");
 });
+// Вкладки кабинета: показываем одну панель за раз.
+function cabinetTab(name) {
+  document.querySelectorAll(".cab-tab").forEach((tb) => tb.classList.toggle("active", tb.dataset.cab === name));
+  ["profile", "people", "history", "payments"].forEach((p) =>
+    $("cab-panel-" + p).classList.toggle("hidden", p !== name));
+}
+document.querySelectorAll(".cab-tab").forEach((tb) =>
+  tb.addEventListener("click", () => cabinetTab(tb.dataset.cab)));
 
 async function loadCabinet() {
   try {
@@ -2750,6 +2787,19 @@ async function loadCabinet() {
     const profiles = profR.ok ? await profR.json() : [];
     const history = histR.ok ? await histR.json() : [];
     const pays = payR.ok ? (await payR.json()).items : [];
+
+    // Шапка кабинета: имя + статус-бейджи
+    $("cab-head-name").textContent = me.username;
+    const badges = [];
+    if (me.premium && me.premium_until) {
+      badges.push(`<span class="cab-badge cab-badge-prem">${t("cab_badge_premium").replace("{d}", formatDate(new Date(me.premium_until * 1000).toISOString().slice(0, 10)))}</span>`);
+    } else {
+      badges.push(`<span class="cab-badge cab-badge-free">${t("cab_badge_free")}</span>`);
+    }
+    if (me.report_credits > 0) {
+      badges.push(`<span class="cab-badge cab-badge-report">${t("cab_badge_reports").replace("{n}", me.report_credits)}</span>`);
+    }
+    $("cab-badges").innerHTML = badges.join("");
 
     // Профиль: логин, почта (привязка/смена), смена пароля — кнопкой 🔑 в шапке
     const emailLine = me.email
@@ -3237,6 +3287,7 @@ function escapeHtml(s) {
     IS_PREMIUM = !!me.premium;
     PREMIUM_UNTIL = me.premium_until;
     HAS_CONSULT = !!me.consultation;
+    REPORT_CREDITS = me.report_credits || 0;
     updateAuthUI(me.username, me.is_admin);
     refreshPremiumBtn();
     await loadProfiles();
