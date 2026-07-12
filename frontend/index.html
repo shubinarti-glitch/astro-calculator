@@ -733,7 +733,20 @@
 
   <button id="scroll-top" class="scroll-top hidden" aria-label="Наверх" data-i18n-title="scroll_top_title" title="Наверх">↑</button>
 
-  <script src="/js/i18n.js?v=14"></script>
-  <script src="/js/app.js?v=14"></script>
+  <button id="support-btn" class="support-btn" aria-label="Написать в поддержку" data-i18n-title="support_title" title="Написать в поддержку">💬</button>
+  <div id="support-panel" class="support-panel hidden">
+    <div class="support-head">
+      <span data-i18n="support_head">Написать в поддержку</span>
+      <button id="support-close" class="support-close" aria-label="Закрыть">×</button>
+    </div>
+    <p class="support-hint" data-i18n="support_hint">Опишите вопрос — ответим на вашу почту.</p>
+    <input type="email" id="support-email" data-i18n-ph="support_email_ph" placeholder="Ваша почта для ответа" />
+    <textarea id="support-message" rows="4" data-i18n-ph="support_msg_ph" placeholder="Ваше сообщение…"></textarea>
+    <button id="support-send" class="btn-primary" data-i18n="support_send">Отправить</button>
+    <p id="support-status" class="support-status hidden"></p>
+  </div>
+
+  <script src="/js/i18n.js?v=15"></script>
+  <script src="/js/app.js?v=15"></script>
 </body>
 </html>

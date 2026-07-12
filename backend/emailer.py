@@ -35,15 +35,25 @@ def is_configured() -> bool:
     return CONFIG_PATH.exists()
 
 
-def send(to: str, subject: str, body: str, html: str | None = None) -> None:
+def send(to: str, subject: str, body: str, html: str | None = None, reply_to: str | None = None) -> None:
     cfg = _config()
     msg = EmailMessage()
     msg["From"] = cfg.get("from") or cfg["user"]
     msg["To"] = to
     msg["Subject"] = subject
+    if reply_to:
+        msg["Reply-To"] = reply_to  # ответить пользователю — прямо из почты
     msg.set_content(body)  # текстовый вариант — фолбэк для клиентов без HTML
     if html:
         msg.add_alternative(html, subtype="html")
+
+
+def support_to() -> str:
+    """Куда слать обращения из формы поддержки (data/smtp.json → support_to)."""
+    try:
+        return _config().get("support_to") or "astrosmap@gmail.com"
+    except NotConfiguredError:
+        return "astrosmap@gmail.com"
     port = int(cfg.get("port", 465))
     if cfg.get("ssl", True):
         with smtplib.SMTP_SSL(cfg["host"], port, context=ssl.create_default_context(), timeout=15) as s:
@@ -126,6 +136,20 @@ def _digest_html(person: str, events: list[dict], empty_note: str, unsub_link: s
 </td></tr>
 </table>
 </body></html>"""
+
+
+def support_letter(name: str, email: str, message: str, user_id: int | None) -> tuple[str, str]:
+    """Письмо оператору с обращением из формы поддержки на сайте."""
+    who = name.strip() if name else "аноним"
+    contact = email.strip() if email else "почта не указана"
+    acc = f"аккаунт #{user_id}" if user_id else "без входа"
+    subject = f"Поддержка astrosmap.ru — {who}"
+    body = (f"Новое сообщение из формы поддержки на сайте.\n\n"
+            f"От: {who} ({contact}, {acc})\n\n"
+            f"Сообщение:\n{message}\n\n"
+            "———\n"
+            "Ответить можно прямо на это письмо (Reply-To — почта пользователя, если он её указал).")
+    return subject, body
 
 
 def reset_letter(link: str, lang: str = "ru") -> tuple[str, str]:

@@ -105,6 +105,40 @@ $("theme-switch").addEventListener("click", (e) => {
   onScroll();
 })();
 
+// ---------- Чат поддержки (сообщение уходит оператору на почту) ----------
+(function supportWidget() {
+  const btn = $("support-btn"), panel = $("support-panel");
+  if (!btn || !panel) return;
+  btn.addEventListener("click", () => {
+    panel.classList.toggle("hidden");
+    if (!panel.classList.contains("hidden")) $("support-message").focus();
+  });
+  $("support-close").addEventListener("click", () => panel.classList.add("hidden"));
+  $("support-send").addEventListener("click", async () => {
+    const message = $("support-message").value.trim();
+    const email = $("support-email").value.trim();
+    const status = $("support-status");
+    if (!message) { showSupportStatus(status, t("support_empty"), false); return; }
+    $("support-send").disabled = true;
+    showSupportStatus(status, t("support_sending"), true);
+    try {
+      await postJSON("/api/support", { message, email });
+      $("support-message").value = "";
+      showSupportStatus(status, t("support_ok"), true);
+    } catch (ex) {
+      showSupportStatus(status, ex.message || t("support_err"), false);
+    } finally {
+      $("support-send").disabled = false;
+    }
+  });
+})();
+function showSupportStatus(el, text, ok) {
+  el.textContent = text;
+  el.classList.remove("hidden");
+  el.classList.toggle("support-ok", ok);
+  el.classList.toggle("support-err", !ok);
+}
+
 // Справочник архетипов знаков — ленивая загрузка при раскрытии
 $("archetypes-details").addEventListener("toggle", async function () {
   if (!this.open || this._loaded) return;

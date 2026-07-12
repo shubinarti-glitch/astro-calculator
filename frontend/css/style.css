@@ -119,6 +119,49 @@ html[data-theme="light"] .sun-rays { display: block; }
 .scroll-top:hover { opacity: 1; transform: translateY(-2px); }
 .scroll-top.hidden { display: none; }
 
+/* Чат поддержки */
+.support-btn {
+  position: fixed;
+  left: 22px; bottom: 22px;
+  z-index: 40;
+  width: 52px; height: 52px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--accent-2);
+  border: none; border-radius: 50%;
+  font-size: 24px; line-height: 1; cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s;
+}
+.support-btn:hover { transform: translateY(-2px) scale(1.05); }
+.support-panel {
+  position: fixed;
+  left: 22px; bottom: 84px;
+  z-index: 41;
+  width: 320px; max-width: calc(100vw - 44px);
+  padding: 16px;
+  background: var(--menu-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.support-panel.hidden { display: none; }
+.support-head { display: flex; align-items: center; justify-content: space-between;
+  font-family: "Cormorant Garamond", serif; font-size: 19px; color: var(--accent); }
+.support-close { border: none; background: transparent; color: var(--text-dim);
+  font-size: 22px; line-height: 1; cursor: pointer; }
+.support-hint { font-size: 12.5px; color: var(--text-dim); line-height: 1.4; }
+.support-panel input, .support-panel textarea {
+  width: 100%; padding: 10px 12px;
+  background: var(--inset); border: 1px solid var(--panel-border);
+  border-radius: 10px; color: var(--text); font-family: inherit; font-size: 13.5px;
+  resize: vertical;
+}
+.support-status { font-size: 12.5px; }
+.support-status.hidden { display: none; }
+.support-ok { color: var(--good); }
+.support-err { color: var(--bad); }
+
 .site-header, .layout, .site-footer { position: relative; z-index: 1; }
 
 .site-header {

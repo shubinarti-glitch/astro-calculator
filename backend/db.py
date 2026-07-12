@@ -163,6 +163,17 @@ def init_db() -> None:
                 created_at TEXT NOT NULL
             )"""
         )
+        # Сообщения в поддержку: страховка на случай сбоя SMTP (основной канал — почта).
+        c.execute(
+            """CREATE TABLE IF NOT EXISTS support_messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                name TEXT,
+                email TEXT,
+                message TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            )"""
+        )
 
 
 # --------------------------------------------------------------------------- #
@@ -643,6 +654,16 @@ def list_all_users() -> list[dict]:
          "premium_until": r["premium_until"] if r["premium_until"] and r["premium_until"] > now else None}
         for r in rows
     ]
+
+
+def add_support_message(user_id: Optional[int], name: str, email: str, message: str) -> int:
+    """Сохранить обращение в поддержку (страховка к почте). Возвращает id записи."""
+    with get_conn() as c:
+        cur = c.execute(
+            "INSERT INTO support_messages (user_id, name, email, message, created_at) VALUES (?,?,?,?,?)",
+            (user_id, name or None, email or None, message, datetime.now(timezone.utc).isoformat()),
+        )
+        return cur.lastrowid
 
 
 def admin_set_premium(user_id: int, days: int) -> bool:

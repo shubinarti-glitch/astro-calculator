@@ -715,6 +715,50 @@ def api_set_notify(body: NotifyIn, uid: int = Depends(current_user_id)):
     return {"ok": True}
 
 
+class SupportIn(BaseModel):
+    message: str = Field(..., min_length=1, max_length=4000)
+    email: str = Field("", max_length=200)
+    name: str = Field("", max_length=120)
+
+    @field_validator("message", "email", "name")
+    @classmethod
+    def _strip_markup(cls, v: str) -> str:
+        # Текст уходит в письмо и в БД (позже, возможно, в админку) — вырезаем разметку.
+        if isinstance(v, str):
+            return v.replace("<", "").replace(">", "").replace("&", "").strip()
+        return v
+
+
+@app.post("/api/support")
+def api_support(body: SupportIn, request: Request, authorization: Optional[str] = Header(None)):
+    """Обращение из формы поддержки: сохраняем в БД (страховка) и шлём оператору на почту."""
+    ip = _client_ip(request)
+    if _rate_limited(f"support:{ip}", max_n=5, window=3600):
+        raise HTTPException(status_code=429, detail="Слишком много сообщений. Попробуйте позже.")
+    # Опциональный вход: если есть валидный токен — подставим аккаунт и почту.
+    uid = None
+    email = body.email
+    if authorization and authorization.lower().startswith("bearer "):
+        uid = db.verify_token(authorization.split(" ", 1)[1].strip())
+        if uid and not email:
+            user = db.get_user_by_id(uid)
+            if user and user["email"]:
+                email = user["email"]
+    message = body.message
+    if not message:
+        raise HTTPException(status_code=400, detail="Пустое сообщение")
+    name = body.name
+    db.add_support_message(uid, name, email, message)  # сохраняем всегда — не потерять
+    if emailer.is_configured():
+        subject, text = emailer.support_letter(name, email, message, uid)
+        try:
+            emailer.send(emailer.support_to(), subject, text, reply_to=email or None)
+        except Exception:
+            logger.exception("Не удалось отправить письмо поддержки")
+    _rate_record(f"support:{ip}")
+    return {"ok": True}
+
+
 @app.get("/api/unsubscribe")
 def api_unsubscribe(token: str = Query("", max_length=100)):
     """Отписка по ссылке из письма — без входа. Всегда отвечаем страницей-подтверждением."""
