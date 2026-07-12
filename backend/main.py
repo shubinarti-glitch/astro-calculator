@@ -812,7 +812,7 @@ def api_transit(req: TransitRequest):
 
 
 @app.post("/api/return")
-def api_return(req: ReturnRequest):
+def api_return(req: ReturnRequest, uid: int = Depends(require_premium)):
     try:
         return astrology.return_report(
             natal_params=req.natal.model_dump(),

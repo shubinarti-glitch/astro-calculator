@@ -1765,4 +1765,10 @@ html[data-theme="light"] .adm-tab.active { background: rgba(139,123,216,0.14); }
 }
 .premium-status { margin: 10px 0; padding: 10px 14px; border-radius: 8px;
   background: rgba(232, 198, 111, .12); color: var(--accent, #e8c66f); }
-.auth-btn.premium-on { color: #e8c66f; border-color: rgba(232, 198, 111, .5); }
+.auth-btn.premium-on {
+  color: var(--accent);
+  background: rgba(201, 168, 106, 0.14);
+  border: 1.5px solid var(--accent);
+  font-weight: 700;
+}
+.auth-btn.premium-on:hover { background: rgba(201, 168, 106, 0.24); }
