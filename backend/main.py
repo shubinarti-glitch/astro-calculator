@@ -337,7 +337,8 @@ def api_verify_email(req: EmailToken):
     if uid is None:
         raise HTTPException(status_code=400, detail="Ссылка недействительна или устарела")
     db.mark_email_verified(uid)
-    return {"ok": True}
+    gift = db.grant_welcome_report(uid)  # лид-магнит: 1 бесплатный PDF за подтверждение почты
+    return {"ok": True, "report_gift": gift}
 
 
 class ForgotRequest(BaseModel):

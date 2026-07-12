@@ -70,6 +70,8 @@ def init_db() -> None:
             c.execute("ALTER TABLE users ADD COLUMN unsub_token TEXT")  # стабильный токен отписки
         if "report_credits" not in cols:
             c.execute("ALTER TABLE users ADD COLUMN report_credits INTEGER NOT NULL DEFAULT 0")  # разовые PDF-отчёты
+        if "welcome_report_granted" not in cols:
+            c.execute("ALTER TABLE users ADD COLUMN welcome_report_granted INTEGER NOT NULL DEFAULT 0")  # лид-магнит: 1 бесплатный PDF выдан
         c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(email) WHERE email IS NOT NULL")
         c.execute(
             """CREATE TABLE IF NOT EXISTS profiles (
@@ -305,6 +307,17 @@ def set_user_email(user_id: int, email: str) -> bool:
 def mark_email_verified(user_id: int) -> None:
     with get_conn() as c:
         c.execute("UPDATE users SET email_verified = 1 WHERE id = ?", (user_id,))
+
+
+def grant_welcome_report(user_id: int) -> bool:
+    """Лид-магнит: 1 бесплатный PDF за подтверждение почты. Однократно — возвращает True, если начислили."""
+    with get_conn() as c:
+        cur = c.execute(
+            "UPDATE users SET report_credits = report_credits + 1, welcome_report_granted = 1 "
+            "WHERE id = ? AND welcome_report_granted = 0",
+            (user_id,),
+        )
+        return cur.rowcount > 0
 
 
 def set_password(user_id: int, new_password: str) -> None:

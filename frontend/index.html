@@ -73,6 +73,7 @@
           <input type="password" id="auth-password" autocomplete="current-password" />
         </label>
         <a href="#" id="auth-forgot" class="auth-forgot" data-i18n="forgot_link">Забыли пароль?</a>
+        <p class="register-gift hidden" id="register-gift" data-i18n="register_gift">🎁 Подтвердите почту после регистрации — и первый PDF-отчёт будет бесплатным.</p>
         <div class="consent-row hidden" id="consent-row">
           <label class="consent-item">
             <input type="checkbox" id="terms-check" />
@@ -681,6 +682,8 @@
           </div>
           <button id="teaser-register" class="btn-primary" data-i18n="teaser_cta">Зарегистрироваться бесплатно</button>
         </div>
+
+        <div id="locked-preview" class="locked-preview hidden"></div>
       </div>
     </section>
   </main>
@@ -746,7 +749,7 @@
     <p id="support-status" class="support-status hidden"></p>
   </div>
 
-  <script src="/js/i18n.js?v=17"></script>
-  <script src="/js/app.js?v=17"></script>
+  <script src="/js/i18n.js?v=18"></script>
+  <script src="/js/app.js?v=18"></script>
 </body>
 </html>

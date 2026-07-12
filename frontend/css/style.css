@@ -1065,6 +1065,50 @@ tr:hover td { background: rgba(139,123,216,0.06); }
 
 .section-note { font-size: 12px; color: var(--text-dim); margin-bottom: 10px; }
 
+/* Подарок за регистрацию — заманка в форме регистрации */
+.register-gift {
+  font-size: 12.5px; line-height: 1.45;
+  color: var(--accent);
+  background: rgba(201, 168, 106, 0.10);
+  border: 1px solid rgba(201, 168, 106, 0.3);
+  border-radius: 10px; padding: 9px 12px;
+}
+.register-gift.hidden { display: none; }
+
+/* Размытое превью платного раздела (пейволл) */
+.locked-preview { position: relative; margin-top: 20px; min-height: 340px; }
+.locked-preview.hidden { display: none; }
+.lp-mock { filter: blur(7px); opacity: 0.5; pointer-events: none; user-select: none; padding: 4px; }
+.lp-mock-summary {
+  height: 90px; border-radius: 14px; margin-bottom: 16px;
+  background: linear-gradient(100deg, rgba(139,123,216,0.28), rgba(201,168,106,0.20));
+}
+.lp-mock-rows { display: flex; flex-direction: column; gap: 12px; }
+.lp-mock-row { display: flex; gap: 12px; }
+.lp-mock-row span {
+  height: 34px; border-radius: 8px; background: var(--inset);
+  border: 1px solid var(--panel-border);
+}
+.lp-mock-row span:nth-child(1) { flex: 2; }
+.lp-mock-row span:nth-child(2) { flex: 3; }
+.lp-mock-row span:nth-child(3) { flex: 1; }
+.lp-card {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 24px;
+  gap: 6px;
+}
+.lp-card::before {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, var(--bg) 30%, transparent 90%);
+  z-index: -1;
+}
+.lp-lock { font-size: 38px; margin-bottom: 4px; }
+.lp-card h3 { font-family: "Cormorant Garamond", serif; font-size: 24px; color: var(--accent); }
+.lp-card > p { font-size: 13.5px; color: var(--text-dim); max-width: 420px; line-height: 1.5; margin-bottom: 8px; }
+.lp-card .premium-benefits { text-align: left; margin-bottom: 14px; }
+.lp-card .btn-primary { max-width: 320px; }
+
 /* Тизер платных разделов для гостей */
 .guest-teaser {
   margin-top: 26px;
