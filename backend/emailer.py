@@ -53,9 +53,9 @@ def support_to() -> str:
     По умолчанию — +support-алиас: тот же ящик, но адрес ≠ отправителя, поэтому
     Gmail кладёт письмо во «Входящие» (self-письма он прячет в «Отправленные»)."""
     try:
-        return _config().get("support_to") or "astrosmap+support@gmail.com"
+        return _config().get("support_to") or "astrosmap@yandex.ru"
     except NotConfiguredError:
-        return "astrosmap+support@gmail.com"
+        return "astrosmap@yandex.ru"
     port = int(cfg.get("port", 465))
     if cfg.get("ssl", True):
         with smtplib.SMTP_SSL(cfg["host"], port, context=ssl.create_default_context(), timeout=15) as s:

@@ -309,7 +309,7 @@ const I18N = {
     footer_terms: "Пользовательское соглашение",
     footer_offer: "Публичная оферта",
     footer_source: "Исходный код (AGPL-3.0)",
-    footer_disclaimer: "Сервис носит информационно-развлекательный характер, не гарантирует достоверность прогнозов и не заменяет консультацию специалиста. Оператор — Шубин Артём Иванович, самозанятый (НПД), ИНН 245010711934, e-mail: astrosmap@gmail.com.",
+    footer_disclaimer: "Сервис носит информационно-развлекательный характер, не гарантирует достоверность прогнозов и не заменяет консультацию специалиста. Оператор — Шубин Артём Иванович, самозанятый (НПД), ИНН 245010711934, e-mail: astrosmap@yandex.ru.",
     house_word: "дом",
     read_more: "Подробнее ▾",
     orb: "орб",
@@ -693,7 +693,7 @@ const I18N = {
     // Юр-документы: Политика ПДн
     privacy_title: "Политика обработки персональных данных",
     privacy_p_intro: "Настоящая Политика разработана в соответствии с Федеральным законом от 27.07.2006 № 152-ФЗ «О персональных данных» и определяет порядок обработки данных пользователей сервиса «Project Artemisa», размещённого по адресу astrosmap.ru (далее — Сервис).",
-    privacy_p_operator: "<strong>Оператор.</strong> Обработку персональных данных осуществляет Шубин Артём Иванович, применяющий специальный налоговый режим «Налог на профессиональный доход» (самозанятый), ИНН 245010711934. Адрес для запросов по вопросам обработки персональных данных (удаление, отзыв согласия): astrosmap@gmail.com.",
+    privacy_p_operator: "<strong>Оператор.</strong> Обработку персональных данных осуществляет Шубин Артём Иванович, применяющий специальный налоговый режим «Налог на профессиональный доход» (самозанятый), ИНН 245010711934. Адрес для запросов по вопросам обработки персональных данных (удаление, отзыв согласия): astrosmap@yandex.ru.",
     privacy_p1: "<strong>1. Какие данные обрабатываются.</strong> Имя пользователя и пароль (в зашифрованном виде); вводимые вами данные рождения (дата, время, место/координаты) и названия сохранённых карт. Сервис не запрашивает паспортных данных и не получает данных банковских карт: оплата выполняется на стороне платёжного сервиса ЮKassa.",
     privacy_p2: "<strong>2. Цель обработки.</strong> Регистрация и вход в личный кабинет, выполнение астрологических расчётов и сохранение ваших карт для повторного доступа.",
     privacy_p3: "<strong>3. Правовое основание.</strong> Согласие субъекта персональных данных, выражаемое путём отметки соответствующего поля при регистрации.",
@@ -718,7 +718,7 @@ const I18N = {
 
     // Публичная оферта
     offer_title: "Публичная оферта",
-    offer_intro: "Настоящая Публичная оферта (далее — Оферта) является предложением Шубина Артёма Ивановича, применяющего специальный налоговый режим «Налог на профессиональный доход» (самозанятый), ИНН 245010711934, e-mail: astrosmap@gmail.com (далее — Исполнитель), заключить договор возмездного оказания услуг с любым лицом, оплатившим услуги на сервисе «Project Artemisa», размещённом по адресу astrosmap.ru (далее — Сервис). Оплата услуги означает полное принятие условий Оферты (акцепт).",
+    offer_intro: "Настоящая Публичная оферта (далее — Оферта) является предложением Шубина Артёма Ивановича, применяющего специальный налоговый режим «Налог на профессиональный доход» (самозанятый), ИНН 245010711934, e-mail: astrosmap@yandex.ru (далее — Исполнитель), заключить договор возмездного оказания услуг с любым лицом, оплатившим услуги на сервисе «Project Artemisa», размещённом по адресу astrosmap.ru (далее — Сервис). Оплата услуги означает полное принятие условий Оферты (акцепт).",
     offer_p1: "<strong>1. Услуги и тарифы.</strong> Подписка «Премиум» — расширенный доступ к функциям Сервиса (глубокий отчёт, ректификация, синастрия, прогнозы, PDF-экспорт): месяц — 299 ₽, год — 1990 ₽. Подписка «Премиум+» — подписка и одна консультация астролога: месяц — 1799 ₽, год — 3490 ₽. Консультация астролога без подписки — 3500 ₽.",
     offer_p2: "<strong>2. Порядок оплаты.</strong> Оплата производится через платёжный сервис ЮKassa банковской картой или иными доступными способами. Данные карты обрабатываются ЮKassa; Исполнитель их не получает. Подписка активируется автоматически сразу после подтверждения оплаты и действует указанный в тарифе срок. Автоматическое продление подписки не применяется: по окончании срока списаний не происходит, продление — только новой оплатой по желанию пользователя.",
     offer_p3: "<strong>3. Консультация астролога.</strong> После оплаты тарифа с консультацией Исполнитель связывается с пользователем в Telegram (кнопка связи появляется в Сервисе после оплаты) в течение 3 (трёх) рабочих дней для согласования времени. Консультация — личный разбор натальной карты длительностью до 60 минут, в формате видеосвязи либо ином удобном пользователю формате (переписка, голосовая беседа) по согласованию сторон. Для консультации пользователь предоставляет данные рождения.",
@@ -1025,7 +1025,7 @@ const I18N = {
     footer_terms: "Terms of Use",
     footer_offer: "Public Offer",
     footer_source: "Source code (AGPL-3.0)",
-    footer_disclaimer: "The service is for informational and entertainment purposes, does not guarantee the accuracy of forecasts and does not replace professional advice. Operator — Artyom I. Shubin, self-employed (NPD), TIN 245010711934, e-mail: astrosmap@gmail.com.",
+    footer_disclaimer: "The service is for informational and entertainment purposes, does not guarantee the accuracy of forecasts and does not replace professional advice. Operator — Artyom I. Shubin, self-employed (NPD), TIN 245010711934, e-mail: astrosmap@yandex.ru.",
     house_word: "house",
     read_more: "Read more ▾",
     orb: "orb",
@@ -1410,7 +1410,7 @@ const I18N = {
     // Legal: Privacy Policy
     privacy_title: "Personal Data Processing Policy",
     privacy_p_intro: "This Policy is drawn up in accordance with Federal Law No. 152-FZ of 27 July 2006 “On Personal Data” and defines how the data of users of the “Project Artemisa” service at astrosmap.ru (the “Service”) are processed.",
-    privacy_p_operator: "<strong>Operator.</strong> Personal data are processed by Artyom Ivanovich Shubin, applying the special “Professional Income Tax” regime (self-employed), TIN 245010711934. Address for requests regarding data processing (deletion, withdrawal of consent): astrosmap@gmail.com.",
+    privacy_p_operator: "<strong>Operator.</strong> Personal data are processed by Artyom Ivanovich Shubin, applying the special “Professional Income Tax” regime (self-employed), TIN 245010711934. Address for requests regarding data processing (deletion, withdrawal of consent): astrosmap@yandex.ru.",
     privacy_p1: "<strong>1. What data are processed.</strong> Your username and password (in encrypted form); the birth data you enter (date, time, place/coordinates) and the names of your saved charts. The Service does not request passport data and does not receive bank card data: payments are handled by the YooKassa payment service.",
     privacy_p2: "<strong>2. Purpose of processing.</strong> Registration and sign-in to your personal account, performing astrological calculations and saving your charts for repeated access.",
     privacy_p3: "<strong>3. Legal basis.</strong> The consent of the personal-data subject, given by checking the corresponding box at registration.",
@@ -1434,7 +1434,7 @@ const I18N = {
     terms_disclaimer: 'Paid features (the Premium subscription, consultations) are provided under the <a href="#" id="terms-offer-link">Public Offer</a> published on the Service.',
 
     offer_title: "Public Offer",
-    offer_intro: "This Public Offer (the “Offer”) is a proposal by Artem I. Shubin, self-employed under the Russian “Professional Income Tax” regime, TIN 245010711934, e-mail: astrosmap@gmail.com (the “Provider”), to conclude a paid-services agreement with any person who pays for services on the “Project Artemisa” service at astrosmap.ru (the “Service”). Payment constitutes full acceptance of the Offer.",
+    offer_intro: "This Public Offer (the “Offer”) is a proposal by Artem I. Shubin, self-employed under the Russian “Professional Income Tax” regime, TIN 245010711934, e-mail: astrosmap@yandex.ru (the “Provider”), to conclude a paid-services agreement with any person who pays for services on the “Project Artemisa” service at astrosmap.ru (the “Service”). Payment constitutes full acceptance of the Offer.",
     offer_p1: "<strong>1. Services and plans.</strong> The Premium subscription — extended access to Service features (in-depth report, rectification, synastry, forecasts, PDF export): 299 ₽/month, 1990 ₽/year. Premium+ — subscription plus one astrologer consultation: 1799 ₽/month, 3490 ₽/year. Consultation without a subscription — 3500 ₽.",
     offer_p2: "<strong>2. Payment.</strong> Payments are processed by YooKassa using a bank card or other available methods. Card data are handled by YooKassa; the Provider does not receive them. The subscription activates automatically upon payment confirmation and lasts for the plan period. There is no automatic renewal: no charges occur after expiry; renewal requires a new payment made by the user.",
     offer_p3: "<strong>3. Astrologer consultation.</strong> After paying for a plan that includes a consultation, the Provider contacts the user via Telegram (a contact button appears in the Service after payment) within 3 business days to arrange a time. The consultation is a personal natal chart reading of up to 60 minutes, via video call or another format convenient for the user (text or voice) as agreed. The user provides birth data for the consultation.",
