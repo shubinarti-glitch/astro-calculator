@@ -49,7 +49,7 @@ def main() -> int:
         if not db.is_premium(sub["id"]):
             skipped += 1  # дайджест — премиум-функция
             continue
-        primary = db.get_primary_profile(sub["id"])
+        primary = db.digest_profile(sub["id"])  # primary, а если не выбран — последняя карта
         if not primary:
             skipped += 1
             continue

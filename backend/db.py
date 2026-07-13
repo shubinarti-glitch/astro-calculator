@@ -478,6 +478,18 @@ def get_primary_profile(user_id: int) -> Optional[dict]:
     return {"id": r["id"], "label": r["label"], "data": json.loads(r["data"])}
 
 
+def digest_profile(user_id: int) -> Optional[dict]:
+    """Карта для дайджеста: основной человек, а если не выбран — последняя сохранённая.
+    Отдельно от get_primary_profile: «транзит дня» показывается только при явном «это я»."""
+    p = get_primary_profile(user_id)
+    if p:
+        return p
+    with get_conn() as c:
+        r = c.execute("SELECT id, label, data FROM profiles WHERE user_id = ? ORDER BY id DESC LIMIT 1",
+                      (user_id,)).fetchone()
+    return {"id": r["id"], "label": r["label"], "data": json.loads(r["data"])} if r else None
+
+
 def _ensure_unsub_token(c, user_id: int) -> str:
     row = c.execute("SELECT unsub_token FROM users WHERE id = ?", (user_id,)).fetchone()
     if row and row["unsub_token"]:
@@ -505,13 +517,15 @@ def unsubscribe_by_token(token: str) -> bool:
 
 
 def weekly_subscribers() -> list[dict]:
-    """Кому слать дайджест: включили рассылку, подтвердили почту, не забанены."""
+    """Кому слать дайджест: включили рассылку, подтвердили почту, не забанены,
+    и есть хотя бы одна сохранённая карта (primary необязателен — берём последнюю)."""
     with get_conn() as c:
         rows = c.execute(
             """SELECT id, email, unsub_token, primary_profile_id
-               FROM users
+               FROM users u
                WHERE notify_weekly = 1 AND email_verified = 1 AND is_banned = 0
-                 AND email IS NOT NULL AND primary_profile_id IS NOT NULL"""
+                 AND email IS NOT NULL
+                 AND EXISTS (SELECT 1 FROM profiles p WHERE p.user_id = u.id)"""
         ).fetchall()
     return [dict(r) for r in rows]
 

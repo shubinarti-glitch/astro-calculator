@@ -847,7 +847,7 @@ def api_progression(req: ProgressionRequest):
 
 
 @app.post("/api/calendar")
-def api_calendar(req: CalendarRequest):
+def api_calendar(req: CalendarRequest, uid: int = Depends(require_premium)):
     try:
         return astrology.transit_calendar_report(
             natal_params=req.natal.model_dump(),
@@ -865,7 +865,7 @@ def api_calendar(req: CalendarRequest):
 
 
 @app.post("/api/forecast")
-def api_forecast(req: ForecastRequest, uid: int = Depends(require_premium)):
+def api_forecast(req: ForecastRequest):
     db.record_usage("forecast")
     try:
         return astrology.forecast_report(
