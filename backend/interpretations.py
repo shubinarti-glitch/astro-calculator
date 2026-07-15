@@ -1693,82 +1693,146 @@ SIGN_ARCHETYPE = {
         "essence": ("чистая инициирующая энергия, импульс к действию и началу", "pure initiating energy, the impulse to act and to begin"),
         "light": ("смелость, решительность, честность, лидерство и умение начинать", "courage, decisiveness, honesty, leadership and the ability to start"),
         "shadow": ("вспыльчивость, эгоцентризм, нетерпеливость и неумение доводить до конца", "hot temper, egocentrism, impatience and difficulty finishing things"),
+        "detail": (
+            "Овном движет чистый глагол «действовать». Там, где другие ещё взвешивают, он уже сделал первый шаг — и в этом одновременно его дар и его беда. Внутри живёт ребёнок-первопроходец: ему нужно завоёвывать, пробовать, быть первым, встречать сопротивление и преодолевать его. Скука и ожидание для Овна мучительнее любого поражения.\n\nВ отношениях он честен до прямоты и завоёвывает открыто, но быстро остывает, когда исчезает азарт погони. В работе незаменим на старте — запустить, пробить, зажечь команду, — а рутину и доведение до финиша лучше отдать другим. Главный внутренний конфликт: энергия рвётся наружу быстрее, чем приходит терпение её направить. Взрослея, Овен учится не гасить огонь, а держать его — превращать вспышку в ровное горение, злость в смелость, «я первый» в «я поведу за собой».",
+            "Aries is driven by a single verb: to act. Where others are still weighing options, an Aries has already taken the first step — and that is both the gift and the trouble. Inside lives a pioneer-child who needs to conquer, to try, to be first, to meet resistance and overcome it; waiting and boredom are more painful to Aries than any defeat.\n\nIn love they court openly and honestly but cool quickly once the thrill of the chase is gone. At work they are invaluable at the start — to launch, to break through, to fire up a team — while routine and finishing are better left to others. The core tension: energy bursts out faster than the patience to aim it. Growing up, Aries learns not to smother the fire but to hold it — turning a flash into a steady flame, anger into courage, 'me first' into 'follow me'.",
+        ),
     },
     "Tau": {
         "archetype": ("Хранитель, Садовник", "The Keeper, the Gardener"),
         "essence": ("укоренённость в материи, чувственность и созидание устойчивости", "rootedness in matter, sensuality and the building of stability"),
         "light": ("надёжность, терпение, верность, практичность и вкус к жизни", "reliability, patience, loyalty, practicality and a taste for life"),
         "shadow": ("упрямство, инертность, собственничество и страх перемен", "stubbornness, inertia, possessiveness and fear of change"),
+        "detail": (
+            "Телец приходит в мир, чтобы обжить его телом и руками. Ему важно не абстрактное, а осязаемое: вкус, тепло, надёжность, то, что можно потрогать и чем можно спокойно владеть. Он никуда не спешит — и в этой неспешности его сила: то, что Телец строит, стоит долго, потому что построено на совесть.\n\nВ любви он верен, чувственен и основателен, дарит партнёру ощущение защищённости, но ревнует и тяжело отпускает — привязанность легко превращается в собственничество. В деле он выносливый марафонец: доведёт начатое до конца, когда остальные бросили, зато сдвинуть его с наезженной колеи почти невозможно. Его внутренний узел — страх перемен: устойчивость, которая держит, при перегибе становится тюрьмой из привычек. Зрелость Тельца — научиться разжимать ладонь: беречь ценное, но не путать обладание с любовью, а покой — с застоем.",
+            "Taurus comes into the world to inhabit it through the body and the hands. What matters is not the abstract but the tangible: taste, warmth, reliability, what can be touched and calmly owned. There is no hurry — and in that lies the strength: what Taurus builds lasts, because it is built to last.\n\nIn love they are faithful, sensual and grounding, giving a partner a sense of safety, but they are jealous and slow to let go — attachment easily hardens into possessiveness. At work they are the enduring marathoner who finishes what others abandoned, yet moving them off a worn track is nearly impossible. Their inner knot is the fear of change: the stability that steadies them can, taken too far, become a prison of habits. Maturity for Taurus is learning to unclench the hand — to keep what is precious without mistaking ownership for love, or calm for stagnation.",
+        ),
     },
     "Gem": {
         "archetype": ("Посланник, Вечный ученик", "The Messenger, the Eternal Student"),
         "essence": ("подвижный ум, любознательность и связь через слово", "a mobile mind, curiosity and connection through words"),
         "light": ("гибкость, остроумие, общительность и быстрая обучаемость", "flexibility, wit, sociability and quick learning"),
         "shadow": ("поверхностность, разбросанность, непостоянство и суетливость", "superficiality, scatteredness, inconstancy and restlessness"),
+        "detail": (
+            "Близнецы живут скоростью мысли. Мир для них — бесконечная библиотека, где хочется полистать всё сразу: новое знакомство, новую тему, новый поворот разговора. Слово — их стихия и инструмент: они связывают людей, идеи и факты, переводят сложное на понятный язык и заражают любопытством.\n\nВ отношениях им нужен собеседник прежде любовника — молчаливая скука для Близнецов страшнее ссоры. Они лёгкие и остроумные, но непостоянные: интерес вспыхивает ярко и так же быстро перескакивает дальше. В работе блестящи там, где нужны переговоры, тексты, многозадачность и быстрое переключение, а глубина и усидчивость даются с трудом. Их конфликт — распыление: тысяча начатых дел и ни одного законченного, ум, который бежит впереди чувств. Взрослея, Близнецы учатся не хвататься за всё подряд, а выбирать одно и доходить до сути — превращать эрудицию в настоящую мудрость.",
+            "Gemini lives at the speed of thought. The world is an endless library they long to leaf through all at once: a new acquaintance, a new topic, a new turn in the conversation. Words are their element and their tool — they connect people, ideas and facts, translate the complex into plain language and spread curiosity.\n\nIn relationships they need a conversationalist before a lover; silent boredom frightens a Gemini more than a quarrel. They are light and witty but inconstant — interest flares brightly and just as quickly leaps elsewhere. At work they shine wherever negotiation, writing, multitasking and quick switching are needed, while depth and persistence come hard. Their conflict is scattering: a thousand things begun and none finished, a mind that outruns the heart. Growing up, Gemini learns not to grab at everything but to choose one thing and reach its essence — turning cleverness into real wisdom.",
+        ),
     },
     "Can": {
         "archetype": ("Хранитель очага, Мать", "The Keeper of the Hearth, the Mother"),
         "essence": ("эмоциональная глубина, забота и потребность в принадлежности", "emotional depth, care and the need to belong"),
         "light": ("чуткость, преданность, интуиция и умение создавать тепло", "sensitivity, devotion, intuition and the ability to create warmth"),
         "shadow": ("обидчивость, тревожность, цепляние за прошлое и манипуляции чувствами", "touchiness, anxiety, clinging to the past and manipulation through feelings"),
+        "detail": (
+            "Рак чувствует мир кожей. Там, где другие рассуждают, он ощущает — настроение в комнате, невысказанную боль близкого, то, что «что-то не так». Его дом, его люди, его память — вот подлинная территория Рака; он создаёт тепло и принадлежность, без которых сам вянет.\n\nВ любви он преданный и заботливый, окутывает вниманием, но и уязвим: обиду носит долго, а страх быть покинутым толкает то к цеплянию, то к манипуляции чувством вины. В работе силён там, где нужно заботиться, удерживать атмосферу, чувствовать людей, — но тонкую кожу приходится защищать от грубости среды. Его внутренний узел — прошлое: память, что питает, легко превращается в якорь, не пускающий вперёд. Зрелость Рака — научиться заботиться, не растворяясь, и отпускать прожитое, оставляя себе тепло, а не рану.",
+            "Cancer feels the world through the skin. Where others reason, a Cancer senses — the mood in a room, a loved one's unspoken pain, the feeling that 'something is off'. Home, their people, their memory — this is Cancer's true territory; they create the warmth and belonging without which they themselves wilt.\n\nIn love they are devoted and caring, wrapping others in attention, but also vulnerable: they hold a hurt for a long time, and the fear of being abandoned pushes them now to cling, now to guilt-driven manipulation. At work they are strong wherever caring, holding the atmosphere and sensing people matter, though that thin skin needs shielding from a rough environment. Their inner knot is the past: the memory that nourishes can turn into an anchor that will not let them move on. Maturity for Cancer is learning to care without dissolving, and to release what has already been lived, keeping the warmth rather than the wound.",
+        ),
     },
     "Leo": {
         "archetype": ("Король, Творец", "The King, the Creator"),
         "essence": ("творческая воля к самовыражению и сиянию", "the creative will to self-expression and to shine"),
         "light": ("великодушие, харизма, верность, щедрость и достоинство", "magnanimity, charisma, loyalty, generosity and dignity"),
         "shadow": ("гордыня, тщеславие, потребность в постоянном восхищении и драматизация", "pride, vanity, the need for constant admiration and drama"),
+        "detail": (
+            "Лев рождён светить. В нём живёт врождённое достоинство и потребность выразить себя — через творчество, любовь, игру, щедрый жест. Зрители нужны ему не из тщеславия, а потому что радость Льва настоящая только тогда, когда её с кем-то делят. Он согревает, вдохновляет и ведёт за собой теплом, а не приказом.\n\nВ любви он щедр, верен и театрален, любит красиво и крупно, но требует восхищения и тяжело переносит равнодушие. В работе — прирождённый лидер и вдохновитель там, где нужно зажечь и повести, но его подводит гордость и неумение признавать ошибки. Главный конфликт — самооценка, зависящая от аплодисментов: за царственной уверенностью часто прячется ребёнок, которому нужно, чтобы его любили. Зрелость Льва — научиться светить не ради оваций, а потому что это его природа, и находить величие в великодушии, а не в превосходстве.",
+            "Leo is born to shine. There is an innate dignity and a need for self-expression — through creativity, love, play, a generous gesture. Leo needs an audience not out of vanity but because their joy is only real when shared; they warm and inspire and lead by warmth rather than command.\n\nIn love they are generous, loyal and theatrical, loving large and beautifully, but they crave admiration and take indifference hard. At work they are a born leader and motivator, wherever it takes fire to get people moving, though pride and difficulty admitting mistakes trip them up. The core conflict is self-worth that hangs on applause: behind the regal confidence often hides a child who needs to be loved. Maturity for Leo is learning to shine not for the ovation but because it is their nature, and to find greatness in generosity rather than superiority.",
+        ),
     },
     "Vir": {
         "archetype": ("Мастер, Целитель", "The Craftsman, the Healer"),
         "essence": ("стремление к совершенству, порядку и служению", "the striving for perfection, order and service"),
         "light": ("трудолюбие, внимательность, скромность и реальная польза", "diligence, attentiveness, modesty and real usefulness"),
         "shadow": ("придирчивость, тревога, самокритика и зацикленность на мелочах", "fault-finding, anxiety, self-criticism and fixation on trifles"),
+        "detail": (
+            "Дева видит то, что можно улучшить. Там, где другие довольствуются «нормально», она замечает шероховатость и хочет довести до ума — не из придирчивости, а из любви к делу, сделанному хорошо. Её стихия — польза: конкретная, ежедневная, та, что делает жизнь чище, здоровее и работоспособнее.\n\nВ отношениях Дева проявляет любовь заботой и делом, а не громкими словами: починит, подскажет, будет рядом в мелочах, — но её тепло легко спрятать за критикой. В работе незаменима там, где важны точность, анализ, порядок и внимание к деталям. Её внутренний узел — перфекционизм, обёрнутый в тревогу: планка «идеально» бьёт по ней самой сильнее, чем по другим, а мелочи заслоняют целое. Зрелость Девы — понять, что служить можно и себе, что «достаточно хорошо» тоже имеет право быть, и что настоящая забота начинается с милосердия к собственному несовершенству.",
+            "Virgo sees what can be improved. Where others settle for 'fine', a Virgo notices the rough edge and wants to set it right — not from fault-finding but from love of a thing done well. Their element is usefulness: concrete, daily, the kind that makes life cleaner, healthier and more workable.\n\nIn relationships Virgo shows love through care and deeds rather than grand words: they will fix it, advise, be there in the small things — though that warmth can hide behind criticism. At work they are indispensable wherever precision, analysis, order and attention to detail count. Their inner knot is perfectionism wrapped in anxiety: the bar of 'flawless' strikes them harder than anyone, and details eclipse the whole. Maturity for Virgo is realizing one may serve oneself too, that 'good enough' has a right to exist, and that real care begins with mercy toward one's own imperfection.",
+        ),
     },
     "Lib": {
         "archetype": ("Дипломат, Художник", "The Diplomat, the Artist"),
         "essence": ("поиск гармонии, баланса и красоты в отношениях", "the search for harmony, balance and beauty in relationships"),
         "light": ("тактичность, справедливость, обаяние и чувство меры", "tact, fairness, charm and a sense of proportion"),
         "shadow": ("нерешительность, зависимость от других, избегание конфликтов и лицемерие", "indecision, dependence on others, conflict avoidance and hypocrisy"),
+        "detail": (
+            "Весам невыносима дисгармония. Они чувствуют перекос — в отношениях, в пространстве, в справедливости — и инстинктивно тянутся выровнять, примирить, сделать красиво. Другой человек для Весов не фон, а зеркало: по-настоящему они раскрываются в паре, в диалоге, во взаимности.\n\nВ любви они обаятельны, тактичны и внимательны к партнёру, умеют слышать, но растворяются в чужих желаниях и боятся сказать «нет», чтобы не разрушить мир. В работе сильны там, где нужны переговоры, эстетика, дипломатия, умение свести разные интересы. Их конфликт — нерешительность: бесконечное взвешивание «за» и «против», за которым прячется страх столкновения и потери одобрения. Зрелость Весов — обрести собственную ось: понять, что честная граница не разрушает отношения, а делает их настоящими, и что гармония с собой важнее гладкости с каждым.",
+            "Libra cannot bear disharmony. They feel the imbalance — in a relationship, in a room, in fairness — and instinctively move to even it out, to reconcile, to make things beautiful. Another person is not background to Libra but a mirror: they truly come alive in a pair, in dialogue, in mutuality.\n\nIn love they are charming, tactful and attentive to a partner, good at listening, but they dissolve into others' wishes and fear saying 'no' lest they break the peace. At work they are strong wherever negotiation, aesthetics, diplomacy and reconciling different interests are needed. Their conflict is indecision: an endless weighing of pros and cons, behind which hide a fear of conflict and of losing approval. Maturity for Libra is finding their own axis — seeing that an honest boundary does not destroy a relationship but makes it real, and that harmony with oneself matters more than smoothness with everyone.",
+        ),
     },
     "Sco": {
         "archetype": ("Алхимик, Феникс", "The Alchemist, the Phoenix"),
         "essence": ("погружение в глубины, страсть и трансформация через кризис", "immersion into the depths, passion and transformation through crisis"),
         "light": ("проницательность, сила воли, верность и способность к перерождению", "insight, willpower, loyalty and the capacity for rebirth"),
         "shadow": ("ревность, мстительность, контроль и разрушительные крайности", "jealousy, vengefulness, control and destructive extremes"),
+        "detail": (
+            "Скорпион не выносит поверхностности. Его тянет туда, где горячо и глубоко: к правде за фасадом, к страсти, к тайнам, к тому, через что другие боятся пройти. Он живёт циклами смерти и возрождения — сгорает и восстаёт, и каждый кризис для него не катастрофа, а перерождение.\n\nВ любви он предан до самозабвения и требует такой же полной отдачи: полутонов он не признаёт, близость для него — слияние без остатка, оттого и ревность, и жажда контроля. В работе силён там, где нужны проницательность, выдержка, работа с кризисом, скрытым и запретным. Его внутренний узел — власть: сила видеть насквозь легко оборачивается манипуляцией, а боль — жаждой мести. Зрелость Скорпиона — направить свою мощь на преображение, а не на разрушение: отпускать вместо того, чтобы держать мёртвой хваткой, и превращать раны в источник глубины и сострадания.",
+            "Scorpio cannot stand the superficial. They are drawn to where it is hot and deep: to the truth behind the facade, to passion, to secrets, to what others are afraid to pass through. They live in cycles of death and rebirth — burning down and rising again, and each crisis is to them not a catastrophe but a transformation.\n\nIn love they are devoted to the point of self-abandon and demand the same total giving: they do not accept half-tones, closeness for them is a merging without remainder, hence the jealousy and the hunger for control. At work they are strong wherever insight, endurance and work with crisis, the hidden and the forbidden are needed. Their inner knot is power: the strength to see through people easily turns into manipulation, and pain into a thirst for revenge. Maturity for Scorpio is aiming that force at transformation rather than destruction — letting go instead of holding in a death-grip, and turning wounds into a source of depth and compassion.",
+        ),
     },
     "Sag": {
         "archetype": ("Странник, Философ", "The Wanderer, the Philosopher"),
         "essence": ("стремление к смыслу, свободе и расширению горизонтов", "the striving for meaning, freedom and the widening of horizons"),
         "light": ("оптимизм, щедрость, искренность и вера в будущее", "optimism, generosity, sincerity and faith in the future"),
         "shadow": ("самоуверенность, нетерпимость, безответственность и склонность поучать", "overconfidence, intolerance, irresponsibility and a tendency to lecture"),
+        "detail": (
+            "Стрельцу нужен горизонт. Его гонит вперёд жажда смысла и простора: новые страны, идеи, вера, всё, что раздвигает рамки. Он оптимист по устройству — верит, что впереди лучше, и этой верой заражает других, зовя в дорогу и вширь.\n\nВ любви он щедр, честен и лёгок, дарит партнёру ощущение полёта, но свободу ценит выше уюта и пугается клетки обязательств. В работе хорош там, где нужны размах, обучение, дальние цели, идеология, — рутина и мелкий контроль его гасят. Его конфликт — между «всё обещать» и «за всё отвечать»: широкие жесты и уверенность легко переходят в самонадеянность и склонность поучать вместо того, чтобы слушать. Зрелость Стрельца — заземлить свою правду: понять, что настоящая свобода не в бегстве от обязательств, а в верности выбранному пути, и что мудрость тише, чем проповедь.",
+            "Sagittarius needs a horizon. They are driven forward by a hunger for meaning and open space: new countries, ideas, faith, everything that widens the frame. An optimist by design, they believe the best lies ahead and infect others with that belief, calling them onto the road and outward.\n\nIn love they are generous, honest and light, giving a partner a sense of flight, but they value freedom above comfort and take fright at the cage of obligation. At work they are good wherever scope, teaching, distant goals and vision matter — routine and petty control smother them. Their conflict is between promising everything and being answerable for it: broad gestures and confidence slide easily into overconfidence and a tendency to preach instead of listen. Maturity for Sagittarius is grounding their truth — seeing that real freedom is not in fleeing obligation but in loyalty to a chosen path, and that wisdom is quieter than a sermon.",
+        ),
     },
     "Cap": {
         "archetype": ("Строитель, Мудрый старец", "The Builder, the Wise Elder"),
         "essence": ("дисциплина, ответственность и восхождение к вершине", "discipline, responsibility and the climb to the summit"),
         "light": ("целеустремлённость, надёжность, выдержка и стратегическое мышление", "determination, reliability, endurance and strategic thinking"),
         "shadow": ("жёсткость, пессимизм, холодность и подавление чувств ради цели", "rigidity, pessimism, coldness and the suppression of feelings for the goal"),
+        "detail": (
+            "Козерог мыслит вершинами и годами. Ему свойственна редкая выдержка: он готов идти долго и в гору, отказывая себе в лёгком сейчас ради весомого потом. Ответственность для него не бремя, а способ быть — он опора, на которую можно положиться, тот, кто доведёт.\n\nВ любви он сдержан и надёжен, говорит делом, а не словами, строит всерьёз и надолго, — но за бронёй самообладания прячет чувства, которые боится показать слабостью. В работе — стратег и труженик, силён там, где нужны дисциплина, структура, долгая игра и власть. Его внутренний узел — суровость: требовательность к себе оборачивается холодом и вечным «ещё не заслужил», а цель заслоняет живую жизнь. Зрелость Козерога — разрешить себе тепло и радость по дороге к вершине: понять, что он ценен не только достижениями и что позволить себе чувствовать — не слабость, а вершина повыше любой карьерной.",
+            "Capricorn thinks in summits and years. Theirs is a rare endurance: they will walk a long uphill road, denying themselves the easy now for a weighty later. Responsibility is not a burden but a way of being — they are the support you can lean on, the one who will see it through.\n\nIn love they are reserved and reliable, speaking through deeds rather than words, building seriously and for the long term — but behind the armor of self-control they hide feelings they fear to show as weakness. At work they are the strategist and the toiler, strong wherever discipline, structure, the long game and authority are needed. Their inner knot is severity: the demand they place on themselves turns into coldness and an eternal 'not earned yet', while the goal eclipses living life. Maturity for Capricorn is allowing warmth and joy along the way to the summit — seeing that they are worth more than their achievements, and that letting oneself feel is not weakness but a peak higher than any career.",
+        ),
     },
     "Aqu": {
         "archetype": ("Реформатор, Гений", "The Reformer, the Genius"),
         "essence": ("свобода, оригинальность и устремлённость в будущее", "freedom, originality and a reach toward the future"),
         "light": ("независимость, новаторство, гуманизм и широта взглядов", "independence, innovation, humanism and breadth of outlook"),
         "shadow": ("отстранённость, упрямый бунт, эмоциональная холодность и эпатаж", "detachment, stubborn rebellion, emotional coldness and provocation"),
+        "detail": (
+            "Водолей смотрит из будущего. Ему тесно в общепринятом: он видит, как могло бы быть иначе — лучше, свободнее — и не понимает, почему все держатся за старое. Он мыслит человечеством и идеями, дорожит независимостью и правом быть не как все.\n\nВ отношениях он верный друг прежде страстного любовника: ценит свободу, равенство и общность взглядов, но эмоциональная близость даётся ему труднее интеллектуальной — чувства он порой держит на расстоянии. В работе блестящ там, где нужны новизна, технологии, нестандартный взгляд, командная идея, — а иерархия и «так принято» его отталкивают. Его конфликт — между «люблю человечество» и «сложно с конкретным человеком»: за отстранённостью и бунтом ради бунта прячется страх раствориться и потерять себя. Зрелость Водолея — соединить свободу с теплом: понять, что близость не отменяет самобытности и что менять мир начинают с готовности быть по-настоящему рядом с одним живым человеком.",
+            "Aquarius looks in from the future. The conventional feels cramped to them: they see how things could be otherwise — better, freer — and cannot understand why everyone clings to the old. They think in terms of humanity and ideas, and prize independence and the right to be unlike the rest.\n\nIn relationships they are a loyal friend before a passionate lover: they value freedom, equality and shared views, but emotional closeness comes harder to them than intellectual, and feelings are sometimes kept at a distance. At work they are brilliant wherever novelty, technology, an unconventional angle and a shared idea are needed — while hierarchy and 'the way it's done' repel them. Their conflict is between 'I love humanity' and 'it's hard with an actual person': behind the detachment and rebellion-for-rebellion's-sake hides a fear of dissolving and losing themselves. Maturity for Aquarius is uniting freedom with warmth — seeing that closeness does not cancel individuality, and that changing the world begins with the willingness to be truly present with one living person.",
+        ),
     },
     "Pis": {
         "archetype": ("Мистик, Сострадающий", "The Mystic, the Compassionate One"),
         "essence": ("растворение границ, сострадание и связь с высшим", "the dissolving of boundaries, compassion and a link with the higher"),
         "light": ("чуткость, воображение, милосердие и духовная тонкость", "sensitivity, imagination, mercy and spiritual subtlety"),
         "shadow": ("уход от реальности, жертвенность, иллюзии и бегство (в т.ч. в зависимости)", "escape from reality, self-sacrifice, illusions and flight (including into addictions)"),
+        "detail": (
+            "Рыбы живут без жёстких границ. Они впитывают настроения, как вода — цвет: чувствуют чужую боль как свою, улавливают невидимое, тянутся к тому, что больше обыденности, — к искусству, состраданию, вере. В них редкая мягкость и воображение, способное видеть за краем очевидного.\n\nВ любви они самоотверженны, нежны и всё прощают, растворяются в другом до потери себя, — и оттого легко становятся спасателями или жертвами. В работе сильны там, где нужны сочувствие, творчество, интуиция, помощь, — а жёсткие рамки и грубая конкуренция их ранят. Их внутренний узел — границы: там, где нет своего «нет», реальность давит, и появляется соблазн уплыть — в мечты, идеализацию, а то и в зависимость. Зрелость Рыб — научиться сострадать, не тонув: беречь свою мягкость, но ставить берега, отличать спасение других от бегства от себя и превращать чувствительность в дар, а не в рану.",
+            "Pisces live without hard borders. They soak up moods the way water takes color: they feel another's pain as their own, catch the invisible, and reach for what is larger than the everyday — art, compassion, faith. In them is a rare softness and an imagination that sees past the edge of the obvious.\n\nIn love they are selfless, tender and endlessly forgiving, dissolving into another to the point of losing themselves — and so they easily become rescuers or victims. At work they are strong wherever empathy, creativity, intuition and helping are needed, while rigid frames and raw competition wound them. Their inner knot is boundaries: where there is no personal 'no', reality presses in and the temptation arises to swim away — into dreams, idealization, sometimes addiction. Maturity for Pisces is learning to feel with others without drowning: to guard their softness but set shores, to tell rescuing others from fleeing themselves, and to turn sensitivity into a gift rather than a wound.",
+        ),
     },
 }
 
 _ZODIAC_ORDER = ["Ari", "Tau", "Gem", "Can", "Leo", "Vir", "Lib", "Sco", "Sag", "Cap", "Aqu", "Pis"]
 
 
+# Знак -> планета, экзальтирующая в нём (инверсия _EXALT). У Близнецов/Льва/Скорпиона/Стрельца/Водолея её нет.
+_SIGN_EXALT = {v: k for k, v in _EXALT.items()}
+_PLANET_LIST = ["Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto"]
+
+
+def _planet_ref(key: str, lang: str) -> dict:
+    """Ссылка-планета для интерфейса: ключ, локализованное имя, символ."""
+    p = C.POINTS.get(key, {})
+    return {"key": key, "name": p.get(lang) or p.get("ru", key), "symbol": p.get("symbol", "")}
+
+
 def archetypes_list(lang: str = "ru") -> list[dict]:
     out = []
     for code in _ZODIAC_ORDER:
         a = SIGN_ARCHETYPE.get(code, {})
+        rulers = [_planet_ref(SIGN_RULER[code], lang)]
+        co = MODERN_CORULER.get(code)
+        if co:
+            rulers.append(_planet_ref(co, lang))
+        exalt_key = _SIGN_EXALT.get(code)
         out.append({
             "sign_ru": C.sign_name(code, lang),
             "symbol": C.sign_symbol(code),
@@ -1777,7 +1841,27 @@ def archetypes_list(lang: str = "ru") -> list[dict]:
             "essence": g(a.get("essence"), lang) if a.get("essence") else "",
             "light": g(a.get("light"), lang) if a.get("light") else "",
             "shadow": g(a.get("shadow"), lang) if a.get("shadow") else "",
+            "detail": g(a.get("detail"), lang) if a.get("detail") else "",
+            "rulers": rulers,
+            "exalt": _planet_ref(exalt_key, lang) if exalt_key else None,
         })
+    return out
+
+
+def planets_info(lang: str = "ru") -> dict:
+    """Полные описания планет для всплывающего окна: суть + функция/любовь/дело."""
+    out = {}
+    for key in _PLANET_LIST:
+        p = C.POINTS.get(key, {})
+        sph = PLANET_SPHERES.get(key, {})
+        out[key] = {
+            "name": p.get(lang) or p.get("ru", key),
+            "symbol": p.get("symbol", ""),
+            "role": planet_role(key, lang),
+            "function": g(sph.get("function"), lang) if sph.get("function") else "",
+            "love": g(sph.get("love"), lang) if sph.get("love") else "",
+            "work": g(sph.get("work"), lang) if sph.get("work") else "",
+        }
     return out
 
 

@@ -1074,6 +1074,14 @@ def api_archetypes(lang: str = "ru"):
     return interp.archetypes_list(lang)
 
 
+@app.get("/api/planets")
+def api_planets(lang: str = "ru"):
+    """Полные описания планет (для всплывающего окна в справочнике архетипов)."""
+    from . import interpretations as interp
+
+    return interp.planets_info(lang)
+
+
 @app.get("/api/meta")
 def api_meta():
     """Справочные данные для интерфейса (системы домов и т.п.)."""

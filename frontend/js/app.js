@@ -167,22 +167,31 @@ function showSupportStatus(el, text, ok) {
 }
 
 // Справочник архетипов знаков — ленивая загрузка при раскрытии
+let PLANETS = null; // карта описаний планет для всплывающего окна (грузится вместе с архетипами)
+const planetChip = (p) => `<button type="button" class="planet-link" data-planet="${p.key}">${p.symbol} ${p.name}</button>`;
 $("archetypes-details").addEventListener("toggle", async function () {
   if (!this.open || this._loaded) return;
   this._loaded = true;
   try {
-    const list = await (await fetch(`/api/archetypes?lang=${LANG}`)).json();
+    const [list, planets] = await Promise.all([
+      fetch(`/api/archetypes?lang=${LANG}`).then((r) => r.json()),
+      fetch(`/api/planets?lang=${LANG}`).then((r) => r.json()),
+    ]);
+    PLANETS = planets;
     $("archetypes-grid").innerHTML = list
-      .map(
-        (a) =>
-          `<div class="arc-card">
+      .map((a) => {
+        const rulers = `<span class="arc-ruler-lbl">${t("arc_ruler")}:</span> ${a.rulers.map(planetChip).join(", ")}`;
+        const exalt = a.exalt ? ` · <span class="arc-ruler-lbl">${t("arc_exalt")}:</span> ${planetChip(a.exalt)}` : "";
+        return `<div class="arc-card">
             <h4><span class="arc-sym">${a.symbol}</span>${a.sign_ru}</h4>
             <div class="arc-type">${a.archetype} · ${t("arc_element")}: ${a.element}</div>
+            <div class="arc-rulers">${rulers}${exalt}</div>
             <p>${a.essence}</p>
             <p><span class="arc-plus">${t("arc_light")}</span> ${a.light}</p>
             <p><span class="arc-minus">${t("arc_shadow")}</span> ${a.shadow}</p>
-          </div>`
-      )
+            ${a.detail ? `<details class="arc-detail"><summary>${t("arc_more")}</summary>${a.detail.split("\n\n").map((p) => `<p>${p}</p>`).join("")}</details>` : ""}
+          </div>`;
+      })
       .join("");
   } catch {
     this._loaded = false;
@@ -190,44 +199,101 @@ $("archetypes-details").addEventListener("toggle", async function () {
   }
 });
 
+// Всплывающее окно с полным описанием планеты (переиспользует паттерн .modal-overlay).
+function ensurePlanetModal() {
+  if ($("planet-modal")) return;
+  const ov = document.createElement("div");
+  ov.className = "modal-overlay hidden";
+  ov.id = "planet-modal";
+  ov.innerHTML =
+    `<div class="modal planet-modal">
+       <button class="modal-close" id="planet-modal-close" aria-label="${t("arc_close")}">×</button>
+       <h3 class="planet-modal-title"><span id="planet-modal-sym"></span> <span id="planet-modal-name"></span></h3>
+       <p id="planet-modal-role" class="planet-modal-role"></p>
+       <div id="planet-modal-spheres"></div>
+     </div>`;
+  document.body.appendChild(ov);
+  ov.addEventListener("click", (e) => {
+    if (e.target === ov || e.target.id === "planet-modal-close") closePlanetModal();
+  });
+}
+function closePlanetModal() {
+  const m = $("planet-modal");
+  if (m) m.classList.add("hidden");
+}
+function openPlanetModal(key) {
+  if (!PLANETS || !PLANETS[key]) return;
+  ensurePlanetModal();
+  const p = PLANETS[key];
+  $("planet-modal-sym").textContent = p.symbol;
+  $("planet-modal-name").textContent = p.name;
+  $("planet-modal-role").textContent = p.role;
+  const box = $("planet-modal-spheres");
+  box.innerHTML = "";
+  [["arc_planet_fn", p.function], ["arc_planet_love", p.love], ["arc_planet_work", p.work]].forEach(([lbl, v]) => {
+    if (!v) return;
+    const para = document.createElement("p");
+    const b = document.createElement("span");
+    b.className = "planet-sphere-lbl";
+    b.textContent = t(lbl) + " ";
+    para.appendChild(b);
+    para.appendChild(document.createTextNode(v)); // текст планеты — через textContent (без innerHTML)
+    box.appendChild(para);
+  });
+  $("planet-modal").classList.remove("hidden");
+}
+$("archetypes-grid").addEventListener("click", (e) => {
+  const btn = e.target.closest(".planet-link");
+  if (btn) openPlanetModal(btn.dataset.planet);
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closePlanetModal();
+});
+
 // Словарь терминов — короткие пояснения, двуязычный, пересобирается при смене языка.
+// Пример в определении отделяется маркером |; — вторая часть становится строкой .gloss-ex.
 const GLOSSARY = [
-  { ru: ["Асцендент (ASC)", "Восходящий знак на горизонте в момент рождения. «Маска», внешность и манера входить в мир. Очень зависит от точного времени."],
-    en: ["Ascendant (ASC)", "The sign rising on the horizon at birth. Your “mask”, appearance and way of entering the world. Highly dependent on exact birth time."] },
-  { ru: ["Середина неба (MC)", "Верхняя точка карты — карьера, статус, призвание и публичная роль."],
-    en: ["Midheaven (MC)", "The top point of the chart — career, status, vocation and public role."] },
-  { ru: ["Десцендент / Глубина неба (IC)", "DSC — партнёрство и значимые отношения; IC — дом, семья, корни."],
-    en: ["Descendant / Imum Coeli", "DSC — partnership and significant relationships; IC — home, family and roots."] },
-  { ru: ["Дом", "Сектор карты (1–12), отвечающий за сферу жизни: 1-й — личность, 7-й — отношения, 10-й — карьера и т.д."],
-    en: ["House", "A sector of the chart (1–12) governing a life area: 1st — self, 7th — relationships, 10th — career, etc."] },
-  { ru: ["Аспект", "Угол между двумя планетами. Гармоничные (трин, секстиль) дают лёгкость, напряжённые (квадрат, оппозиция) — рост через усилие."],
-    en: ["Aspect", "The angle between two planets. Harmonious (trine, sextile) bring ease; tense (square, opposition) bring growth through effort."] },
-  { ru: ["Орб", "Допустимое отклонение от точного угла аспекта. Чем меньше орб — тем сильнее аспект."],
-    en: ["Orb", "The allowed deviation from the exact aspect angle. The smaller the orb, the stronger the aspect."] },
-  { ru: ["Ретроградность (R)", "Видимое попятное движение планеты. Её энергия обращена внутрь, требует переосмысления и проработки."],
-    en: ["Retrograde (R)", "A planet's apparent backward motion. Its energy turns inward and asks for review and inner work."] },
-  { ru: ["Достоинство", "Сила планеты в знаке: обитель (в своём знаке — сильна), экзальтация (возвышена), изгнание и падение (ослаблена)."],
-    en: ["Dignity", "A planet's strength in a sign: domicile (in its own sign — strong), exaltation (exalted), detriment and fall (weakened)."] },
-  { ru: ["Стихии и кресты", "Стихии (Огонь/Земля/Воздух/Вода) — темперамент; кресты (кардинальный/фиксированный/мутабельный) — способ действия."],
-    en: ["Elements & modalities", "Elements (Fire/Earth/Air/Water) — temperament; modalities (cardinal/fixed/mutable) — the way of acting."] },
-  { ru: ["Управитель карты", "Планета, управляющая знаком Асцендента. Ключевая фигура гороскопа, задающая главный лейтмотив."],
-    en: ["Chart ruler", "The planet ruling the Ascendant sign. The key figure of the chart, setting the main motif."] },
-  { ru: ["Транзит", "Текущее положение планет относительно натальной карты. Показывает, что происходит «сейчас»."],
-    en: ["Transit", "The current position of planets relative to the natal chart. Shows what is happening “now”."] },
-  { ru: ["Прогрессии / дирекции", "Символические методы развития карты во времени (день за год жизни) — внутреннее взросление и этапы."],
-    en: ["Progressions / directions", "Symbolic methods of unfolding the chart over time (a day for a year of life) — inner maturing and life stages."] },
-  { ru: ["Синастрия", "Сравнение двух карт: межкартные аспекты показывают притяжение, поддержку и зоны напряжения в отношениях."],
-    en: ["Synastry", "Comparison of two charts: cross-aspects show attraction, support and tension zones in a relationship."] },
-  { ru: ["Карта дня/ночи (секта)", "Родились вы при Солнце над горизонтом (дневная) или под ним (ночная). Влияет на то, какие планеты «добрее»."],
-    en: ["Day/night chart (sect)", "Whether you were born with the Sun above the horizon (day) or below it (night). Affects which planets are “kinder”."] },
-  { ru: ["Жребий Фортуны", "Расчётная точка телесного благополучия, потока и удачи (по Асценденту, Солнцу и Луне)."],
-    en: ["Lot of Fortune", "A calculated point of bodily well-being, flow and luck (from the Ascendant, Sun and Moon)."] },
+  { ru: ["Асцендент (ASC)", "Знак, восходивший на горизонте в момент вашего рождения. Это ваша «маска» и первое впечатление: как вы выглядите, держитесь и входите в новую ситуацию — ещё до того, как вас узнали ближе. Сильно зависит от точного времени рождения: сдвиг на пару часов меняет знак.|;Например: человек с Асцендентом во Льве часто выглядит ярко и держится уверенно, даже если внутри — скромный Рак."],
+    en: ["Ascendant (ASC)", "The sign that was rising on the horizon at the moment you were born. It's your “mask” and first impression: how you look, carry yourself and enter a new situation — before anyone knows you better. Highly dependent on exact birth time: a shift of a couple of hours can change the sign.|;For example: someone with Leo rising often comes across as bright and self-assured, even if inside they're a shy Cancer."] },
+  { ru: ["Середина неба (MC)", "Верхняя точка карты — про карьеру, репутацию, призвание и то, каким вас видят «на публике». Показывает, к какому делу и статусу вы тянетесь.|;Например: MC в Козероге часто указывает на стремление к серьёзной карьере и авторитету, признанному со временем."],
+    en: ["Midheaven (MC)", "The top point of the chart — about career, reputation, vocation and how you're seen “in public.” It shows the kind of work and standing you reach for.|;For example: an MC in Capricorn often points to a drive for a serious career and hard-earned authority."] },
+  { ru: ["Десцендент (DSC) и «дно неба» (IC)", "Две противоположные точки. DSC (напротив Асцендента) — про партнёрство и то, каких людей вы притягиваете в близких отношениях. IC (низ карты) — про дом, семью, корни и то, что даёт вам чувство «своего».|;Например: по DSC можно понять, какой типаж партнёра вас цепляет; по IC — насколько вам важен родной дом и связь с семьёй."],
+    en: ["Descendant (DSC) & Imum Coeli (IC)", "Two opposite points. DSC (opposite the Ascendant) is about partnership and the kind of people you draw into close relationships. IC (bottom of the chart) is about home, family, roots and what gives you a sense of belonging.|;For example: the DSC hints at the type of partner that hooks you; the IC, at how much home and family ties mean to you."] },
+  { ru: ["Дом", "Карта делится на 12 секторов-домов, и каждый отвечает за свою область жизни: 1-й — вы сами и внешность, 2-й — деньги, 7-й — отношения, 10-й — карьера и так далее. Планета в доме показывает, где её энергия проявится сильнее всего.|;Например: Венера (любовь, деньги) в 10-м доме (карьера) — тема отношений и красоты часто реализуется через работу."],
+    en: ["House", "The chart is divided into 12 sectors — houses — each governing an area of life: 1st — yourself and appearance, 2nd — money, 7th — relationships, 10th — career, and so on. A planet in a house shows where its energy shows up most.|;For example: Venus (love, money) in the 10th house (career) — themes of relationship and beauty often play out through work."] },
+  { ru: ["Аспект", "Угол между двумя планетами, который показывает, «дружат» они или «спорят». Гармоничные аспекты (трин, секстиль) дают лёгкость и таланты, что достаются даром; напряжённые (квадрат, оппозиция) — внутренние конфликты, которые заставляют расти.|;Например: квадрат Луны и Сатурна может ощущаться как «мне трудно позволить себе чувства», но именно он закаляет характер."],
+    en: ["Aspect", "The angle between two planets that shows whether they “get along” or “argue.” Harmonious aspects (trine, sextile) bring ease and gifts that come for free; tense ones (square, opposition) bring inner conflicts that push you to grow.|;For example: a Moon–Saturn square can feel like “it's hard to let myself feel,” yet it's exactly what tempers character."] },
+  { ru: ["Орб", "Насколько угол между планетами отличается от идеального. Чем меньше орб (ближе к точному) — тем сильнее и заметнее работает аспект.|;Например: аспект с орбом 1° звучит громко и постоянно; с орбом 7° — как тихий фон, который легко не заметить."],
+    en: ["Orb", "How far the angle between planets differs from the exact figure. The smaller the orb (the closer to exact), the stronger and more noticeable the aspect.|;For example: an aspect with a 1° orb sounds loud and constant; with a 7° orb, like quiet background you can easily miss."] },
+  { ru: ["Ретроградность (R)", "Видимое «попятное» движение планеты по небу (на самом деле она не разворачивается — это оптический эффект). Её энергия направлена внутрь: тема планеты требует переосмысления, а не рывка наружу.|;Например: ретроградный Меркурий в карте — человек сначала думает и переваривает, а потом говорит; ему ближе письмо, чем спонтанная речь."],
+    en: ["Retrograde (R)", "A planet's apparent “backward” motion across the sky (it doesn't actually reverse — it's an optical effect). Its energy turns inward: the planet's theme asks for rethinking rather than an outward push.|;For example: a natal retrograde Mercury — the person thinks and digests first, speaks later; writing suits them better than off-the-cuff talk."] },
+  { ru: ["Достоинство планеты", "Насколько планете «комфортно» в знаке — от этого зависит её сила. В своём знаке (обитель) или в экзальтации планета сильна и проявляется легко; в противоположных положениях (изгнание, падение) ей труднее.|;Например: Луна в Раке — «дома», чувства текут естественно; Луна в Козероге (падение) — эмоции зажаты, их приходится осознанно разрешать себе."],
+    en: ["Dignity", "How “comfortable” a planet is in a sign — which sets its strength. In its own sign (domicile) or in exaltation a planet is strong and flows easily; in the opposite placements (detriment, fall) it has a harder time.|;For example: the Moon in Cancer is “at home,” feelings flow naturally; the Moon in Capricorn (fall) — emotions are held back and have to be consciously allowed."] },
+  { ru: ["Стихии и кресты", "Два способа сгруппировать 12 знаков. Стихия (Огонь, Земля, Воздух, Вода) — это темперамент, «из чего вы сделаны». Крест (кардинальный, фиксированный, мутабельный) — способ действовать: начинать, держать или подстраиваться.|;Например: Овен — Огонь + кардинальный, то есть «зажечься и начать»; Телец — Земля + фиксированный, «спокойно стоять на своём»."],
+    en: ["Elements & modalities", "Two ways of grouping the 12 signs. The element (Fire, Earth, Air, Water) is temperament — “what you're made of.” The modality (cardinal, fixed, mutable) is how you act: to begin, to hold, or to adapt.|;For example: Aries is Fire + cardinal, i.e. “ignite and begin”; Taurus is Earth + fixed, “calmly stand your ground.”"] },
+  { ru: ["Управитель карты", "Планета, которая управляет знаком вашего Асцендента, — ключевая фигура всей карты. Её положение (знак, дом, аспекты) задаёт главный мотив жизни, как «главный герой» вашего гороскопа.|;Например: Асцендент в Весах → управитель карты Венера, и тогда тема отношений, красоты и гармонии становится сквозной для всей жизни."],
+    en: ["Chart ruler", "The planet that rules your Ascendant sign — the key figure of the whole chart. Its position (sign, house, aspects) sets the main motif of life, like the “lead character” of your horoscope.|;For example: Libra Ascendant → chart ruler Venus, and then the themes of relationship, beauty and harmony run through the entire life."] },
+  { ru: ["Транзит", "Где планеты находятся на небе прямо сейчас относительно вашей натальной карты. Это «погода на сегодня»: транзиты показывают, какие темы активны в данный период и когда ждать перемен.|;Например: транзитный Юпитер проходит по вашему 7-му дому — год, благоприятный для отношений и партнёрств."],
+    en: ["Transit", "Where the planets are in the sky right now relative to your natal chart. It's the “weather for today”: transits show which themes are active in a given period and when to expect change.|;For example: transiting Jupiter crossing your 7th house — a year favorable for relationships and partnerships."] },
+  { ru: ["Прогрессии и дирекции", "Символические методы «взросления» карты во времени: один день после рождения приравнивается к одному году жизни. Показывают не события снаружи, а внутренние этапы — как вы меняетесь с возрастом.|;Например: прогрессивная Луна за ~2,5 года проходит знак и отмечает смену внутреннего настроя — от «хочу покоя» к «хочу перемен»."],
+    en: ["Progressions / directions", "Symbolic methods of the chart “maturing” over time: one day after birth equals one year of life. They show not outer events but inner stages — how you change with age.|;For example: the progressed Moon spends ~2.5 years in a sign, marking a shift of inner mood — from “I want calm” to “I want change.”"] },
+  { ru: ["Синастрия", "Сравнение двух карт, чтобы понять совместимость. Аспекты между планетами одного человека и другого показывают, где притяжение и поддержка, а где — трение и уроки.|;Например: его Солнце в соединении с её Луной — тёплое взаимопонимание; его Марс в квадрате к её Венере — сильное влечение с искрами конфликта."],
+    en: ["Synastry", "Comparing two charts to gauge compatibility. Aspects between one person's planets and the other's show where the attraction and support are, and where the friction and lessons lie.|;For example: his Sun conjunct her Moon — warm mutual understanding; his Mars square her Venus — strong attraction with sparks of conflict."] },
+  { ru: ["Карта дня или ночи (секта)", "Родились вы, когда Солнце было над горизонтом (дневная карта) или под ним (ночная). От этого зависит, какие планеты в карте проявляются мягче, а какие жёстче.|;Например: в дневной карте Юпитер считается особенно «добрым» помощником, а в ночной эту роль сильнее берёт на себя Венера."],
+    en: ["Day/night chart (sect)", "Whether you were born with the Sun above the horizon (a day chart) or below it (a night chart). This affects which planets in the chart come through more gently and which more harshly.|;For example: in a day chart Jupiter is an especially “kind” helper, while in a night chart Venus takes on more of that role."] },
+  { ru: ["Жребий Фортуны", "Особая расчётная точка (по Асценденту, Солнцу и Луне), связанная с телесным благополучием, лёгкостью и удачей — где жизнь «течёт» без надрыва. Это не планета, а математическая точка.|;Например: Жребий Фортуны во 2-м доме намекает, что ощущение благополучия и везения приходит через финансы и материальную стабильность."],
+    en: ["Lot of Fortune", "A special calculated point (from the Ascendant, Sun and Moon) tied to bodily well-being, ease and luck — where life “flows” without strain. It isn't a planet but a mathematical point.|;For example: the Lot of Fortune in the 2nd house hints that a sense of well-being and luck comes through finances and material stability."] },
 ];
 function buildGlossary() {
   const box = $("glossary-grid");
   if (!box) return;
   box.innerHTML = GLOSSARY
-    .map((g) => { const [term, def] = LANG === "en" ? g.en : g.ru; return `<div class="gloss-card"><h4>${term}</h4><p>${def}</p></div>`; })
+    .map((g) => {
+      const [term, def] = LANG === "en" ? g.en : g.ru;
+      const [main, ex] = def.split("|;");
+      const exHtml = ex ? `<p class="gloss-ex">${ex}</p>` : "";
+      return `<div class="gloss-card"><h4>${term}</h4><p>${main}</p>${exHtml}</div>`;
+    })
     .join("");
 }
 buildGlossary();
@@ -1436,8 +1502,10 @@ function formatDate(dateStr) {
   return `${+d} ${MONTHS_RU[+mo - 1]} ${y}`;
 }
 
-// Дата + время платежа в местном поясе (created_at хранится в UTC с офсетом).
-function formatDateTime(iso) {
+// Дата + время платежа: created_at в UTC → переводим в пояс смотрящего (админ-таблица).
+// ВНИМАНИЕ: не называть это formatDateTime — иначе перекроет натальную версию выше и
+// время рождения начнёт сдвигаться в пояс браузера (см. formatDateTime на строке ~1489).
+function formatPayDateTime(iso) {
   const dt = new Date(iso);
   if (isNaN(dt)) return formatDate(iso);
   const loc = LANG === "en" ? "en-GB" : "ru-RU";
@@ -3179,7 +3247,7 @@ async function loadAdmin() {
           pay.items.map((p) => {
             const paid = p.status === "succeeded";
             const email = p.email ? escapeHtml(p.email) : `<span class="cab-dim">${escapeHtml(p.username || "#" + p.user_id)}</span>`;
-            return `<tr class="${paid ? "pay-paid" : ""}"><td>${formatDateTime(p.created_at)}</td><td>${email}</td><td>${escapeHtml(p.plan_title || p.plan)}</td><td>${p.amount} ₽</td><td>${paid ? "✓ " : ""}${escapeHtml(p.status)}</td></tr>`;
+            return `<tr class="${paid ? "pay-paid" : ""}"><td>${formatPayDateTime(p.created_at)}</td><td>${email}</td><td>${escapeHtml(p.plan_title || p.plan)}</td><td>${p.amount} ₽</td><td>${paid ? "✓ " : ""}${escapeHtml(p.status)}</td></tr>`;
           }).join("")
         : `<tr><td class="section-note">${t("admin_pay_empty")}</td></tr>`;
     }
