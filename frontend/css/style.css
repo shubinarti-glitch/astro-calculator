@@ -163,6 +163,7 @@ html[data-theme="light"] .sun-rays { display: block; }
 .support-err { color: var(--bad); }
 
 .site-header, .layout, .site-footer { position: relative; z-index: 1; }
+.site-header { z-index: 20; }  /* попап статуса подписки должен ложиться поверх формы */
 
 .site-header {
   padding: 28px 40px 12px;
@@ -221,21 +222,31 @@ html[data-theme="light"] .sun-rays { display: block; }
 .auth-btn.ghost { background: transparent; border-color: var(--panel-border); color: var(--text-dim); }
 .user-box { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .user-id { position: relative; display: flex; align-items: center; gap: 6px; }
+/* Обычный ник — серебро, без анимации */
 .user-name {
   border: none; background: transparent; padding: 0;
-  font-family: inherit; font-weight: 600; font-size: 14px;
-  color: var(--accent); cursor: pointer;
-}
-/* Премиум-подписчик: золотой перелив на никнейме */
-.user-name.premium-name {
-  background: linear-gradient(95deg, var(--accent), var(--accent-2), var(--accent));
-  background-size: 220% auto;
+  font-family: inherit; font-weight: 700; font-size: 14px;
+  cursor: pointer;
+  background-image: linear-gradient(95deg, #7f8598, #c4c9d6, #7f8598);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: name-shine 5s linear infinite;
 }
-@keyframes name-shine { 0% { background-position: 0% center; } 100% { background-position: 220% center; } }
+/* Премиум-ник — золото со сверканием */
+.user-name.premium-name {
+  background-image: linear-gradient(95deg, var(--accent), #f5e2a8, var(--accent-2), #f5e2a8, var(--accent));
+  background-size: 250% auto;
+  animation: name-shine 4s linear infinite;
+  filter: drop-shadow(0 0 6px rgba(201, 168, 106, 0.35));
+}
+@keyframes name-shine { 0% { background-position: 0% center; } 100% { background-position: 250% center; } }
+/* Бриллиант у премиум-ника */
+.premium-gem { font-size: 13px; line-height: 1; animation: gem-sparkle 2.4s ease-in-out infinite; }
+.premium-gem.hidden { display: none; }
+@keyframes gem-sparkle {
+  0%, 100% { opacity: 0.75; transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 2px rgba(160, 220, 255, 0.5)); }
+  50%      { opacity: 1;    transform: scale(1.25) rotate(8deg); filter: drop-shadow(0 0 7px rgba(160, 220, 255, 0.95)); }
+}
 
 /* Поле пароля с глазиком */
 .pw-wrap { position: relative; display: block; }

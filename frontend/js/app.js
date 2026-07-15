@@ -2604,7 +2604,10 @@ function refreshLock() {
   const name = $("user-name");
   const pop = $("lock-popover");
   if (!name || !pop) return;
-  if (IS_PREMIUM && PREMIUM_UNTIL) {
+  const gem = $("premium-gem");
+  const isPrem = IS_PREMIUM && PREMIUM_UNTIL;
+  if (gem) gem.classList.toggle("hidden", !isPrem);
+  if (isPrem) {
     name.classList.add("premium-name");
     pop.innerHTML = `<b>${t("lock_prem_title")}</b><p>${t("lock_prem_until").replace(
       "{d}", formatDate(new Date(PREMIUM_UNTIL * 1000).toISOString().slice(0, 10)))}</p>`;
