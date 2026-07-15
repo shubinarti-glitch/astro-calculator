@@ -254,17 +254,19 @@ def current_user_id(authorization: Optional[str] = Header(None)) -> int:
     return uid
 
 
-def _send_verify_email(request: Request, user_id: int, email: str, lang: str = "ru") -> None:
-    """Отправить письмо подтверждения; молча пропустить, если SMTP не настроен."""
+def _send_verify_email(request: Request, user_id: int, email: str, lang: str = "ru") -> bool:
+    """Отправить письмо подтверждения. Возвращает True, если письмо реально принято сервером."""
     if not emailer.is_configured():
-        return
+        return False
     token = db.create_email_token(user_id, "verify", 24 * 3600)
     link = str(request.base_url).rstrip("/") + f"/?email-token={token}"
     subject, body = emailer.verify_letter(link, lang)
     try:
         emailer.send(email, subject, body)
+        return True
     except Exception:
         logger.exception("Не удалось отправить письмо подтверждения")
+        return False
 
 
 @app.post("/api/auth/register")
@@ -323,8 +325,8 @@ def api_attach_email(req: EmailAttach, request: Request, uid: int = Depends(curr
     if not db.set_user_email(uid, req.email):
         raise HTTPException(status_code=409, detail="Эта почта уже привязана к другому аккаунту")
     _rate_record(f"email:{ip}")
-    _send_verify_email(request, uid, req.email, req.lang)
-    return {"ok": True, "sent": emailer.is_configured()}
+    sent = _send_verify_email(request, uid, req.email, req.lang)
+    return {"ok": True, "sent": sent}
 
 
 class EmailToken(BaseModel):
