@@ -46,16 +46,6 @@ def send(to: str, subject: str, body: str, html: str | None = None, reply_to: st
     msg.set_content(body)  # текстовый вариант — фолбэк для клиентов без HTML
     if html:
         msg.add_alternative(html, subtype="html")
-
-
-def support_to() -> str:
-    """Куда слать обращения из формы поддержки (data/smtp.json → support_to).
-    По умолчанию — +support-алиас: тот же ящик, но адрес ≠ отправителя, поэтому
-    Gmail кладёт письмо во «Входящие» (self-письма он прячет в «Отправленные»)."""
-    try:
-        return _config().get("support_to") or "astrosmap@yandex.ru"
-    except NotConfiguredError:
-        return "astrosmap@yandex.ru"
     port = int(cfg.get("port", 465))
     if cfg.get("ssl", True):
         with smtplib.SMTP_SSL(cfg["host"], port, context=ssl.create_default_context(), timeout=15) as s:
@@ -66,6 +56,16 @@ def support_to() -> str:
             s.starttls(context=ssl.create_default_context())
             s.login(cfg["user"], cfg["password"])
             s.send_message(msg)
+
+
+def support_to() -> str:
+    """Куда слать обращения из формы поддержки (data/smtp.json → support_to).
+    По умолчанию — +support-алиас: тот же ящик, но адрес ≠ отправителя, поэтому
+    почтовик кладёт письмо во «Входящие» (self-письма прячутся в «Отправленные»)."""
+    try:
+        return _config().get("support_to") or "astrosmap+support@yandex.ru"
+    except NotConfiguredError:
+        return "astrosmap+support@yandex.ru"
 
 
 # ---------------------------------------------------------------------------
