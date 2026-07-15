@@ -143,12 +143,13 @@ $("aspects-table").addEventListener("click", (e) => {
   $("support-send").addEventListener("click", async () => {
     const message = $("support-message").value.trim();
     const email = $("support-email").value.trim();
+    const name = $("support-name").value.trim();
     const status = $("support-status");
     if (!message) { showSupportStatus(status, t("support_empty"), false); return; }
     $("support-send").disabled = true;
     showSupportStatus(status, t("support_sending"), true);
     try {
-      await postJSON("/api/support", { message, email });
+      await postJSON("/api/support", { message, email, name });
       $("support-message").value = "";
       showSupportStatus(status, t("support_ok"), true);
     } catch (ex) {
