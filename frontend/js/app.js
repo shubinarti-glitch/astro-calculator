@@ -95,6 +95,32 @@ $("theme-switch").addEventListener("click", (e) => {
   if (opt) applyTheme(opt.dataset.themeSet);
 });
 
+// ---------- Глазик у полей пароля ----------
+document.addEventListener("click", (e) => {
+  const eye = e.target.closest(".pw-eye");
+  if (!eye) return;
+  const input = eye.parentElement.querySelector("input");
+  const show = input.type === "password";
+  input.type = show ? "text" : "password";
+  eye.classList.toggle("on", show);
+});
+
+// ---------- Трактовка аспекта по тапу (на телефоне hover нет) ----------
+$("aspects-table").addEventListener("click", (e) => {
+  const tr = e.target.closest("tr[title]");
+  if (!tr) return;
+  const next = tr.nextElementSibling;
+  if (next && next.classList.contains("aspect-interp-row")) { next.remove(); return; }
+  tr.parentElement.querySelectorAll(".aspect-interp-row").forEach((r) => r.remove());
+  const row = document.createElement("tr");
+  row.className = "aspect-interp-row";
+  const td = document.createElement("td");
+  td.colSpan = tr.children.length;
+  td.textContent = tr.getAttribute("title");
+  row.appendChild(td);
+  tr.after(row);
+});
+
 // ---------- Кнопка «наверх» ----------
 (function scrollTopBtn() {
   const btn = $("scroll-top");
@@ -2572,24 +2598,22 @@ function refreshPremiumBtn() {
   refreshLock();
 }
 
-// Замок у имени: 🔓 = премиум активен, 🔒 = бесплатный доступ. Клик → подсказка.
+// Статус подписки на никнейме: премиум — золотой перелив, без — обычный. Клик по имени → подсказка.
 function refreshLock() {
-  const lock = $("lock-status");
+  const name = $("user-name");
   const pop = $("lock-popover");
-  if (!lock || !pop) return;
+  if (!name || !pop) return;
   if (IS_PREMIUM && PREMIUM_UNTIL) {
-    lock.textContent = "🔓";
-    lock.classList.add("unlocked");
+    name.classList.add("premium-name");
     pop.innerHTML = `<b>${t("lock_prem_title")}</b><p>${t("lock_prem_until").replace(
       "{d}", formatDate(new Date(PREMIUM_UNTIL * 1000).toISOString().slice(0, 10)))}</p>`;
   } else {
-    lock.textContent = "🔒";
-    lock.classList.remove("unlocked");
+    name.classList.remove("premium-name");
     pop.innerHTML = `<b>${t("lock_free_title")}</b><p>${t("lock_free_text")}</p>` +
       `<button class="adm-mini" id="lock-buy">${t("premium_btn")}</button>`;
   }
 }
-$("lock-status").addEventListener("click", (e) => {
+$("user-name").addEventListener("click", (e) => {
   e.stopPropagation();
   $("lock-popover").classList.toggle("hidden");
 });
@@ -2771,6 +2795,7 @@ function setAuthMode(mode) {
   $("auth-username-row").classList.toggle("hidden", isForgot || isReset);
   $("auth-email-row").classList.toggle("hidden", !(isReg || isForgot));
   $("auth-password-row").classList.toggle("hidden", isForgot);
+  $("auth-password2-row").classList.toggle("hidden", !isReg);
   // подпись поля пароля: в режиме сброса — «новый пароль»
   const pwLabel = $("auth-password-row");
   pwLabel.setAttribute("data-i18n", isReset ? "new_password_label" : "password");
@@ -2847,6 +2872,9 @@ $("auth-form").addEventListener("submit", async (e) => {
   }
   if (authMode === "register" && !email.includes("@")) {
     return showAuthError(t("email_need"));
+  }
+  if (authMode === "register" && password !== $("auth-password2").value) {
+    return showAuthError(t("password_mismatch"));
   }
   if (authMode === "register" && !$("terms-check").checked) {
     return showAuthError(t("auth_terms"));

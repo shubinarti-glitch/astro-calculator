@@ -8,6 +8,8 @@ const I18N = {
     tagline: "Астрокалькулятор · составлено практикующими астрологами",
     expand_hint: "нажмите, чтобы развернуть",
     scroll_top_title: "Наверх",
+    password_repeat: "Повторите пароль",
+    password_mismatch: "Пароли не совпадают.",
     support_title: "Написать в поддержку",
     support_head: "Написать в поддержку",
     support_hint: "Опишите вопрос — ответим на вашу почту.",
@@ -156,7 +158,7 @@ const I18N = {
     sec_planets: "Положения планет",
     sec_houses: "Дома",
     sec_aspects: "Аспекты",
-    aspects_note: "Наведите на строку аспекта, чтобы увидеть трактовку.",
+    aspects_note: "Нажмите на строку аспекта, чтобы увидеть трактовку.",
 
     // Колонки таблиц
     col_planet: "Планета",
@@ -736,6 +738,8 @@ const I18N = {
     tagline: "Astrocalculator · created by practicing astrologers",
     expand_hint: "click to expand",
     scroll_top_title: "Back to top",
+    password_repeat: "Repeat password",
+    password_mismatch: "Passwords do not match.",
     support_title: "Contact support",
     support_head: "Contact support",
     support_hint: "Describe your question — we'll reply to your email.",
@@ -878,7 +882,7 @@ const I18N = {
     sec_planets: "Planet positions",
     sec_houses: "Houses",
     sec_aspects: "Aspects",
-    aspects_note: "Hover over an aspect row to see its meaning.",
+    aspects_note: "Tap an aspect row to see its meaning.",
 
     col_planet: "Planet",
     col_position: "Position",
