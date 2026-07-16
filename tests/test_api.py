@@ -48,6 +48,15 @@ def test_natal_invalid_month():
     assert client.post("/api/natal", json=dict(NATAL, month=13)).status_code == 422
 
 
+def test_natal_no_svg():
+    # svg=0 — режим мобильного приложения: тексты есть, SVG нет.
+    d = client.post("/api/natal?svg=0", json=NATAL).json()
+    assert "svg" not in d
+    assert d["planets"] and d["story"]
+    t = client.post("/api/transit?svg=0", json={"natal": NATAL, "transit_date": {"year": 2026, "month": 6, "day": 1, "hour": 12, "minute": 0}}).json()
+    assert "svg" not in t
+
+
 def test_synastry():
     r = client.post("/api/synastry", json={"person_a": NATAL, "person_b": dict(NATAL, year=1988)})
     assert r.status_code == 200

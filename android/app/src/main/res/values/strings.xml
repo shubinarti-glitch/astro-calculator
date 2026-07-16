@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AstroSMap</string>
+    <string name="section_chart">Карта</string>
+    <string name="section_saved">Сохранённые</string>
+    <string name="section_account">Кабинет</string>
+    <string name="section_tools">Прогнозы</string>
+    <string name="tools_pick">Карта для расчёта</string>
+    <string name="tools_need_saved">Сначала сохраните хотя бы одну карту</string>
+    <string name="tools_transits">Транзиты сегодня</string>
+    <string name="tools_solar">Соляр — карта года</string>
+    <string name="transit_planets">Транзитные планеты</string>
+    <string name="transit_aspects">Аспекты к натальной карте</string>
+    <string name="texts_offline_short">Без интернета показан только расчёт, без трактовок</string>
+    <string name="premium_required">Эта техника доступна по подписке «Премиум». Оформить её можно на сайте — подписка сразу заработает и в приложении.</string>
+    <string name="premium_buy">Оформить Премиум</string>
+    <string name="solar_need_auth">Войдите в кабинет, чтобы рассчитать соляр</string>
+
+    <string name="form_name">Имя</string>
+    <string name="form_date">Дата рождения</string>
+    <string name="form_day">День</string>
+    <string name="form_month">Месяц</string>
+    <string name="form_year">Год</string>
+    <string name="form_time">Время рождения</string>
+    <string name="form_hour">Часы</string>
+    <string name="form_minute">Минуты</string>
+    <string name="form_city">Город</string>
+    <string name="form_calculate">Рассчитать</string>
+    <string name="form_pick_city">Выберите город из списка</string>
+    <string name="form_bad_date">Проверьте дату и время</string>
+
+    <string name="save">Сохранить</string>
+    <string name="share">Поделиться</string>
+    <string name="delete">Удалить</string>
+    <string name="delete_confirm">Удалить эту карту?</string>
+    <string name="cancel">Отмена</string>
+    <string name="edit">Редактировать</string>
+    <string name="search">Поиск</string>
+    <string name="saved_empty">Пока нет сохранённых карт</string>
+    <string name="planets">Планеты</string>
+    <string name="aspects">Аспекты</string>
+    <string name="house_short">%d дом</string>
+    <string name="texts_offline">Трактовки появятся при подключении к интернету. У сохранённых карт они читаются офлайн.</string>
+    <string name="about_you">Просто о себе</string>
+    <string name="big_three">Большая тройка</string>
+    <string name="portrait">Портрет</string>
+    <string name="spheres">Сферы жизни</string>
+
+    <string name="auth_login">Вход</string>
+    <string name="auth_register">Регистрация</string>
+    <string name="auth_username">Имя пользователя</string>
+    <string name="auth_username_or_email">Имя пользователя или почта</string>
+    <string name="auth_email">Почта</string>
+    <string name="auth_password">Пароль</string>
+    <string name="auth_do_login">Войти</string>
+    <string name="auth_do_register">Зарегистрироваться</string>
+    <string name="auth_no_account">Нет аккаунта? Регистрация</string>
+    <string name="auth_have_account">Уже есть аккаунт? Войти</string>
+    <string name="auth_logout">Выйти</string>
+    <string name="email_unverified">не подтверждена</string>
+    <string name="premium_active">Премиум до %s</string>
+    <string name="premium_none">Бесплатный тариф</string>
+    <string name="net_error">Нет соединения с сервером</string>
+    <string name="retry">Повторить</string>
+</resources>

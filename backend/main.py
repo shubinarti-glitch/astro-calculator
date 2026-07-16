@@ -782,10 +782,11 @@ def api_unsubscribe(token: str = Query("", max_length=100)):
 #  API
 # --------------------------------------------------------------------------- #
 @app.post("/api/natal")
-def api_natal(birth: BirthData):
+def api_natal(birth: BirthData, svg: bool = Query(True)):
+    # svg=0 — для мобильного приложения: тексты без тяжёлого SVG (колесо рисует само).
     db.record_usage("natal")
     try:
-        return astrology.natal_report(birth.model_dump())
+        return astrology.natal_report(birth.model_dump(), with_svg=svg)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except HTTPException:
@@ -796,13 +797,14 @@ def api_natal(birth: BirthData):
 
 
 @app.post("/api/transit")
-def api_transit(req: TransitRequest):
+def api_transit(req: TransitRequest, svg: bool = Query(True)):
     db.record_usage("transit")
     try:
         return astrology.transit_report(
             natal_params=req.natal.model_dump(),
             transit_dt=req.transit_date.model_dump(),
             transit_location=req.transit_location.model_dump() if req.transit_location else None,
+            with_svg=svg,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))

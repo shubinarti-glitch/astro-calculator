@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="section_chart">Chart</string>
+    <string name="section_saved">Saved</string>
+    <string name="section_account">Account</string>
+    <string name="section_tools">Forecasts</string>
+    <string name="tools_pick">Chart to calculate</string>
+    <string name="tools_need_saved">Save at least one chart first</string>
+    <string name="tools_transits">Transits today</string>
+    <string name="tools_solar">Solar return — year chart</string>
+    <string name="transit_planets">Transit planets</string>
+    <string name="transit_aspects">Aspects to the natal chart</string>
+    <string name="texts_offline_short">Offline: calculation only, no interpretations</string>
+    <string name="premium_required">This technique requires the Premium subscription. Purchase it on the website — it works in the app right away.</string>
+    <string name="premium_buy">Get Premium</string>
+    <string name="solar_need_auth">Sign in to calculate the solar return</string>
+
+    <string name="form_name">Name</string>
+    <string name="form_date">Birth date</string>
+    <string name="form_day">Day</string>
+    <string name="form_month">Month</string>
+    <string name="form_year">Year</string>
+    <string name="form_time">Birth time</string>
+    <string name="form_hour">Hours</string>
+    <string name="form_minute">Minutes</string>
+    <string name="form_city">City</string>
+    <string name="form_calculate">Calculate</string>
+    <string name="form_pick_city">Pick a city from the list</string>
+    <string name="form_bad_date">Check the date and time</string>
+
+    <string name="save">Save</string>
+    <string name="share">Share</string>
+    <string name="delete">Delete</string>
+    <string name="delete_confirm">Delete this chart?</string>
+    <string name="cancel">Cancel</string>
+    <string name="edit">Edit</string>
+    <string name="search">Search</string>
+    <string name="saved_empty">No saved charts yet</string>
+    <string name="planets">Planets</string>
+    <string name="aspects">Aspects</string>
+    <string name="house_short">house %d</string>
+    <string name="texts_offline">Interpretations appear when online. Saved charts keep them available offline.</string>
+    <string name="about_you">About you</string>
+    <string name="big_three">Big three</string>
+    <string name="portrait">Portrait</string>
+    <string name="spheres">Life spheres</string>
+
+    <string name="auth_login">Sign in</string>
+    <string name="auth_register">Sign up</string>
+    <string name="auth_username">Username</string>
+    <string name="auth_username_or_email">Username or email</string>
+    <string name="auth_email">Email</string>
+    <string name="auth_password">Password</string>
+    <string name="auth_do_login">Sign in</string>
+    <string name="auth_do_register">Create account</string>
+    <string name="auth_no_account">No account? Sign up</string>
+    <string name="auth_have_account">Already have an account? Sign in</string>
+    <string name="auth_logout">Sign out</string>
+    <string name="email_unverified">not verified</string>
+    <string name="premium_active">Premium until %s</string>
+    <string name="premium_none">Free plan</string>
+    <string name="net_error">No connection to the server</string>
+    <string name="retry">Retry</string>
+</resources>
