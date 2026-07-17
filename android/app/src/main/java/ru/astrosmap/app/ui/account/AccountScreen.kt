@@ -33,6 +33,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -40,6 +41,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import ru.astrosmap.app.BuildConfig
 import ru.astrosmap.app.R
 import ru.astrosmap.app.data.api.MeResponse
+import ru.astrosmap.app.ui.AstroLabels
+import ru.astrosmap.app.ui.LangPref
 import ru.astrosmap.app.ui.PRIVACY_URL
 import ru.astrosmap.app.ui.TERMS_URL
 import ru.astrosmap.app.ui.openSite
@@ -208,11 +211,13 @@ private fun Profile(me: MeResponse, viewModel: AccountViewModel) {
     }
 }
 
-/** Юр-блок кабинета: сайт, политика, соглашение, 18+, версия приложения. */
+/** Юр-блок кабинета: язык, сайт, политика, соглашение, 18+, версия приложения. */
 @Composable
 private fun LegalPanel() {
     val context = LocalContext.current
     ru.astrosmap.app.ui.theme.AstroPanel {
+        LanguageRow(context)
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         TextButton(onClick = { openSite(context) }) { Text(stringResource(R.string.acc_site)) }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         TextButton(onClick = { openSite(context, PRIVACY_URL) }) { Text(stringResource(R.string.acc_privacy)) }
@@ -227,6 +232,27 @@ private fun LegalPanel() {
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
+
+/** Переключатель языка интерфейса. Меняет локаль и пересоздаёт экран. */
+@Composable
+private fun LanguageRow(context: android.content.Context) {
+    val isRu = AstroLabels.isRu()
+    fun switch(lang: String) {
+        LangPref.set(context, lang)
+        (context as? android.app.Activity)?.recreate()
+    }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text("🌐  " + stringResource(R.string.acc_language), Modifier.weight(1f))
+        TextButton(onClick = { switch("ru") }) {
+            Text("RU", fontWeight = if (isRu) FontWeight.Bold else FontWeight.Normal,
+                color = if (isRu) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        TextButton(onClick = { switch("en") }) {
+            Text("EN", fontWeight = if (!isRu) FontWeight.Bold else FontWeight.Normal,
+                color = if (!isRu) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 

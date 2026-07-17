@@ -95,6 +95,7 @@
     <string name="ret_period_start">Начало периода</string>
     <string name="ret_period_end">Конец периода</string>
 
+    <string name="acc_language">Язык / Language</string>
     <string name="acc_charts_count">Сохранённых карт: %d</string>
     <string name="acc_version">Версия приложения: %s</string>
     <string name="acc_site">Сайт astrosmap.ru — ещё больше функций</string>

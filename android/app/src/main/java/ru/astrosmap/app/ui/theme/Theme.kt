@@ -44,7 +44,9 @@ val NeutralColor = Color(0xFF8B9BD8) // --neutral
 
 @Composable
 fun AstroTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    // Приложение всегда в тёмной космической теме (бренд сайта). Светлая тема
+    // давала тёмные панели на светлом фоне и нечитаемый текст — поэтому фиксируем тёмную.
+    darkTheme: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     MaterialTheme(

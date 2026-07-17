@@ -52,15 +52,11 @@ fun AstroPanel(
         color = Color(0xB8161630),                       // --panel
         border = BorderStroke(1.dp, Color(0x2E7878C8)),  // --panel-border
     ) {
-        // Панель всегда тёмная — внутри принудительно тёмная палитра,
-        // иначе в светлой теме текст тёмный на тёмном и не читается.
-        MaterialTheme(colorScheme = DarkColors) {
-            Column(
-                Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                content = content,
-            )
-        }
+        Column(
+            Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            content = content,
+        )
     }
 }
 

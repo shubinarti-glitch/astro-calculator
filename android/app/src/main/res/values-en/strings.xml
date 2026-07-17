@@ -94,6 +94,7 @@
     <string name="ret_period_start">Period start</string>
     <string name="ret_period_end">Period end</string>
 
+    <string name="acc_language">Язык / Language</string>
     <string name="acc_charts_count">Saved charts: %d</string>
     <string name="acc_version">App version: %s</string>
     <string name="acc_site">astrosmap.ru — even more features</string>

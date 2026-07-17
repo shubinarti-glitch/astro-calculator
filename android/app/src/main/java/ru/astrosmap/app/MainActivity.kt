@@ -1,5 +1,6 @@
 package ru.astrosmap.app
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -17,6 +18,10 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var syncManager: SyncManager
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(ru.astrosmap.app.ui.LangPref.wrap(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
