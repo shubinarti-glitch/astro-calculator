@@ -1748,10 +1748,11 @@ const PRINT_OVERRIDE = `
   .syn-item, .interp-card, .fc-event, .vedic-cell, .cal-cell, .big-card, .rc-asp,
   .portrait-card, tr { page-break-inside: avoid; }
   h1, h2, h3, h4 { page-break-after: avoid; }
-  /* Фирменная шапка проекта */
+  /* Фирменная шапка проекта — как на сайте (золото + фиолет, засечки) */
   .print-brand { text-align: center; border-bottom: 2px solid #c9a86a; padding-bottom: 10px; margin-bottom: 18px; }
+  .print-brand-logo { font-size: 22pt; color: #c9a86a; line-height: 1; }
   .print-brand-main { font-family: "Cormorant Garamond", Georgia, serif; font-size: 26pt; font-weight: 700; color: #2a2150; line-height: 1.1; }
-  .print-brand-sub { font-size: 10.5pt; letter-spacing: 3px; text-transform: uppercase; color: #6b5bc4; margin-top: 2px; }
+  .print-brand-sub { font-size: 9.5pt; letter-spacing: 2px; color: #6b5bc4; margin-top: 2px; }
   .print-brand-doc { font-size: 12pt; color: #444; margin-top: 6px; font-weight: 600; }
   .print-brand-date { font-size: 9pt; color: #999; margin-top: 2px; }
   /* Повторяющийся колонтитул внизу каждой страницы */
@@ -1789,23 +1790,25 @@ function buildPrintFrame(srcId, title, extraHead) {
   frame.setAttribute("aria-hidden", "true");
   frame.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;";
   document.body.appendChild(frame);
-  const brandTitle = (typeof t === "function" ? t("title") : "Астрокалькулятор");
-  const brandSub = (typeof t === "function" ? t("brand") : "Project Artemisa");
+  // Название как на сайте: главный бренд — «Project Artemisa», под ним — тип документа.
+  const brandTitle = (typeof t === "function" ? t("brand") : "Project Artemisa");
+  const brandSub = (typeof t === "function" ? t("hero_title") : "Натальная карта");
   const dateStr = new Date().toLocaleDateString(LANG === "en" ? "en-GB" : "ru-RU");
   // Фирменная шапка проекта вверху документа + повторяющийся колонтитул внизу.
   const brandHeader =
     `<div class="print-brand">
+       <div class="print-brand-logo" aria-hidden="true">✦</div>
        <div class="print-brand-main">${brandTitle}</div>
-       <div class="print-brand-sub">${brandSub}</div>
+       <div class="print-brand-sub">astrosmap.ru</div>
        ${title ? `<div class="print-brand-doc">${title}</div>` : ""}
        <div class="print-brand-date">${dateStr}</div>
      </div>`;
-  const brandFooter = `<div class="print-footer">${brandTitle} · ${brandSub}</div>`;
+  const brandFooter = `<div class="print-footer">${brandTitle} · astrosmap.ru</div>`;
   const doc = frame.contentWindow.document;
   doc.open();
   doc.write(
     `<!DOCTYPE html><html lang="${LANG}" data-theme="light"><head><meta charset="utf-8">` +
-    `<title>${brandSub} — ${title || brandTitle}</title>` +
+    `<title>${brandTitle} — ${title || brandSub}</title>` +
     `<link rel="stylesheet" href="${location.origin}/css/style.css">` +
     `<style>${PRINT_OVERRIDE}</style>${extraHead || ""}</head>` +
     `<body data-theme="light">${brandHeader}${content}${brandFooter}</body></html>`
@@ -2703,6 +2706,11 @@ $("premium-btn").addEventListener("click", openPremiumModal);
 $("premium-close").addEventListener("click", () => $("premium-modal").classList.add("hidden"));
 $("premium-modal").addEventListener("click", (e) => {
   if (e.target.id === "premium-modal") $("premium-modal").classList.add("hidden");
+});
+// Deep-link из приложения: astrosmap.ru/#premium сразу открывает окно подписки.
+if (location.hash === "#premium") openPremiumModal();
+window.addEventListener("hashchange", () => {
+  if (location.hash === "#premium") openPremiumModal();
 });
 document.querySelectorAll("#premium-plans [data-plan]").forEach((btn) => {
   btn.addEventListener("click", async () => {

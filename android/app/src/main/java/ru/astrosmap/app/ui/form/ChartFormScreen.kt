@@ -185,6 +185,13 @@ fun ChartFormScreen(
                     Text("›", color = MaterialTheme.colorScheme.primary)
                 }
             }
+            // Оформление подписки идёт на сайте — диплинк открывает окно «Премиум».
+            Button(
+                onClick = { ru.astrosmap.app.ui.openSite(context, "https://astrosmap.ru/#premium") },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.premium_cta))
+            }
         }
     }
 }
