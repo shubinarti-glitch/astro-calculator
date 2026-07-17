@@ -3569,10 +3569,10 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
 }
 
-// Базовые деттеренты от копирования авторских трактовок внутри #results.
+// Базовые деттеренты от копирования авторских трактовок (#results и дневной дайджест).
 // Обходятся (просмотр кода, скриншот) — задача лишь отпугнуть случайное копирование.
 ["copy", "cut", "contextmenu"].forEach((evt) => {
   document.addEventListener(evt, (e) => {
-    if (e.target.closest && e.target.closest("#results")) e.preventDefault();
+    if (e.target.closest && e.target.closest("#results, #daily-block")) e.preventDefault();
   });
 });
