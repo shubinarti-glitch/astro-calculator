@@ -100,6 +100,9 @@ async def _sync_content(request, call_next):
         response.headers["Cache-Control"] = "no-store, must-revalidate"
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
+    elif path.endswith(".apk"):
+        # APK всегда ревалидируем по ETag — иначе браузер отдаёт устаревшую сборку из кэша.
+        response.headers["Cache-Control"] = "no-cache"
     return response
 
 
