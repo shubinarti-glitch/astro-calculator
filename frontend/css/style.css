@@ -1790,6 +1790,10 @@ html[data-theme="light"] .adm-tab.active { background: rgba(139,123,216,0.14); }
 .app-badge.apk:hover { filter: brightness(1.08); }
 .app-badge.soon { cursor: default; opacity: .85; }
 
+/* Базовые деттеренты от копирования трактовок (обходятся, лишь отпугивают) */
+.results { -webkit-user-select: none; user-select: none; }
+.results input, .results textarea, .results select { -webkit-user-select: text; user-select: text; }
+
 .hidden { display: none !important; }
 
 @media (max-width: 960px) {

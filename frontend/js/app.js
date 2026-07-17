@@ -3560,3 +3560,11 @@ function escapeHtml(s) {
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
 }
+
+// Базовые деттеренты от копирования авторских трактовок внутри #results.
+// Обходятся (просмотр кода, скриншот) — задача лишь отпугнуть случайное копирование.
+["copy", "cut", "contextmenu"].forEach((evt) => {
+  document.addEventListener(evt, (e) => {
+    if (e.target.closest && e.target.closest("#results")) e.preventDefault();
+  });
+});
