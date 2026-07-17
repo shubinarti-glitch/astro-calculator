@@ -78,9 +78,10 @@ fun SavedScreen(
 private fun ChartRow(chart: ChartEntity, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
-        color = MaterialTheme.colorScheme.surface,
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-        shape = MaterialTheme.shapes.medium,
+        color = androidx.compose.ui.graphics.Color(0xB8161630),
+        border = androidx.compose.foundation.BorderStroke(1.dp, androidx.compose.ui.graphics.Color(0x2E7878C8)),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp),
+        shape = MaterialTheme.shapes.large,
     ) {
         Column(Modifier.padding(12.dp)) {
             Text(chart.name, style = MaterialTheme.typography.titleMedium)

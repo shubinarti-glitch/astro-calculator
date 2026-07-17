@@ -58,8 +58,10 @@ private fun AuthForm(viewModel: AccountViewModel) {
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        ru.astrosmap.app.ui.theme.AppHeader(stringResource(R.string.section_account))
+        ru.astrosmap.app.ui.theme.AstroPanel {
         Text(
             stringResource(if (registerMode) R.string.auth_register else R.string.auth_login),
             style = MaterialTheme.typography.headlineSmall,
@@ -108,6 +110,7 @@ private fun AuthForm(viewModel: AccountViewModel) {
         TextButton(onClick = { registerMode = !registerMode }) {
             Text(stringResource(if (registerMode) R.string.auth_have_account else R.string.auth_no_account))
         }
+        }
     }
 }
 
@@ -118,8 +121,10 @@ private fun Profile(me: MeResponse, viewModel: AccountViewModel) {
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        ru.astrosmap.app.ui.theme.AppHeader(stringResource(R.string.section_account))
+        ru.astrosmap.app.ui.theme.AstroPanel {
         Text(me.username, style = MaterialTheme.typography.headlineSmall)
         me.email?.let {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -135,7 +140,7 @@ private fun Profile(me: MeResponse, viewModel: AccountViewModel) {
         }
         if (me.premium) {
             Text(
-                stringResource(R.string.premium_active, me.premiumUntil?.take(10) ?: ""),
+                stringResource(R.string.premium_active, me.premiumUntilDate() ?: ""),
                 color = GoodColor,
             )
         } else {
@@ -148,6 +153,7 @@ private fun Profile(me: MeResponse, viewModel: AccountViewModel) {
         }
         OutlinedButton(onClick = viewModel::logout, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.auth_logout))
+        }
         }
     }
 }

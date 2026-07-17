@@ -57,6 +57,15 @@ def test_natal_no_svg():
     assert "svg" not in t
 
 
+def test_premium_reports_no_svg():
+    r = client.post("/api/return?svg=0", json={"natal": NATAL, "year": 2026, "return_type": "Solar"}).json()
+    assert "svg" not in r and r["planets"]
+    p = client.post("/api/progression?svg=0", json={"natal": NATAL, "target_date": {"year": 2026, "month": 7, "day": 17, "hour": 12, "minute": 0}}).json()
+    assert "svg" not in p and p["prog_planets"]
+    s = client.post("/api/synastry?svg=0", json={"person_a": NATAL, "person_b": dict(NATAL, year=1988)}).json()
+    assert "svg" not in s and s["couple"]["verdict"]
+
+
 def test_synastry():
     r = client.post("/api/synastry", json={"person_a": NATAL, "person_b": dict(NATAL, year=1988)})
     assert r.status_code == 200

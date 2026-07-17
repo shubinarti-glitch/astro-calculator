@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">AstroSMap</string>
+    <string name="app_tagline">Натальная карта и прогнозы</string>
+    <string name="ok">Готово</string>
     <string name="section_chart">Карта</string>
     <string name="section_saved">Сохранённые</string>
     <string name="section_account">Кабинет</string>
@@ -8,7 +10,21 @@
     <string name="tools_pick">Карта для расчёта</string>
     <string name="tools_need_saved">Сначала сохраните хотя бы одну карту</string>
     <string name="tools_transits">Транзиты сегодня</string>
+    <string name="tools_progression">Прогрессии</string>
+    <string name="tools_forecast">Прогноз на месяц</string>
     <string name="tools_solar">Соляр — карта года</string>
+    <string name="tools_lunar">Лунар — карта месяца</string>
+    <string name="tools_synastry">Синастрия — совместимость</string>
+    <string name="syn_pick_partner">С кем сравнить?</string>
+    <string name="syn_need_two">Для синастрии сохраните вторую карту</string>
+    <string name="syn_score">Совместимость: %1$d — %2$s</string>
+    <string name="syn_spheres">Сферы отношений</string>
+    <string name="syn_strengths">Сильные стороны</string>
+    <string name="syn_challenges">Зоны роста</string>
+    <string name="prog_positions">Прогрессивные позиции</string>
+    <string name="prog_aspects">Аспекты к наталу</string>
+    <string name="forecast_spheres">Сферы жизни</string>
+    <string name="forecast_events">Ключевые дни</string>
     <string name="transit_planets">Транзитные планеты</string>
     <string name="transit_aspects">Аспекты к натальной карте</string>
     <string name="texts_offline_short">Без интернета показан только расчёт, без трактовок</string>

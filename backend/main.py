@@ -816,7 +816,7 @@ def api_transit(req: TransitRequest, svg: bool = Query(True)):
 
 
 @app.post("/api/return")
-def api_return(req: ReturnRequest, uid: int = Depends(require_premium)):
+def api_return(req: ReturnRequest, uid: int = Depends(require_premium), svg: bool = Query(True)):
     try:
         return astrology.return_report(
             natal_params=req.natal.model_dump(),
@@ -824,6 +824,7 @@ def api_return(req: ReturnRequest, uid: int = Depends(require_premium)):
             month=req.month,
             return_type=req.return_type,
             location=req.location.model_dump() if req.location else None,
+            with_svg=svg,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
@@ -835,11 +836,12 @@ def api_return(req: ReturnRequest, uid: int = Depends(require_premium)):
 
 
 @app.post("/api/progression")
-def api_progression(req: ProgressionRequest):
+def api_progression(req: ProgressionRequest, svg: bool = Query(True)):
     try:
         return astrology.progression_report(
             natal_params=req.natal.model_dump(),
             target_date=req.target_date.model_dump(),
+            with_svg=svg,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
@@ -946,12 +948,13 @@ def api_vedic(req: VedicRequest):
 
 
 @app.post("/api/synastry")
-def api_synastry(req: SynastryRequest, uid: int = Depends(require_premium)):
+def api_synastry(req: SynastryRequest, uid: int = Depends(require_premium), svg: bool = Query(True)):
     db.record_usage("synastry")
     try:
         return astrology.synastry_report(
             person_a=req.person_a.model_dump(),
             person_b=req.person_b.model_dump(),
+            with_svg=svg,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))

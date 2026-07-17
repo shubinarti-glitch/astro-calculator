@@ -60,6 +60,9 @@ fun AstroRoot() {
             }
         },
     ) { padding ->
+        Box(Modifier.fillMaxSize()) {
+            ru.astrosmap.app.ui.theme.StarryBackground()
+        }
         NavHost(
             navController = navController,
             startDestination = Section.Chart.route,
@@ -75,11 +78,18 @@ fun AstroRoot() {
             composable(Section.Tools.route) {
                 ru.astrosmap.app.ui.tools.ToolsScreen(
                     onTransits = { id -> navController.navigate("transit/$id") },
-                    onSolar = { id -> navController.navigate("solar/$id") },
+                    onProgression = { id -> navController.navigate("progression/$id") },
+                    onForecast = { id -> navController.navigate("forecast/$id") },
+                    onSolar = { id -> navController.navigate("return/solar/$id") },
+                    onLunar = { id -> navController.navigate("return/lunar/$id") },
+                    onSynastry = { a, b -> navController.navigate("synastry/$a/$b") },
                 )
             }
             composable("transit/{id}") { ru.astrosmap.app.ui.tools.TransitScreen() }
-            composable("solar/{id}") { ru.astrosmap.app.ui.tools.SolarScreen() }
+            composable("progression/{id}") { ru.astrosmap.app.ui.tools.ProgressionScreen() }
+            composable("forecast/{id}") { ru.astrosmap.app.ui.tools.ForecastScreen() }
+            composable("return/{type}/{id}") { ru.astrosmap.app.ui.tools.ReturnScreen() }
+            composable("synastry/{a}/{b}") { ru.astrosmap.app.ui.tools.SynastryScreen() }
             composable("view/{id}") {
                 ChartViewScreen(
                     onEdit = {

@@ -62,6 +62,9 @@ class AccountViewModel @Inject constructor(
             AccountState.LoggedOut
         } catch (e: IOException) {
             AccountState.Offline
+        } catch (e: Exception) {
+            // Неожиданный формат ответа и т.п. — никогда не роняем приложение.
+            AccountState.Offline
         }
     }
 
@@ -104,6 +107,8 @@ class AccountViewModel @Inject constructor(
                 errorText = parseDetail(e)
             } catch (e: IOException) {
                 errorRes = R.string.net_error
+            } catch (e: Exception) {
+                errorRes = R.string.net_error // формат ответа и прочее — не краш, а сообщение
             } finally {
                 busy = false
             }

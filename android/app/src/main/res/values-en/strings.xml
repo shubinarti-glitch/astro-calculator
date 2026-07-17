@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="app_tagline">Natal chart &amp; forecasts</string>
+    <string name="ok">Done</string>
     <string name="section_chart">Chart</string>
     <string name="section_saved">Saved</string>
     <string name="section_account">Account</string>
@@ -7,7 +9,21 @@
     <string name="tools_pick">Chart to calculate</string>
     <string name="tools_need_saved">Save at least one chart first</string>
     <string name="tools_transits">Transits today</string>
+    <string name="tools_progression">Progressions</string>
+    <string name="tools_forecast">Monthly forecast</string>
     <string name="tools_solar">Solar return — year chart</string>
+    <string name="tools_lunar">Lunar return — month chart</string>
+    <string name="tools_synastry">Synastry — compatibility</string>
+    <string name="syn_pick_partner">Compare with whom?</string>
+    <string name="syn_need_two">Save a second chart for synastry</string>
+    <string name="syn_score">Compatibility: %1$d — %2$s</string>
+    <string name="syn_spheres">Relationship spheres</string>
+    <string name="syn_strengths">Strengths</string>
+    <string name="syn_challenges">Growth areas</string>
+    <string name="prog_positions">Progressed positions</string>
+    <string name="prog_aspects">Aspects to natal</string>
+    <string name="forecast_spheres">Life spheres</string>
+    <string name="forecast_events">Key days</string>
     <string name="transit_planets">Transit planets</string>
     <string name="transit_aspects">Aspects to the natal chart</string>
     <string name="texts_offline_short">Offline: calculation only, no interpretations</string>
