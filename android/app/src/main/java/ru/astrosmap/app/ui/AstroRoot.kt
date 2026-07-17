@@ -83,8 +83,10 @@ fun AstroRoot() {
                     onSolar = { id -> navController.navigate("return/solar/$id") },
                     onLunar = { id -> navController.navigate("return/lunar/$id") },
                     onSynastry = { a, b -> navController.navigate("synastry/$a/$b") },
+                    onLunarCalendar = { navController.navigate("luncal") },
                 )
             }
+            composable("luncal") { ru.astrosmap.app.ui.tools.LunarCalendarScreen() }
             composable("transit/{id}") { ru.astrosmap.app.ui.tools.TransitScreen() }
             composable("progression/{id}") { ru.astrosmap.app.ui.tools.ProgressionScreen() }
             composable("forecast/{id}") { ru.astrosmap.app.ui.tools.ForecastScreen() }

@@ -90,6 +90,9 @@ fun JsonObject.s(key: String): String? =
 
 fun JsonObject.i(key: String): Int? = (this[key] as? JsonPrimitive)?.intOrNull
 
+/** Булево поле: сервер шлёт true/false как JSON-boolean (не строку). */
+fun JsonObject.b(key: String): Boolean = (this[key] as? JsonPrimitive)?.content == "true"
+
 fun JsonObject.d(key: String): Double? = (this[key] as? JsonPrimitive)?.doubleOrNull
 
 fun JsonObject.o(key: String): JsonObject? = this[key] as? JsonObject

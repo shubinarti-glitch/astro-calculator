@@ -1,6 +1,8 @@
 package ru.astrosmap.app.ui.tools
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,8 +14,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -26,6 +31,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.JsonObject
 import ru.astrosmap.app.R
 import ru.astrosmap.app.data.ChartDao
 import ru.astrosmap.app.data.RemoteChart
@@ -93,6 +99,7 @@ class ReturnViewModel @Inject constructor(
 fun ReturnScreen(viewModel: ReturnViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
     val title = stringResource(if (viewModel.isLunar) R.string.tools_lunar else R.string.tools_solar)
+    val expanded = remember { mutableStateOf(setOf<String>()) }
 
     ReportScaffold(state, onRetry = viewModel::load) { data ->
         LazyColumn(Modifier.fillMaxSize()) {
@@ -119,17 +126,71 @@ fun ReturnScreen(viewModel: ReturnViewModel = hiltViewModel()) {
                     )
                 }
             }
-            val theme = data.s("theme") ?: data.o("theme")?.s("text")
+
+            // Тема периода — те же 5 карточек, что на сайте (overlay/tone/focus/mood/lord).
+            val theme = data.o("theme")
             if (theme != null) {
-                item {
-                    Text(
-                        theme,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                    )
+                themeCard("⭐", R.string.ret_overlay, theme.s("overlay"))
+                themeCard("🎯", R.string.ret_tone, theme.s("tone"))
+                themeCard("🏠", R.string.ret_focus, theme.s("focus"))
+                themeCard("🌙", R.string.ret_mood, theme.s("mood"))
+                themeCard("👑", R.string.ret_lord, theme.s("lord"))
+            } else {
+                // Старый формат ответа: theme — строка.
+                data.s("theme")?.let { t ->
+                    item { Text(t, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) }
                 }
             }
+
+            // Период действия карты.
+            data.s("period_start")?.let { periodRow(R.string.ret_period_start, it) }
+            data.s("period_end")?.let { periodRow(R.string.ret_period_end, it) }
+
+            // Большая тройка возвращения.
+            val big = data.o("big_three")
+            if (big != null) {
+                item { ReturnSectionTitle(stringResource(R.string.big_three)) }
+                listOf(
+                    "sun" to "Sun", "moon" to "Moon", "asc" to "Ascendant",
+                ).forEach { (key, point) ->
+                    val text = big.o(key)?.s("text") ?: return@forEach
+                    item {
+                        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
+                            Text(
+                                "${AstroLabels.pointGlyphs[point] ?: ""} ${AstroLabels.point(point)}",
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.secondary,
+                            )
+                            Text(text, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+            }
+
+            item { ReturnSectionTitle(stringResource(R.string.planets)) }
             items(data.a("planets")) { p -> RemotePlanetRow(p) }
+
+            // Дома возвращения.
+            val houses = data.a("houses")
+            if (houses.isNotEmpty()) {
+                item { ReturnSectionTitle(stringResource(R.string.houses)) }
+                items(houses) { h -> RemoteHouseRow(h) }
+            }
+
+            // Аспекты — по тапу раскрывается трактовка (interp приходит с сервера).
+            val aspects = data.a("aspects")
+            if (aspects.isNotEmpty()) {
+                item { ReturnSectionTitle(stringResource(R.string.aspects)) }
+                item {
+                    Text(
+                        stringResource(R.string.tap_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                    )
+                }
+                items(aspects) { a -> RemoteAspectRow(a, expanded) }
+            }
         }
     }
 }
@@ -137,9 +198,114 @@ fun ReturnScreen(viewModel: ReturnViewModel = hiltViewModel()) {
 private fun periodLabel(vm: ReturnViewModel): String =
     if (vm.isLunar) "%02d.%d".format(vm.month, vm.year) else vm.year.toString()
 
+/** "2026-03-21T05:33:00+03:00" → "21.03.2026 05:33". */
+private fun fmtDateTime(iso: String): String {
+    val date = iso.take(10).split("-")
+    val time = iso.drop(11).take(5)
+    return if (date.size == 3) "${date[2]}.${date[1]}.${date[0]} $time" else iso
+}
+
+private fun androidx.compose.foundation.lazy.LazyListScope.themeCard(emoji: String, titleRes: Int, text: String?) {
+    if (text.isNullOrBlank()) return
+    item {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
+            Text(
+                "$emoji ${stringResource(titleRes)}",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.secondary,
+            )
+            Text(text, style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
+
+private fun androidx.compose.foundation.lazy.LazyListScope.periodRow(titleRes: Int, iso: String) {
+    item {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 2.dp)) {
+            Text(
+                stringResource(titleRes),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            Text(fmtDateTime(iso), style = MaterialTheme.typography.bodySmall)
+        }
+    }
+}
+
+@Composable
+private fun ReturnSectionTitle(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.titleMedium,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+    )
+}
+
+/** Строка дома из серверного отчёта. */
+@Composable
+fun RemoteHouseRow(h: JsonObject) {
+    val num = h.i("house_num") ?: return
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(stringResource(R.string.house_short, num), Modifier.weight(1f))
+        val sign = h.s("sign") ?: ""
+        Text("${AstroLabels.signGlyphs[sign] ?: ""} ${if (AstroLabels.isRu()) h.s("sign_ru") ?: "" else AstroLabels.sign(sign)}")
+        Text("${h.i("deg") ?: 0}°${(h.i("min") ?: 0).toString().padStart(2, '0')}′")
+    }
+}
+
+/** Строка аспекта из серверного отчёта; тап раскрывает трактовку interp. */
+@Composable
+fun RemoteAspectRow(a: JsonObject, expanded: MutableState<Set<String>>) {
+    val p1 = a.s("p1") ?: return
+    val p2 = a.s("p2") ?: return
+    val kind = a.s("aspect") ?: return
+    val interp = a.s("interp")
+    val key = "raspect:$p1|$kind|$p2"
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clickable(enabled = !interp.isNullOrBlank()) {
+                expanded.value = if (key in expanded.value) expanded.value - key else expanded.value + key
+            }
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(AstroLabels.pointGlyphs[p1] ?: a.s("p1_symbol") ?: p1, color = MaterialTheme.colorScheme.primary)
+            Text(AstroLabels.aspectGlyphs[kind] ?: a.s("aspect_symbol") ?: "", color = MaterialTheme.colorScheme.secondary)
+            Text(AstroLabels.pointGlyphs[p2] ?: a.s("p2_symbol") ?: p2, color = MaterialTheme.colorScheme.primary)
+            Text(
+                if (AstroLabels.isRu()) a.s("aspect_ru") ?: kind else AstroLabels.aspect(kind),
+                Modifier.weight(1f),
+            )
+            a.d("orbit")?.let {
+                Text(
+                    "%.2f°".format(it),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            if (!interp.isNullOrBlank()) {
+                Text(if (key in expanded.value) "⌄" else "›", color = MaterialTheme.colorScheme.primary)
+            }
+        }
+        if (key in expanded.value && !interp.isNullOrBlank()) {
+            Text(interp, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 6.dp))
+        }
+    }
+}
+
 /** Строка позиции из серверного отчёта — поля *_ru уже локализованы бэкендом. */
 @Composable
-fun RemotePlanetRow(p: kotlinx.serialization.json.JsonObject) {
+fun RemotePlanetRow(p: JsonObject) {
     val name = p.s("name") ?: return
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
@@ -148,7 +314,7 @@ fun RemotePlanetRow(p: kotlinx.serialization.json.JsonObject) {
     ) {
         Text(AstroLabels.pointGlyphs[name] ?: p.s("symbol") ?: "", color = MaterialTheme.colorScheme.primary)
         Text(if (AstroLabels.isRu()) p.s("name_ru") ?: name else AstroLabels.point(name), Modifier.weight(1f))
-        if (p.s("retrograde") == "true") {
+        if (p.b("retrograde")) {
             Text("R", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
         }
         val sign = p.s("sign") ?: ""

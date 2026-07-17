@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">AstroSMap</string>
+    <string name="app_project">Project Artemisa</string>
     <string name="app_tagline">Натальная карта и прогнозы</string>
     <string name="ok">Готово</string>
     <string name="section_chart">Карта</string>
@@ -78,4 +79,29 @@
     <string name="premium_none">Бесплатный тариф</string>
     <string name="net_error">Нет соединения с сервером</string>
     <string name="retry">Повторить</string>
+
+    <string name="pwd_toggle">Показать или скрыть пароль</string>
+    <string name="tap_hint">Нажмите на строку со стрелкой ›, чтобы раскрыть трактовку</string>
+    <string name="houses">Дома</string>
+
+    <string name="tools_luncal">Лунный календарь</string>
+    <string name="luncal_hint">В каждой клетке — фаза и знак Луны. Нажмите на день, чтобы увидеть настрой дня и что благоприятно делать.</string>
+
+    <string name="ret_overlay">Главная сфера периода</string>
+    <string name="ret_tone">Тон периода</string>
+    <string name="ret_focus">Дополнительный акцент</string>
+    <string name="ret_mood">Эмоциональный климат</string>
+    <string name="ret_lord">Управитель периода</string>
+    <string name="ret_period_start">Начало периода</string>
+    <string name="ret_period_end">Конец периода</string>
+
+    <string name="acc_charts_count">Сохранённых карт: %d</string>
+    <string name="acc_version">Версия приложения: %s</string>
+    <string name="acc_site">Сайт astrosmap.ru — ещё больше функций</string>
+    <string name="acc_privacy">Политика обработки персональных данных</string>
+    <string name="acc_terms">Пользовательское соглашение</string>
+    <string name="acc_age">Сервис носит информационно-развлекательный характер и не заменяет консультацию специалиста. 18+</string>
+    <string name="consent_pd">Я даю согласие на обработку персональных данных (152-ФЗ) и принимаю Пользовательское соглашение</string>
+
+    <string name="site_banner">Ещё больше функций — на сайте astrosmap.ru</string>
 </resources>

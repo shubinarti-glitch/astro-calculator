@@ -53,6 +53,7 @@ fun ToolsScreen(
     onSolar: (Long) -> Unit,
     onLunar: (Long) -> Unit,
     onSynastry: (Long, Long) -> Unit,
+    onLunarCalendar: () -> Unit,
     viewModel: ToolsViewModel = hiltViewModel(),
 ) {
     val charts by viewModel.charts.collectAsState()
@@ -89,6 +90,11 @@ fun ToolsScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         AppHeader(stringResource(R.string.section_tools))
+
+        // Лунный календарь не требует сохранённой карты — доступен всегда и офлайн.
+        AstroPanel {
+            ToolButton("🌙 " + stringResource(R.string.tools_luncal)) { onLunarCalendar() }
+        }
 
         if (charts.isEmpty()) {
             AstroPanel {

@@ -8,7 +8,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 // Палитра сайта astrosmap.ru (frontend/css/style.css).
-private val DarkColors = darkColorScheme(
+// internal: AstroPanel всегда тёмная, поэтому внутри панелей эта палитра нужна и в светлой теме.
+internal val DarkColors = darkColorScheme(
     primary = Color(0xFFC9A86A),          // --accent (золото)
     onPrimary = Color(0xFF16132B),
     secondary = Color(0xFF8B7BD8),        // --accent-2 (фиолет)

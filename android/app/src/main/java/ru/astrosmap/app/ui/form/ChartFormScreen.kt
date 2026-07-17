@@ -166,6 +166,26 @@ fun ChartFormScreen(
                 Text(stringResource(R.string.form_calculate))
             }
         }
+
+        // Ссылка на сайт: там больше функций (ректификация, PDF, подписка и т.д.).
+        AstroPanel {
+            val context = androidx.compose.ui.platform.LocalContext.current
+            Surface(
+                onClick = { ru.astrosmap.app.ui.openSite(context) },
+                color = MaterialTheme.colorScheme.surface,
+                shape = MaterialTheme.shapes.medium,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text("🌐")
+                    Text(stringResource(R.string.site_banner), Modifier.weight(1f))
+                    Text("›", color = MaterialTheme.colorScheme.primary)
+                }
+            }
+        }
     }
 }
 

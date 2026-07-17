@@ -6,6 +6,9 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import retrofit2.HttpException
@@ -33,7 +36,11 @@ class AccountViewModel @Inject constructor(
     private val api: AstroApi,
     private val tokenStore: TokenStore,
     private val syncManager: SyncManager,
+    dao: ru.astrosmap.app.data.ChartDao,
 ) : ViewModel() {
+
+    val chartsCount = dao.search("").map { it.size }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     var state by mutableStateOf<AccountState>(AccountState.Loading)
         private set

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="app_project">Project Artemisa</string>
     <string name="app_tagline">Natal chart &amp; forecasts</string>
     <string name="ok">Done</string>
     <string name="section_chart">Chart</string>
@@ -77,4 +78,29 @@
     <string name="premium_none">Free plan</string>
     <string name="net_error">No connection to the server</string>
     <string name="retry">Retry</string>
+
+    <string name="pwd_toggle">Show or hide password</string>
+    <string name="tap_hint">Tap a row with the › arrow to expand its interpretation</string>
+    <string name="houses">Houses</string>
+
+    <string name="tools_luncal">Lunar calendar</string>
+    <string name="luncal_hint">Each cell shows the Moon\'s phase and sign. Tap a day to see its mood and what it favours.</string>
+
+    <string name="ret_overlay">Main sphere of the period</string>
+    <string name="ret_tone">Tone of the period</string>
+    <string name="ret_focus">Additional emphasis</string>
+    <string name="ret_mood">Emotional climate</string>
+    <string name="ret_lord">Ruler of the period</string>
+    <string name="ret_period_start">Period start</string>
+    <string name="ret_period_end">Period end</string>
+
+    <string name="acc_charts_count">Saved charts: %d</string>
+    <string name="acc_version">App version: %s</string>
+    <string name="acc_site">astrosmap.ru — even more features</string>
+    <string name="acc_privacy">Personal data policy</string>
+    <string name="acc_terms">Terms of service</string>
+    <string name="acc_age">The service is for information and entertainment and does not replace professional advice. 18+</string>
+    <string name="consent_pd">I consent to personal data processing and accept the Terms of service</string>
+
+    <string name="site_banner">Even more features — on astrosmap.ru</string>
 </resources>

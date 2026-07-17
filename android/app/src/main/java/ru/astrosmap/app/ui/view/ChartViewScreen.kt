@@ -136,6 +136,16 @@ fun ChartViewScreen(
                 }
             }
             item { SectionTitle(stringResource(R.string.planets)) }
+            if (texts != null) {
+                item {
+                    Text(
+                        stringResource(R.string.tap_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                    )
+                }
+            }
             items(chart.points) { p ->
                 PlanetRow(p, texts?.planetTexts?.get(p.name), expanded)
             }
@@ -226,6 +236,12 @@ private fun PlanetRow(
                 stringResource(R.string.house_short, p.houseNum),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            if (paragraphs != null) {
+                Text(
+                    if (key in expanded.value) "⌄" else "›",
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
         }
         if (key in expanded.value && paragraphs != null) {
             for (block in paragraphs) {
@@ -272,6 +288,12 @@ private fun AspectRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall,
             )
+            if (interp != null) {
+                Text(
+                    if (key in expanded.value) "⌄" else "›",
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
         }
         if (key in expanded.value && interp != null) {
             Text(
