@@ -1396,6 +1396,10 @@ tr:hover td { background: rgba(139,123,216,0.06); }
 .adm-tab.active { background: rgba(139,123,216,0.2); color: var(--text); border-color: var(--accent-2); }
 html[data-theme="light"] .adm-tab.active { background: rgba(139,123,216,0.14); }
 #admin-payments tr.pay-paid td { background: rgba(126,217,159,0.08); } /* оплаченные — выделены, им нужен чек */
+#admin-payments .pay-st { white-space: nowrap; }
+#admin-payments .pay-st-succeeded { color: var(--good); }
+#admin-payments .pay-st-pending, #admin-payments .pay-st-waiting_for_capture { color: var(--accent); }
+#admin-payments .pay-st-canceled { color: var(--bad); }
 #admin-users .adm-mini {
   background: none; border: 1px solid rgba(201,168,106,0.4); color: var(--accent);
   border-radius: 6px; padding: 2px 6px; font-size: 11px; cursor: pointer; font-family: inherit;

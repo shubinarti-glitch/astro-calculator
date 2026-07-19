@@ -1511,6 +1511,14 @@ function formatPayDateTime(iso) {
   const loc = LANG === "en" ? "en-GB" : "ru-RU";
   return `${dt.toLocaleDateString(loc)} ${dt.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" })}`;
 }
+// Человеко-понятные статусы платежа ЮKassa (в админке вместо сырых pending/succeeded).
+const PAY_STATUS = {
+  ru: { pending: "ожидает оплаты", waiting_for_capture: "ожидает подтверждения", succeeded: "оплачено", canceled: "отменён", refunded: "возвращён" },
+  en: { pending: "awaiting payment", waiting_for_capture: "awaiting capture", succeeded: "paid", canceled: "canceled", refunded: "refunded" },
+};
+function payStatusLabel(status) {
+  return (PAY_STATUS[LANG === "en" ? "en" : "ru"] || {})[status] || status;
+}
 
 // ---------- Рендер: натальная карта ----------
 // «Просто о себе» — тематический рассказ без терминов.
@@ -3255,7 +3263,7 @@ async function loadAdmin() {
           pay.items.map((p) => {
             const paid = p.status === "succeeded";
             const email = p.email ? escapeHtml(p.email) : `<span class="cab-dim">${escapeHtml(p.username || "#" + p.user_id)}</span>`;
-            return `<tr class="${paid ? "pay-paid" : ""}"><td>${formatPayDateTime(p.created_at)}</td><td>${email}</td><td>${escapeHtml(p.plan_title || p.plan)}</td><td>${p.amount} ₽</td><td>${paid ? "✓ " : ""}${escapeHtml(p.status)}</td></tr>`;
+            return `<tr class="${paid ? "pay-paid" : ""}"><td>${formatPayDateTime(p.created_at)}</td><td>${email}</td><td>${escapeHtml(p.plan_title || p.plan)}</td><td>${p.amount} ₽</td><td class="pay-st pay-st-${escapeHtml(p.status)}">${paid ? "✓ " : ""}${escapeHtml(payStatusLabel(p.status))}</td></tr>`;
           }).join("")
         : `<tr><td class="section-note">${t("admin_pay_empty")}</td></tr>`;
     }
