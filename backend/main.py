@@ -447,6 +447,21 @@ def api_billing_check(uid: int = Depends(current_user_id)):
         raise HTTPException(status_code=502, detail="Платёжный сервис недоступен. Попробуйте позже.")
 
 
+@app.post("/api/yookassa/webhook")
+async def api_yookassa_webhook(request: Request):
+    """Уведомления ЮKassa (payment.succeeded/canceled). Тело НЕ доверяем: берём только id
+    платежа и сами перепроверяем статус в ЮKassa (reconcile_one — авторитетно, идемпотентно).
+    Всегда отвечаем 200, чтобы ЮKassa не ретраила бесконечно."""
+    try:
+        body = await request.json()
+        payment_id = (body.get("object") or {}).get("id")
+        if payment_id:
+            payments.reconcile_one(str(payment_id))
+    except Exception:
+        logger.exception("Ошибка обработки вебхука ЮKassa")
+    return {"ok": True}
+
+
 class PasswordChange(BaseModel):
     old_password: str = Field(..., min_length=1, max_length=200)
     new_password: str = Field(..., min_length=8, max_length=200)
@@ -514,6 +529,14 @@ def api_admin_ban(user_id: int, body: BanRequest, uid: int = Depends(require_adm
 
 @app.get("/api/admin/payments")
 def api_admin_payments(uid: int = Depends(require_admin)):
+    # Досверка висящих pending старше 30 мин: брошенные платежи ЮKassa сама не «расскажет»,
+    # поэтому перепроверяем их при открытии вкладки. Не критично — если ЮKassa недоступна, просто пропускаем.
+    try:
+        payments.reconcile_pending(older_than_min=30)
+    except payments.NotConfiguredError:
+        pass
+    except Exception:
+        logger.exception("Досверка платежей не удалась")
     data = db.list_payments()
     prices = {p: price for p, (price, _d) in payments.PLANS.items()}
     for it in data["items"]:

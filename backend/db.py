@@ -622,6 +622,28 @@ def set_payment_status(payment_id: str, status: str) -> None:
         c.execute("UPDATE payments SET status = ? WHERE payment_id = ?", (status, payment_id))
 
 
+def get_pending_payment(payment_id: str) -> Optional[dict]:
+    """Запись платежа, если он ещё в статусе pending (для идемпотентной сверки). Иначе None."""
+    with get_conn() as c:
+        r = c.execute(
+            "SELECT payment_id, user_id, plan FROM payments WHERE payment_id = ? AND status = 'pending'",
+            (payment_id,),
+        ).fetchone()
+    return dict(r) if r else None
+
+
+def pending_payments_all(older_than_min: int = 30, limit: int = 50) -> list[dict]:
+    """Все висящие pending старше N минут (для досверки в админке)."""
+    cutoff = (datetime.now(timezone.utc) - timedelta(minutes=older_than_min)).isoformat()
+    with get_conn() as c:
+        rows = c.execute(
+            "SELECT payment_id, user_id, plan FROM payments "
+            "WHERE status = 'pending' AND created_at <= ? ORDER BY created_at ASC LIMIT ?",
+            (cutoff, limit),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
 # --------------------------------------------------------------------------- #
 #  Статистика использования функций
 # --------------------------------------------------------------------------- #

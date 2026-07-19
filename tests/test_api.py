@@ -661,3 +661,33 @@ def test_report_credits_flow():
         assert payments.PLANS["report"] == (149, 0)
     finally:
         _cleanup(name)
+
+
+# ---- Вебхук и досверка платежей ----
+def test_yookassa_webhook_safe():
+    # Неизвестный платёж и пустое тело → 200 без обращения к ЮKassa (spoof-safe no-op).
+    assert client.post("/api/yookassa/webhook", json={"object": {"id": "no-such-payment-xyz"}}).status_code == 200
+    assert client.post("/api/yookassa/webhook", json={}).status_code == 200
+
+
+def test_payment_reconcile_helpers():
+    from backend import payments
+    name, _tok = _make_user("pay_")
+    pid = "test_pay_" + name
+    try:
+        u = db.get_user_by_username(name)
+        db.add_payment(pid, u["id"], "report")
+        # pending виден в обеих выборках
+        assert db.get_pending_payment(pid) == {"payment_id": pid, "user_id": u["id"], "plan": "report"}
+        assert any(p["payment_id"] == pid for p in db.pending_payments_all(older_than_min=0))
+        # succeeded применяется идемпотентно: выдаёт report-кредит и уводит запись из pending
+        assert payments._apply_status(pid, u["id"], "report", "succeeded") is True
+        assert db.get_pending_payment(pid) is None          # больше не pending
+        assert db.get_report_credits(u["id"]) == 1
+        # запись уже не pending → повторная сверка её не тронет (нет двойной выдачи)
+        assert db.pending_payments_all(older_than_min=0) == [] or all(
+            p["payment_id"] != pid for p in db.pending_payments_all(older_than_min=0))
+    finally:
+        with db.get_conn() as c:
+            c.execute("DELETE FROM payments WHERE payment_id = ?", (pid,))
+        _cleanup(name)

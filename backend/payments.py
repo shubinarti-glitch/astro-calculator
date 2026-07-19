@@ -78,26 +78,61 @@ def create_payment(user_id: int, plan: str, return_url: str) -> str:
     return data["confirmation"]["confirmation_url"]
 
 
+def _apply_status(payment_id: str, user_id: int, plan: str, status: str) -> bool:
+    """Идемпотентно применить статус ЮKassa к нашему платежу. Вызывать только для записей
+    в статусе pending (иначе возможна двойная выдача подписки). Возвращает True при активации."""
+    if status == "succeeded":
+        db.set_payment_status(payment_id, "succeeded")
+        days = PLANS[plan][1]
+        if days:
+            db.extend_subscription(user_id, plan, days)
+        if plan.startswith("plus_") or plan == "consult":
+            db.add_consultation(user_id)
+        if plan == "report":
+            db.add_report_credit(user_id)
+        return True
+    if status == "canceled":
+        db.set_payment_status(payment_id, "canceled")
+    return False
+
+
+def reconcile_one(payment_id: str) -> bool:
+    """Перепроверить один платёж в ЮKassa (авторитетно) и применить статус, если у нас ещё
+    pending. Источник истины — API ЮKassa, не тело вебхука. Возвращает True при активации."""
+    rec = db.get_pending_payment(payment_id)
+    if not rec:
+        return False  # неизвестный или уже обработанный платёж — ничего не делаем
+    resp = requests.get(f"{API}/{payment_id}", auth=_auth(), timeout=15)
+    if resp.status_code != 200:
+        return False
+    return _apply_status(payment_id, rec["user_id"], rec["plan"], resp.json().get("status", ""))
+
+
+def reconcile_pending(older_than_min: int = 30) -> int:
+    """Досверка всех висящих pending старше N минут (для админки). Возвращает число обновлённых."""
+    n = 0
+    for p in db.pending_payments_all(older_than_min):
+        try:
+            resp = requests.get(f"{API}/{p['payment_id']}", auth=_auth(), timeout=15)
+            if resp.status_code != 200:
+                continue
+            status = resp.json().get("status", "")
+            if status in ("succeeded", "canceled"):
+                _apply_status(p["payment_id"], p["user_id"], p["plan"], status)
+                n += 1
+        except requests.RequestException:
+            continue  # сеть/ЮKassa недоступны — пропускаем, не роняем вызывающего
+    return n
+
+
 def check_payments(user_id: int) -> dict:
     """Проверить pending-платежи пользователя; активировать подписку при успехе."""
-    auth = _auth()
     activated = False
     for p in db.pending_payments(user_id):
-        resp = requests.get(f"{API}/{p['payment_id']}", auth=auth, timeout=15)
+        resp = requests.get(f"{API}/{p['payment_id']}", auth=_auth(), timeout=15)
         if resp.status_code != 200:
             continue
-        status = resp.json().get("status")
-        if status == "succeeded":
-            db.set_payment_status(p["payment_id"], "succeeded")
-            days = PLANS[p["plan"]][1]
-            if days:
-                db.extend_subscription(user_id, p["plan"], days)
-            if p["plan"].startswith("plus_") or p["plan"] == "consult":
-                db.add_consultation(user_id)
-            if p["plan"] == "report":
-                db.add_report_credit(user_id)
+        if _apply_status(p["payment_id"], user_id, p["plan"], resp.json().get("status", "")):
             activated = True
-        elif status == "canceled":
-            db.set_payment_status(p["payment_id"], "canceled")
     return {"activated": activated, "premium": db.is_premium(user_id),
             "subscription": db.get_subscription(user_id)}
