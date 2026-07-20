@@ -3,6 +3,7 @@
     <string name="app_project">Project Artemisa</string>
     <string name="app_tagline">Natal chart &amp; forecasts</string>
     <string name="ok">Done</string>
+    <string name="section_today">Today</string>
     <string name="section_chart">Chart</string>
     <string name="section_saved">Saved</string>
     <string name="section_account">Account</string>
@@ -104,5 +105,13 @@
     <string name="consent_pd">I consent to personal data processing and accept the Terms of service</string>
 
     <string name="site_banner">Even more features — on astrosmap.ru</string>
+
+    <string name="today_moon">Moon today</string>
+    <string name="today_main">Today\'s highlights</string>
+    <string name="today_for">For chart: %s</string>
+    <string name="today_no_chart">Build your natal chart — your personal transits of the day will appear here.</string>
+    <string name="today_quiet">No sharp aspects today — a calm background.</string>
+    <string name="today_make_chart">Build a chart</string>
+    <string name="today_texts_offline">Detailed interpretations appear when you are online.</string>
     <string name="premium_cta">✦ Premium — subscribe on the website</string>
 </resources>

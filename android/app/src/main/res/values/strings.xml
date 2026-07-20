@@ -4,6 +4,7 @@
     <string name="app_project">Project Artemisa</string>
     <string name="app_tagline">Натальная карта и прогнозы</string>
     <string name="ok">Готово</string>
+    <string name="section_today">Сегодня</string>
     <string name="section_chart">Карта</string>
     <string name="section_saved">Сохранённые</string>
     <string name="section_account">Кабинет</string>
@@ -105,5 +106,13 @@
     <string name="consent_pd">Я даю согласие на обработку персональных данных (152-ФЗ) и принимаю Пользовательское соглашение</string>
 
     <string name="site_banner">Ещё больше функций — на сайте astrosmap.ru</string>
+
+    <string name="today_moon">Луна сегодня</string>
+    <string name="today_main">Главное сегодня</string>
+    <string name="today_for">Для карты: %s</string>
+    <string name="today_no_chart">Постройте натальную карту — и здесь появятся ваши личные транзиты дня.</string>
+    <string name="today_quiet">Сегодня без резких аспектов — спокойный фон.</string>
+    <string name="today_make_chart">Построить карту</string>
+    <string name="today_texts_offline">Подробные трактовки появятся при подключении к интернету.</string>
     <string name="premium_cta">✦ Премиум — оформить на сайте</string>
 </resources>

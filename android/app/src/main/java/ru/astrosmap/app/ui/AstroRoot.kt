@@ -27,6 +27,7 @@ import ru.astrosmap.app.ui.view.ChartViewScreen
 
 /** Корневые разделы приложения (нижняя навигация). */
 enum class Section(val route: String, val titleRes: Int, val iconRes: Int) {
+    Today("today", R.string.section_today, R.drawable.ic_today),
     Chart("chart", R.string.section_chart, R.drawable.ic_chart),
     Saved("saved", R.string.section_saved, R.drawable.ic_saved),
     Tools("tools", R.string.section_tools, R.drawable.ic_tools),
@@ -65,9 +66,19 @@ fun AstroRoot() {
         }
         NavHost(
             navController = navController,
-            startDestination = Section.Chart.route,
+            startDestination = Section.Today.route,
             modifier = Modifier.padding(padding),
         ) {
+            composable(Section.Today.route) {
+                ru.astrosmap.app.ui.today.TodayScreen(
+                    onCreateChart = {
+                        navController.navigate(Section.Chart.route) {
+                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                        }
+                    },
+                )
+            }
             composable(Section.Chart.route) {
                 ChartFormScreen(onCalculated = { navController.navigate("view/0") })
             }
