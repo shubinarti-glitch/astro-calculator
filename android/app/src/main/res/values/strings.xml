@@ -5,9 +5,10 @@
     <string name="app_tagline">Натальная карта и прогнозы</string>
     <string name="ok">Готово</string>
     <string name="section_today">Сегодня</string>
-    <!-- Подписи вкладок держим короткими: их пять, длинные переносятся на две строки. -->
+    <!-- Подписи вкладок: их пять, места мало. У «Мои карты» перенос задан явно (\n),
+         чтобы слова вставали друг под другом, а не обрезались. -->
     <string name="section_chart">Расчёт</string>
-    <string name="section_saved">Карты</string>
+    <string name="section_saved">Мои\nкарты</string>
     <string name="section_account">Кабинет</string>
     <string name="section_tools">Прогнозы</string>
     <string name="tools_pick">Карта для расчёта</string>

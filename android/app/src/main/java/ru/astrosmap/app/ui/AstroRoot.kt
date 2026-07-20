@@ -15,6 +15,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -55,7 +57,15 @@ fun AstroRoot() {
                             }
                         },
                         icon = { Icon(painterResource(section.iconRes), contentDescription = null) },
-                        label = { Text(stringResource(section.titleRes)) },
+                        label = {
+                            // Двухстрочные подписи допускаем осознанно — иначе длинные обрезаются.
+                            Text(
+                                stringResource(section.titleRes),
+                                maxLines = 2,
+                                textAlign = TextAlign.Center,
+                                lineHeight = 13.sp,
+                            )
+                        },
                     )
                 }
             }

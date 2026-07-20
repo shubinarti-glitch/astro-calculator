@@ -1797,6 +1797,7 @@ html[data-theme="light"] .adm-tab.active { background: rgba(139,123,216,0.14); }
 .app-badge.apk { background: var(--accent); color: #16132b; border-color: transparent; font-weight: 600; }
 .app-badge.apk:hover { filter: brightness(1.08); }
 .app-badge.soon { cursor: default; opacity: .85; }
+.app-badge.store-link:hover { border-color: var(--accent); }
 
 /* Базовые деттеренты от копирования трактовок (обходятся, лишь отпугивают) */
 .results, .daily-block { -webkit-user-select: none; user-select: none; }
