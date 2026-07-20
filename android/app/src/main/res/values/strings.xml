@@ -5,8 +5,9 @@
     <string name="app_tagline">Натальная карта и прогнозы</string>
     <string name="ok">Готово</string>
     <string name="section_today">Сегодня</string>
-    <string name="section_chart">Карта</string>
-    <string name="section_saved">Сохранённые</string>
+    <!-- Подписи вкладок держим короткими: их пять, длинные переносятся на две строки. -->
+    <string name="section_chart">Расчёт</string>
+    <string name="section_saved">Карты</string>
     <string name="section_account">Кабинет</string>
     <string name="section_tools">Прогнозы</string>
     <string name="tools_pick">Карта для расчёта</string>
