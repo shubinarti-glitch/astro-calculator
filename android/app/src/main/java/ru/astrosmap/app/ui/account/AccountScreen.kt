@@ -1,5 +1,10 @@
 package ru.astrosmap.app.ui.account
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,8 +15,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Switch
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -24,7 +34,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -40,6 +52,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ru.astrosmap.app.BuildConfig
 import ru.astrosmap.app.R
+import androidx.core.content.ContextCompat
+import ru.astrosmap.app.data.DailyNotify
 import ru.astrosmap.app.data.api.MeResponse
 import ru.astrosmap.app.ui.AstroLabels
 import ru.astrosmap.app.ui.LangPref
@@ -218,6 +232,8 @@ private fun LegalPanel() {
     ru.astrosmap.app.ui.theme.AstroPanel {
         LanguageRow(context)
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        DailyNotifyRow(context)
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         TextButton(onClick = { openSite(context) }) { Text(stringResource(R.string.acc_site)) }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         TextButton(onClick = { openSite(context, PRIVACY_URL) }) { Text(stringResource(R.string.acc_privacy)) }
@@ -233,6 +249,85 @@ private fun LegalPanel() {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+/**
+ * Ежедневное напоминание: выключатель + время. Разрешение на уведомления
+ * спрашиваем только в момент включения — не при первом запуске.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DailyNotifyRow(context: android.content.Context) {
+    var enabled by rememberSaveable { mutableStateOf(DailyNotify.isEnabled(context)) }
+    var hour by rememberSaveable { mutableIntStateOf(DailyNotify.hour(context)) }
+    var minute by rememberSaveable { mutableIntStateOf(DailyNotify.minute(context)) }
+    var showPicker by remember { mutableStateOf(false) }
+    var denied by remember { mutableStateOf(false) }
+
+    val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        denied = !granted
+        if (granted) {
+            enabled = true
+            DailyNotify.setEnabled(context, true)
+        }
+    }
+
+    fun turnOn() {
+        // На Android 13+ без разрешения уведомление просто не покажется — спрашиваем явно.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            permission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            enabled = true
+            DailyNotify.setEnabled(context, true)
+        }
+    }
+
+    if (showPicker) {
+        val state = rememberTimePickerState(initialHour = hour, initialMinute = minute, is24Hour = true)
+        AlertDialog(
+            onDismissRequest = { showPicker = false },
+            title = { Text(stringResource(R.string.notify_time)) },
+            text = { TimePicker(state = state) },
+            confirmButton = {
+                TextButton(onClick = {
+                    hour = state.hour
+                    minute = state.minute
+                    DailyNotify.setTime(context, hour, minute)
+                    showPicker = false
+                }) { Text(stringResource(R.string.ok)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPicker = false }) { Text(stringResource(R.string.cancel)) }
+            },
+        )
+    }
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text("🔔  " + stringResource(R.string.notify_setting), Modifier.weight(1f))
+        Switch(
+            checked = enabled,
+            onCheckedChange = { on ->
+                denied = false
+                if (on) turnOn() else {
+                    enabled = false
+                    DailyNotify.setEnabled(context, false)
+                }
+            },
+        )
+    }
+    if (enabled) {
+        TextButton(onClick = { showPicker = true }) {
+            Text(stringResource(R.string.notify_time) + ": %02d:%02d".format(hour, minute))
+        }
+    }
+    Text(
+        stringResource(if (denied) R.string.notify_denied else R.string.notify_hint),
+        style = MaterialTheme.typography.bodySmall,
+        color = if (denied) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 /** Переключатель языка интерфейса. Меняет локаль и пересоздаёт экран. */

@@ -34,7 +34,12 @@ class MainActivity : ComponentActivity() {
                 AstroRoot()
             }
         }
-        analytics.track("app_open")
+        val fromNotification = intent?.getBooleanExtra(ru.astrosmap.app.data.DailyNotify.FROM_NOTIFICATION, false) == true
+        analytics.track(if (fromNotification) "notif_opened" else "app_open")
+        // Переустановка/обновление сбрасывает очередь WorkManager — восстанавливаем расписание.
+        if (ru.astrosmap.app.data.DailyNotify.isEnabled(this)) {
+            ru.astrosmap.app.data.DailyNotify.schedule(this)
+        }
         // Синхронизация карт при каждом запуске (если выполнен вход и есть сеть).
         lifecycleScope.launch { syncManager.sync() }
     }
