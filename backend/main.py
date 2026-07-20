@@ -788,6 +788,40 @@ def api_support(body: SupportIn, request: Request, authorization: Optional[str] 
     return {"ok": True}
 
 
+class EventIn(BaseModel):
+    name: str = Field(..., min_length=1, max_length=40, pattern=r"^[a-z0-9_]+$")
+    props: dict | None = None
+
+
+class EventBatch(BaseModel):
+    device_id: str = Field(..., min_length=8, max_length=64, pattern=r"^[A-Za-z0-9\-]+$")
+    events: list[EventIn] = Field(..., min_length=1, max_length=50)
+
+
+@app.post("/api/events")
+def api_events(body: EventBatch, request: Request, authorization: str | None = Header(None)):
+    """Приём обезличенных продуктовых событий (приложение и сайт).
+
+    Эндпоинт открытый — события шлют и невошедшие пользователи, поэтому здесь
+    строгая валидация формата и лимит частоты. Персональные данные не принимаем:
+    device_id — случайный UUID устройства, props ограничены по объёму.
+    """
+    ip = _client_ip(request)
+    if _rate_limited(f"ev:{ip}", max_n=60, window=60):
+        raise HTTPException(status_code=429, detail="Слишком много событий. Попробуйте позже.")
+    _rate_record(f"ev:{ip}")
+    uid = None
+    if authorization and authorization.lower().startswith("bearer "):
+        uid = db.verify_token(authorization.split(" ", 1)[1].strip())
+    n = db.record_events(body.device_id, uid, [e.model_dump() for e in body.events])
+    return {"ok": True, "accepted": n}
+
+
+@app.get("/api/admin/events")
+def api_admin_events(uid: int = Depends(require_admin), days: int = Query(30, ge=1, le=365)):
+    return db.events_summary(days)
+
+
 @app.get("/api/unsubscribe")
 def api_unsubscribe(token: str = Query("", max_length=100)):
     """Отписка по ссылке из письма — без входа. Всегда отвечаем страницей-подтверждением."""

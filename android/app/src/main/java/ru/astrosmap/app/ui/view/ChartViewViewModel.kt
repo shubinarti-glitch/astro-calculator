@@ -36,6 +36,7 @@ class ChartViewViewModel @Inject constructor(
     private val engine: AstroEngine,
     private val api: AstroApi,
     private val syncManager: SyncManager,
+    private val analytics: ru.astrosmap.app.data.Analytics,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ChartViewState())
@@ -88,6 +89,7 @@ class ChartViewViewModel @Inject constructor(
 
     fun save() {
         val e = _state.value.entity ?: return
+        analytics.track("chart_saved")
         viewModelScope.launch {
             var toSave = if (textsRaw != null) e.copy(textsJson = textsRaw, textsLang = lang) else e
             // Правка уже синхронизированной карты — пометить для пересоздания на сервере.

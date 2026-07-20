@@ -48,7 +48,10 @@ import javax.inject.Inject
 data class LunarDay(val day: Int, val phaseKey: String, val sign: String)
 
 @HiltViewModel
-class LunarCalendarViewModel @Inject constructor(private val engine: AstroEngine) : ViewModel() {
+class LunarCalendarViewModel @Inject constructor(
+    private val engine: AstroEngine,
+    analytics: ru.astrosmap.app.data.Analytics,
+) : ViewModel() {
 
     var year by mutableIntStateOf(LocalDate.now().year)
         private set
@@ -59,6 +62,7 @@ class LunarCalendarViewModel @Inject constructor(private val engine: AstroEngine
     var selected by mutableStateOf<LunarDay?>(null)
 
     init {
+        analytics.track("lunar_calendar_opened")
         load()
     }
 

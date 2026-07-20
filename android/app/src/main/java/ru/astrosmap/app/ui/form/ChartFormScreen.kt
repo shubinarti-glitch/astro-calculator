@@ -187,7 +187,10 @@ fun ChartFormScreen(
             }
             // Оформление подписки идёт на сайте — диплинк открывает окно «Премиум».
             Button(
-                onClick = { ru.astrosmap.app.ui.openSite(context, "https://astrosmap.ru/#premium") },
+                onClick = {
+                    viewModel.trackPremiumTap()
+                    ru.astrosmap.app.ui.openSite(context, "https://astrosmap.ru/#premium")
+                },
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(stringResource(R.string.premium_cta))

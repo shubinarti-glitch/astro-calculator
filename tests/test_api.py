@@ -691,3 +691,36 @@ def test_payment_reconcile_helpers():
         with db.get_conn() as c:
             c.execute("DELETE FROM payments WHERE payment_id = ?", (pid,))
         _cleanup(name)
+
+
+def test_events_accepts_batch_and_stores():
+    """Обезличенные события принимаются и попадают в сводку."""
+    dev = "test-" + "".join(random.choices(string.ascii_lowercase + string.digits, k=12))
+    r = client.post("/api/events", json={
+        "device_id": dev,
+        "events": [{"name": "app_open"}, {"name": "chart_created", "props": {"src": "form"}}],
+    })
+    assert r.status_code == 200, r.text
+    assert r.json()["accepted"] == 2
+    summary = db.events_summary(30)
+    names = {row["name"] for row in summary["by_name"]}
+    assert {"app_open", "chart_created"} <= names
+
+
+def test_events_rejects_bad_input():
+    """Открытый эндпоинт обязан отбивать мусор на границе доверия."""
+    dev = "test-" + "".join(random.choices(string.ascii_lowercase + string.digits, k=12))
+    # недопустимые символы в имени события
+    r = client.post("/api/events", json={"device_id": dev, "events": [{"name": "Ужас; DROP"}]})
+    assert r.status_code == 422
+    # слишком короткий device_id
+    r = client.post("/api/events", json={"device_id": "x", "events": [{"name": "app_open"}]})
+    assert r.status_code == 422
+    # пустой список событий
+    r = client.post("/api/events", json={"device_id": dev, "events": []})
+    assert r.status_code == 422
+
+
+def test_admin_events_requires_admin():
+    r = client.get("/api/admin/events")
+    assert r.status_code in (401, 403)

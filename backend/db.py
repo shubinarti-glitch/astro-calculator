@@ -176,6 +176,20 @@ def init_db() -> None:
                 created_at TEXT NOT NULL
             )"""
         )
+        # Продуктовые события приложения/сайта: обезличенные, device_id — случайный UUID.
+        # Нужны для воронки и возвратов (D1/D7) — без них эффект фич не измерить.
+        c.execute(
+            """CREATE TABLE IF NOT EXISTS app_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                device_id TEXT NOT NULL,
+                user_id INTEGER,
+                name TEXT NOT NULL,
+                props TEXT NOT NULL DEFAULT '{}',
+                created_at TEXT NOT NULL
+            )"""
+        )
+        c.execute("CREATE INDEX IF NOT EXISTS idx_events_name_date ON app_events (name, created_at)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_events_device ON app_events (device_id, created_at)")
 
 
 # --------------------------------------------------------------------------- #
@@ -655,6 +669,64 @@ def record_usage(endpoint: str) -> None:
             "ON CONFLICT(date, endpoint) DO UPDATE SET count = count + 1",
             (day, endpoint),
         )
+
+
+# --------------------------------------------------------------------------- #
+#  Продуктовые события (воронка и возвраты)
+# --------------------------------------------------------------------------- #
+def record_events(device_id: str, user_id: int | None, events: list[dict]) -> int:
+    """Пишет пачку обезличенных событий. Возвращает число записанных."""
+    now = _now_iso()
+    rows = [
+        (
+            device_id,
+            user_id,
+            e["name"],
+            json.dumps(e.get("props") or {}, ensure_ascii=False)[:500],
+            now,
+        )
+        for e in events
+    ]
+    with get_conn() as c:
+        c.executemany(
+            "INSERT INTO app_events (device_id, user_id, name, props, created_at) VALUES (?, ?, ?, ?, ?)",
+            rows,
+        )
+    return len(rows)
+
+
+def events_summary(days: int = 30) -> dict:
+    """Сводка для админки: события по именам, активные устройства по дням, возвраты."""
+    since = (datetime.now(timezone.utc).date() - timedelta(days=days)).isoformat()
+    with get_conn() as c:
+        by_name = [
+            dict(r)
+            for r in c.execute(
+                "SELECT name, COUNT(*) AS n, COUNT(DISTINCT device_id) AS devices "
+                "FROM app_events WHERE created_at >= ? GROUP BY name ORDER BY n DESC",
+                (since,),
+            )
+        ]
+        by_day = [
+            dict(r)
+            for r in c.execute(
+                "SELECT substr(created_at, 1, 10) AS day, COUNT(DISTINCT device_id) AS dau, COUNT(*) AS events "
+                "FROM app_events WHERE created_at >= ? GROUP BY day ORDER BY day DESC",
+                (since,),
+            )
+        ]
+        # Возвраты: сколько устройств возвращалось хотя бы на второй отдельный день.
+        returning = c.execute(
+            "SELECT COUNT(*) FROM (SELECT device_id FROM app_events "
+            "GROUP BY device_id HAVING COUNT(DISTINCT substr(created_at, 1, 10)) > 1)"
+        ).fetchone()[0]
+        total_devices = c.execute("SELECT COUNT(DISTINCT device_id) FROM app_events").fetchone()[0]
+    return {
+        "by_name": by_name,
+        "by_day": by_day,
+        "devices_total": total_devices,
+        "devices_returning": returning,
+    }
 
 
 def usage_summary(days: int = 30) -> list[dict]:

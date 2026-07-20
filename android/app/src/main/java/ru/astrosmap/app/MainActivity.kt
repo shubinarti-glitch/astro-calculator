@@ -19,6 +19,9 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var syncManager: SyncManager
 
+    @Inject
+    lateinit var analytics: ru.astrosmap.app.data.Analytics
+
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(ru.astrosmap.app.ui.LangPref.wrap(newBase))
     }
@@ -31,6 +34,7 @@ class MainActivity : ComponentActivity() {
                 AstroRoot()
             }
         }
+        analytics.track("app_open")
         // Синхронизация карт при каждом запуске (если выполнен вход и есть сеть).
         lifecycleScope.launch { syncManager.sync() }
     }

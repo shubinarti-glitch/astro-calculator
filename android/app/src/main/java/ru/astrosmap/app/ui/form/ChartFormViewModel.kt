@@ -25,6 +25,7 @@ object ChartDraftHolder {
 @HiltViewModel
 class ChartFormViewModel @Inject constructor(
     private val cities: CityStore,
+    private val analytics: ru.astrosmap.app.data.Analytics,
 ) : ViewModel() {
 
     var name by mutableStateOf("")
@@ -75,6 +76,9 @@ class ChartFormViewModel @Inject constructor(
         suggestions = emptyList()
     }
 
+    /** Переход к оплате на сайте — начало платной воронки. */
+    fun trackPremiumTap() = analytics.track("premium_tapped", mapOf("from" to "main"))
+
     /** Проверяет ввод и кладёт черновик; true — можно открывать экран карты. */
     fun calculate(): Boolean {
         errorRes = null
@@ -93,6 +97,7 @@ class ChartFormViewModel @Inject constructor(
             lat = city.lat, lng = city.lng, tz = city.tz,
             city = cityQuery,
         )
+        analytics.track("chart_created", mapOf("edit" to (editingId != 0L).toString()))
         return true
     }
 }
