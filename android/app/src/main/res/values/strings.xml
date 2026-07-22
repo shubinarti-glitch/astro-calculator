@@ -118,4 +118,10 @@
     <string name="today_texts_offline">Подробные трактовки появятся при подключении к интернету.</string>
     <string name="premium_cta">✦ Премиум — оформить на сайте</string>
     <string name="picker_chart">Карта:</string>
+    <string name="acc_glossary">Словарь терминов</string>
+    <string name="premium_info_title">Что даёт Премиум</string>
+    <string name="premium_info_1">Полный доступ ко всем функциям сайта — соляр, лунар, синастрия, прогнозы, ректификация</string>
+    <string name="premium_info_2">Безлимитное сохранение карт в приложении</string>
+    <string name="premium_info_3">Гадание на Таро без ограничений по дням</string>
+    <string name="premium_info_4">Подписка с сайта работает и в приложении сразу</string>
 </resources>

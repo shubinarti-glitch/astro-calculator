@@ -46,11 +46,15 @@ fun AstroPanel(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    // Тёмная тема — полупрозрачная панель поверх звёзд; светлая — белая карточка.
+    val isDark = MaterialTheme.colorScheme.background == Color(0xFF0A0A1A)
+    val panelColor = if (isDark) Color(0xB8161630) else Color(0xF7FFFFFF)
+    val panelBorder = if (isDark) Color(0x2E7878C8) else Color(0x33A099C8)
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
-        color = Color(0xB8161630),                       // --panel
-        border = BorderStroke(1.dp, Color(0x2E7878C8)),  // --panel-border
+        color = panelColor,
+        border = BorderStroke(1.dp, panelBorder),
     ) {
         Column(
             Modifier.padding(16.dp),

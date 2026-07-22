@@ -2719,7 +2719,16 @@ $("premium-modal").addEventListener("click", (e) => {
 if (location.hash === "#premium") openPremiumModal();
 window.addEventListener("hashchange", () => {
   if (location.hash === "#premium") openPremiumModal();
+  if (location.hash === "#glossary") openGlossary();
 });
+// astrosmap.ru/#glossary — раскрывает словарь терминов и прокручивает к нему.
+function openGlossary() {
+  const g = document.getElementById("glossary-details");
+  if (!g) return;
+  g.open = true;
+  g.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+if (location.hash === "#glossary") setTimeout(openGlossary, 300);
 document.querySelectorAll("#premium-plans [data-plan]").forEach((btn) => {
   btn.addEventListener("click", async () => {
     btn.disabled = true;

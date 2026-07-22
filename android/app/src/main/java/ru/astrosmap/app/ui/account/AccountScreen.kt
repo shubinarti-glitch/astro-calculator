@@ -171,6 +171,7 @@ private fun AuthForm(viewModel: AccountViewModel) {
             Text(stringResource(if (registerMode) R.string.auth_have_account else R.string.auth_no_account))
         }
         }
+        PremiumInfoPanel()
         LegalPanel()
     }
 }
@@ -221,11 +222,32 @@ private fun Profile(me: MeResponse, viewModel: AccountViewModel) {
             Text(stringResource(R.string.auth_logout))
         }
         }
+        PremiumInfoPanel()
         LegalPanel()
     }
 }
 
-/** Юр-блок кабинета: язык, сайт, политика, соглашение, 18+, версия приложения. */
+/** Памятка: что даёт подписка «Премиум». */
+@Composable
+private fun PremiumInfoPanel() {
+    ru.astrosmap.app.ui.theme.AstroPanel {
+        Text(
+            "✦ " + stringResource(R.string.premium_info_title),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        listOf(
+            R.string.premium_info_1,
+            R.string.premium_info_2,
+            R.string.premium_info_3,
+            R.string.premium_info_4,
+        ).forEach {
+            Text("•  " + stringResource(it), style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
+
+/** Юр-блок кабинета: язык, сайт, словарь, политика, соглашение, 18+, версия приложения. */
 @Composable
 private fun LegalPanel() {
     val context = LocalContext.current
@@ -235,6 +257,9 @@ private fun LegalPanel() {
         DailyNotifyRow(context)
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         TextButton(onClick = { openSite(context) }) { Text(stringResource(R.string.acc_site)) }
+        TextButton(onClick = { openSite(context, "https://astrosmap.ru/#glossary") }) {
+            Text(stringResource(R.string.acc_glossary))
+        }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         TextButton(onClick = { openSite(context, PRIVACY_URL) }) { Text(stringResource(R.string.acc_privacy)) }
         TextButton(onClick = { openSite(context, TERMS_URL) }) { Text(stringResource(R.string.acc_terms)) }
