@@ -1784,9 +1784,11 @@ html[data-theme="light"] .adm-tab.active { background: rgba(139,123,216,0.14); }
 .app-cta p { margin: 0 0 16px; color: var(--text-dim); font-size: 14px; }
 .app-cta-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 22px; }
 .app-badges { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+.app-qr-row { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
 .app-qr { margin: 0; text-align: center; }
-.app-qr img { display: block; background: #fff; padding: 6px; border-radius: 10px; width: 116px; height: 116px; }
-.app-qr figcaption { margin-top: 6px; font-size: 11px; color: var(--text-dim); }
+.app-qr img { display: block; background: #fff; padding: 6px; border-radius: 10px; width: 104px; height: 104px; }
+.app-qr figcaption { margin-top: 5px; font-size: 11px; color: var(--text-dim); }
+.app-qr-hint { margin: 10px 0 0; font-size: 11px; color: var(--text-dim); text-align: center; }
 .app-badge {
   display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px;
   border-radius: 12px; border: 1px solid var(--panel-border);
