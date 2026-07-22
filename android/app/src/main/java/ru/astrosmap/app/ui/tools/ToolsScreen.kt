@@ -57,9 +57,12 @@ fun ToolsScreen(
     viewModel: ToolsViewModel = hiltViewModel(),
 ) {
     val charts by viewModel.charts.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
     var selectedId by rememberSaveable { mutableStateOf<Long?>(null) }
     var pickPartner by remember { mutableStateOf(false) }
-    val selected = charts.firstOrNull { it.id == selectedId } ?: charts.firstOrNull()
+    // По умолчанию — та же карта «это я», что и на экране «Сегодня».
+    val selected = charts.firstOrNull { it.id == selectedId }
+        ?: ru.astrosmap.app.data.PrimaryChart.resolve(context, charts)
 
     if (pickPartner && selected != null) {
         AlertDialog(
@@ -106,27 +109,19 @@ fun ToolsScreen(
             return@Column
         }
 
+        // Сначала выбор карты одной компактной строкой, сразу под ней — техники.
+        // Списком радиокнопок при десятке карт кнопки уезжали за пределы экрана.
         AstroPanel {
-            Text(
-                stringResource(R.string.tools_pick),
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.primary,
+            ru.astrosmap.app.ui.ChartPicker(
+                charts = charts,
+                selectedId = selected?.id ?: 0L,
+                onSelect = { id ->
+                    selectedId = id
+                    ru.astrosmap.app.data.PrimaryChart.set(context, id)
+                },
+                modifier = Modifier.fillMaxWidth(),
             )
-            charts.forEach { chart ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    RadioButton(
-                        selected = chart.id == selected?.id,
-                        onClick = { selectedId = chart.id },
-                    )
-                    Text("${chart.name} · ${chart.day}.${chart.month}.${chart.year}")
-                }
-            }
-        }
 
-        AstroPanel {
             ToolButton(stringResource(R.string.tools_transits)) { selected?.let { onTransits(it.id) } }
             ToolButton(stringResource(R.string.tools_progression)) { selected?.let { onProgression(it.id) } }
             ToolButton(stringResource(R.string.tools_forecast)) { selected?.let { onForecast(it.id) } }

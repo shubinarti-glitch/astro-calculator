@@ -114,4 +114,5 @@
     <string name="today_make_chart">Build a chart</string>
     <string name="today_texts_offline">Detailed interpretations appear when you are online.</string>
     <string name="premium_cta">✦ Premium — subscribe on the website</string>
+    <string name="picker_chart">Chart:</string>
 </resources>

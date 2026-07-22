@@ -36,12 +36,15 @@ import ru.astrosmap.app.astro.AstroEngine
 import ru.astrosmap.app.astro.BirthInput
 import ru.astrosmap.app.data.Analytics
 import ru.astrosmap.app.data.ChartDao
+import ru.astrosmap.app.data.ChartEntity
 import ru.astrosmap.app.data.ChartTexts
+import ru.astrosmap.app.data.PrimaryChart
 import ru.astrosmap.app.data.api.AstroApi
 import ru.astrosmap.app.data.api.NatalRequest
 import ru.astrosmap.app.data.api.TransitApiRequest
 import ru.astrosmap.app.data.api.TransitDateDto
 import ru.astrosmap.app.ui.AstroLabels
+import ru.astrosmap.app.ui.ChartPicker
 import ru.astrosmap.app.ui.theme.AppHeader
 import ru.astrosmap.app.ui.theme.AstroPanel
 import ru.astrosmap.app.ui.tools.LunarTexts
@@ -61,6 +64,9 @@ data class TodayState(
     val moonSign: String = "",
     val aspects: List<DayAspect> = emptyList(),
     val textsOffline: Boolean = false,
+    /** Все карты — для выбора «кто я»; переключатель показываем только когда их больше одной. */
+    val charts: List<ChartEntity> = emptyList(),
+    val chartId: Long = 0,
 )
 
 /**
@@ -71,6 +77,7 @@ data class TodayState(
  */
 @HiltViewModel
 class TodayViewModel @Inject constructor(
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context,
     private val dao: ChartDao,
     private val engine: AstroEngine,
     private val api: AstroApi,
@@ -85,13 +92,19 @@ class TodayViewModel @Inject constructor(
         load()
     }
 
+    /** Сменить карту «это я» — выбор запоминается между запусками. */
+    fun selectChart(id: Long) {
+        PrimaryChart.set(context, id)
+        load()
+    }
+
     fun load() {
         viewModelScope.launch {
             val today = LocalDate.now()
-            // Основная карта — последняя изменённая. Явный выбор «это я» появится вместе с дневником.
-            val chart = runCatching { dao.allOnce() }.getOrDefault(emptyList())
+            val all = runCatching { dao.allOnce() }.getOrDefault(emptyList())
                 .filter { !it.pendingDelete }
-                .maxByOrNull { it.updatedAt }
+            // Карта «это я»: выбранная пользователем, иначе самая ранняя.
+            val chart = PrimaryChart.resolve(context, all)
             if (chart == null) {
                 // Без карты показываем только лунную часть — она считается без данных рождения.
                 val moon = withContext(Dispatchers.Default) { moonOnly(today) }
@@ -117,6 +130,8 @@ class TodayViewModel @Inject constructor(
                 moonPhaseKey = tc.lunarPhase.name,
                 moonSign = moonSign,
                 aspects = top,
+                charts = all,
+                chartId = chart.id,
             )
             loadTexts(chart.name, natal, chart.city, today)
         }
@@ -250,11 +265,20 @@ fun TodayScreen(
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.primary,
             )
-            Text(
-                stringResource(R.string.today_for, state.chartName.orEmpty()),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            // Больше одной карты — даём явно выбрать, по кому считать день.
+            if (state.charts.size > 1) {
+                ChartPicker(
+                    charts = state.charts,
+                    selectedId = state.chartId,
+                    onSelect = viewModel::selectChart,
+                )
+            } else {
+                Text(
+                    stringResource(R.string.today_for, state.chartName.orEmpty()),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             if (state.aspects.isEmpty()) {
                 Text(stringResource(R.string.today_quiet), style = MaterialTheme.typography.bodyMedium)
             }

@@ -117,4 +117,5 @@
     <string name="today_make_chart">Построить карту</string>
     <string name="today_texts_offline">Подробные трактовки появятся при подключении к интернету.</string>
     <string name="premium_cta">✦ Премиум — оформить на сайте</string>
+    <string name="picker_chart">Карта:</string>
 </resources>
