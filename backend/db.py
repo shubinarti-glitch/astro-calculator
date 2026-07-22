@@ -411,7 +411,27 @@ def add_profile(user_id: int, label: str, data: dict) -> dict:
         return {"id": cur.lastrowid, "label": label, "data": data}
 
 
+def first_profile_id(user_id: int) -> Optional[int]:
+    """Самая первая сохранённая карта — она остаётся доступной и без подписки."""
+    with get_conn() as c:
+        row = c.execute(
+            "SELECT MIN(id) AS id FROM profiles WHERE user_id = ?", (user_id,)
+        ).fetchone()
+    return row["id"] if row and row["id"] is not None else None
+
+
+def count_profiles(user_id: int) -> int:
+    with get_conn() as c:
+        return c.execute(
+            "SELECT COUNT(*) FROM profiles WHERE user_id = ?", (user_id,)
+        ).fetchone()[0]
+
+
 def list_profiles(user_id: int) -> list[dict]:
+    """Карты пользователя. Без подписки все, кроме первой, помечаются locked —
+    данные при этом никогда не удаляются и снова открываются после продления."""
+    premium = is_premium(user_id)
+    first_id = None if premium else first_profile_id(user_id)
     with get_conn() as c:
         rows = c.execute(
             "SELECT id, label, data, note, created_at FROM profiles WHERE user_id = ? ORDER BY created_at DESC",
@@ -419,7 +439,8 @@ def list_profiles(user_id: int) -> list[dict]:
         ).fetchall()
     return [
         {"id": r["id"], "label": r["label"], "data": json.loads(r["data"]),
-         "note": r["note"], "created_at": r["created_at"]}
+         "note": r["note"], "created_at": r["created_at"],
+         "locked": (not premium) and r["id"] != first_id}
         for r in rows
     ]
 

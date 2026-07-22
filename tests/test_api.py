@@ -724,3 +724,43 @@ def test_events_rejects_bad_input():
 def test_admin_events_requires_admin():
     r = client.get("/api/admin/events")
     assert r.status_code in (401, 403)
+
+
+def test_free_tier_one_chart_and_unlock_by_premium():
+    """Бесплатно — одна карта; остальные не удаляются, а открываются подпиской."""
+    name, token = _make_user("lim_")
+    h = {"Authorization": f"Bearer {token}"}
+    try:
+        u = db.get_user_by_username(name)
+        first = client.post("/api/profiles", headers=h,
+                            json={"label": "Первая", "data": {"year": 1990}})
+        assert first.status_code == 200
+        first_id = first.json()["id"]
+
+        # вторая карта на бесплатном тарифе — отказ с предложением подписки
+        second = client.post("/api/profiles", headers=h,
+                             json={"label": "Вторая", "data": {"year": 1991}})
+        assert second.status_code == 402, second.text
+        assert "Премиум" in second.json()["detail"]
+
+        # выдаём подписку — лимит снимается
+        db.extend_subscription(u["id"], "month", 30)
+        allowed = client.post("/api/profiles", headers=h,
+                              json={"label": "Вторая", "data": {"year": 1991}})
+        assert allowed.status_code == 200
+        second_id = allowed.json()["id"]
+
+        # с подпиской обе карты доступны
+        items = client.get("/api/profiles", headers=h).json()
+        assert all(not it["locked"] for it in items)
+
+        # подписка кончилась: карты остаются, но активна только первая
+        with db.get_conn() as c:
+            c.execute("DELETE FROM subscriptions WHERE user_id = ?", (u["id"],))
+        items = client.get("/api/profiles", headers=h).json()
+        assert len(items) == 2, "карты не должны удаляться"
+        locked = {it["id"]: it["locked"] for it in items}
+        assert locked[first_id] is False, "первая карта остаётся доступной"
+        assert locked[second_id] is True, "остальные блокируются до продления"
+    finally:
+        _cleanup(name)

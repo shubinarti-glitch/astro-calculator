@@ -24,6 +24,10 @@ logger = logging.getLogger("astro")
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
+# Бесплатный тариф: одна сохранённая карта. Остальные не удаляются, а помечаются
+# locked и снова открываются после оформления подписки.
+FREE_PROFILE_LIMIT = 1
+
 # Content-Security-Policy (defense-in-depth поверх экранирования ввода).
 # 'sha256-...' разрешает единственный инлайн-скрипт темы (frontend/index.html).
 # ВАЖНО: если правишь тот инлайн-скрипт — пересчитай хэш, иначе тема сломается.
@@ -610,6 +614,14 @@ def api_list_profiles(uid: int = Depends(current_user_id)):
 
 @app.post("/api/profiles")
 def api_add_profile(profile: ProfileIn, uid: int = Depends(current_user_id)):
+    # Бесплатный тариф — одна карта. Уже сохранённые не удаляются: подписка снова
+    # открывает их все (см. db.list_profiles, поле locked).
+    if not db.is_premium(uid) and db.count_profiles(uid) >= FREE_PROFILE_LIMIT:
+        raise HTTPException(
+            status_code=402,
+            detail="На бесплатном тарифе можно сохранить одну карту. "
+                   "Подписка «Премиум» снимает ограничение и вернёт доступ ко всем сохранённым.",
+        )
     return db.add_profile(uid, profile.label, profile.data)
 
 

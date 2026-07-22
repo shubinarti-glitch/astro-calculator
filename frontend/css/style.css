@@ -1799,6 +1799,13 @@ html[data-theme="light"] .adm-tab.active { background: rgba(139,123,216,0.14); }
 .app-badge.soon { cursor: default; opacity: .85; }
 .app-badge.store-link:hover { border-color: var(--accent); }
 
+/* Карта, недоступная без подписки: данные сохранены, действия скрыты */
+.cab-person.is-locked { opacity: .72; }
+.cab-locked-note {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin-top: 6px; font-size: 12.5px; color: var(--text-dim);
+}
+
 /* Базовые деттеренты от копирования трактовок (обходятся, лишь отпугивают) */
 .results, .daily-block { -webkit-user-select: none; user-select: none; }
 .results input, .results textarea, .results select { -webkit-user-select: text; user-select: text; }
@@ -1812,6 +1819,10 @@ html[data-theme="light"] .adm-tab.active { background: rgba(139,123,216,0.14); }
 
 /* Планшеты и телефоны: компактная шапка, кнопки не на всю ширину */
 @media (max-width: 640px) {
+  /* На телефоне 40px у .layout + 24px у .panel съедали 64px с каждой стороны. */
+  .layout { padding: 12px 10px 28px; gap: 14px; }
+  .panel { padding: 16px 14px; }
+  .app-cta { padding: 18px 14px; }
   .site-header { padding: 16px 16px 8px; gap: 10px; }
   .auth-area { flex-wrap: wrap; gap: 8px; justify-content: flex-start; }
   .auth-btn { padding: 8px 12px; font-size: 12px; }

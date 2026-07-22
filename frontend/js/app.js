@@ -3122,6 +3122,15 @@ async function loadCabinet() {
         const star = isPrimary
           ? `<button class="adm-mini primary-on" data-primary="${p.id}" data-on="1">${t("cab_is_primary")}</button>`
           : `<button class="adm-mini" data-primary="${p.id}" data-on="0">${t("cab_primary")}</button>`;
+        // Карта без подписки: данные сохранены, но действия недоступны до продления.
+        if (p.locked) {
+          return `<div class="cab-person is-locked" data-id="${p.id}">
+            <div class="cab-person-head"><b>🔒 ${escapeHtml(p.label)}</b> <span class="cab-dim">${meta}</span></div>
+            <div class="cab-locked-note">${t("cab_locked")}
+              <button class="adm-mini" data-unlock="1">${t("premium_btn")}</button>
+            </div>
+          </div>`;
+        }
         return `<div class="cab-person ${isPrimary ? "is-primary" : ""}" data-id="${p.id}">
           <div class="cab-person-head"><b>${escapeHtml(p.label)}</b> <span class="cab-dim">${meta}</span></div>
           <input class="cab-note" data-note="${p.id}" placeholder="${t("cab_note_ph")}" value="${escapeHtml(p.note || "")}" />
@@ -3169,6 +3178,10 @@ $("cab-people").addEventListener("change", async (e) => {
   try { await postJSON(`/api/profiles/${id}/note`, { note: e.target.value }); } catch (ex) {}
 });
 $("cab-people").addEventListener("click", async (e) => {
+  if (e.target && e.target.dataset && e.target.dataset.unlock) {
+    openPremiumModal();
+    return;
+  }
   const star = e.target.closest("[data-primary]");
   if (star) {
     // Клик по звёздочке: назначить основным, повторный клик по основному — снять.
@@ -3231,6 +3244,7 @@ async function loadAdmin() {
         ? `${formatDate(new Date(u.premium_until * 1000).toISOString().slice(0, 10))}`
         : "—";
       const premBtns =
+        `<button class="adm-mini" data-prem="${u.id}" data-days="7" title="+7">+7</button>` +
         `<button class="adm-mini" data-prem="${u.id}" data-days="30" title="+30">+30</button>` +
         `<button class="adm-mini" data-prem="${u.id}" data-days="365" title="+365">+365</button>` +
         (u.premium_until ? `<button class="adm-mini" data-prem="${u.id}" data-days="0">×</button>` : "");
@@ -3517,11 +3531,21 @@ $("save-current").addEventListener("click", async () => {
   const label = prompt(t("save_name_prompt"), defaultLabel);
   if (!label) return;
   try {
-    await fetch("/api/profiles", {
+    const resp = await fetch("/api/profiles", {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({ label, data: birth }),
     });
+    // 402 — исчерпан бесплатный лимит: показываем подписку вместо тихого отказа.
+    if (resp.status === 402) {
+      openPremiumModal();
+      return;
+    }
+    if (!resp.ok) {
+      const detail = await resp.json().catch(() => ({}));
+      alert(detail.detail || t("save_failed"));
+      return;
+    }
     await loadProfiles();
   } catch (ex) {
     alert(t("save_failed") + ex.message);
