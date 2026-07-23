@@ -14,7 +14,7 @@ object TarotStorage {
     private const val PREFS = "settings"
     private const val KEY_DAY_CARD = "tarot_day_card"     // id карты дня
     private const val KEY_DAY_DATE = "tarot_day_date"     // дата (epochDay), когда вытянули
-    private const val KEY_SPREAD_DATE = "tarot_spread_date" // дата последнего расклада (epochDay)
+    // Лимит считается ОТДЕЛЬНО для каждого расклада: ключ — "tarot_spread_<тип>".
 
     private fun prefs(context: Context) = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
     private fun today() = LocalDate.now().toEpochDay()
@@ -34,18 +34,18 @@ object TarotStorage {
     }
 
     /**
-     * Можно ли сделать расклад. Премиум — каждый день, бесплатно — раз в 7 дней.
-     * Возвращает число дней до следующего бесплатного расклада (0 — можно сейчас).
+     * Дней до следующего бесплатного использования КОНКРЕТНОГО расклада (0 — можно сейчас).
+     * Премиум — каждый день; бесплатно — раз в 7 дней, и каждый расклад считается отдельно.
      */
-    fun spreadCooldownDays(context: Context, premium: Boolean): Int {
+    fun spreadCooldownDays(context: Context, spreadKey: String, premium: Boolean): Int {
         if (premium) return 0
-        val last = prefs(context).getLong(KEY_SPREAD_DATE, -8)
+        val last = prefs(context).getLong("tarot_spread_$spreadKey", -8)
         if (last < 0) return 0
         val passed = (today() - last).toInt()
         return (7 - passed).coerceAtLeast(0)
     }
 
-    fun markSpreadDone(context: Context) {
-        prefs(context).edit().putLong(KEY_SPREAD_DATE, today()).apply()
+    fun markSpreadDone(context: Context, spreadKey: String) {
+        prefs(context).edit().putLong("tarot_spread_$spreadKey", today()).apply()
     }
 }

@@ -92,8 +92,6 @@ fun TarotScreen(viewModel: TarotViewModel = hiltViewModel()) {
             ) { Text(stringResource(R.string.tarot_live_reader)) }
         }
 
-        val cooldown = TarotStorage.spreadCooldownDays(context, viewModel.premium)
-
         if (spread == null) {
             AstroPanel {
                 Text(
@@ -101,27 +99,34 @@ fun TarotScreen(viewModel: TarotViewModel = hiltViewModel()) {
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.primary,
                 )
-                if (cooldown > 0) {
-                    Text(
-                        stringResource(R.string.tarot_cooldown, cooldown),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error,
-                    )
+                // У каждого расклада свой недельный лимит — считаем по отдельности.
+                Spread.entries.forEach { s ->
+                    val cooldown = TarotStorage.spreadCooldownDays(context, s.name, viewModel.premium)
+                    Button(
+                        onClick = {
+                            spread = s
+                            cards = TarotDeck.draw(3)
+                            revealed = emptySet()
+                            TarotStorage.markSpreadDone(context, s.name)
+                        },
+                        enabled = cooldown == 0,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text(stringResource(s.titleRes)) }
+                    if (cooldown > 0) {
+                        Text(
+                            stringResource(R.string.tarot_cooldown, cooldown),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                val anyLocked = Spread.entries.any {
+                    TarotStorage.spreadCooldownDays(context, it.name, viewModel.premium) > 0
+                }
+                if (anyLocked && !viewModel.premium) {
                     Button(onClick = { openSite(context, "https://astrosmap.ru/#premium") },
                         modifier = Modifier.fillMaxWidth()) {
                         Text(stringResource(R.string.premium_buy))
-                    }
-                } else {
-                    Spread.entries.forEach { s ->
-                        Button(
-                            onClick = {
-                                spread = s
-                                cards = TarotDeck.draw(3)
-                                revealed = emptySet()
-                                TarotStorage.markSpreadDone(context)
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                        ) { Text(stringResource(s.titleRes)) }
                     }
                 }
             }
