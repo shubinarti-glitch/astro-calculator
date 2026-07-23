@@ -5,4 +5,11 @@
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
+
+    <!-- Стартовая тема: системная заставка в фирменных цветах, дальше — Theme.AstroSMap. -->
+    <style name="Theme.AstroSMap.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#0A0A1A</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/Theme.AstroSMap</item>
+    </style>
 </resources>

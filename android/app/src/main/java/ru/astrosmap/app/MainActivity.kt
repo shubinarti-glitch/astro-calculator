@@ -5,6 +5,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.Crossfade
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -27,11 +33,29 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Системная заставка (иконка на тёмном) висит до первого кадра. Ловим её уход,
+        // чтобы своя анимация стартовала ровно тогда, когда станет видимой, а не раньше.
+        val splashScreen = installSplashScreen()
+        val systemSplashGone = mutableStateOf(false)
+        splashScreen.setOnExitAnimationListener { provider ->
+            provider.remove()
+            systemSplashGone.value = true
+        }
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContent {
             AstroTheme {
-                AstroRoot()
+                var showSplash by remember { mutableStateOf(true) }
+                Crossfade(targetState = showSplash, label = "splash") { splash ->
+                    if (splash) {
+                        ru.astrosmap.app.ui.SplashScreen(
+                            start = systemSplashGone.value,
+                            onFinished = { showSplash = false },
+                        )
+                    } else {
+                        AstroRoot()
+                    }
+                }
             }
         }
         val fromNotification = intent?.getBooleanExtra(ru.astrosmap.app.data.DailyNotify.FROM_NOTIFICATION, false) == true

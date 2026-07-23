@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlin.random.Random
 
 /** Звёздное небо — как фон сайта. Рисуется один раз, позиции фиксированы сидом. */
@@ -85,12 +86,7 @@ fun AppHeader(subtitle: String) {
             star(size.width * 0.78f, size.height * 0.22f, size.width * 0.13f, size.width * 0.035f, Color(0xFF8B7BD8))
         }
         Column(Modifier.padding(start = 10.dp)) {
-            Text(
-                "AstroSMap",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.primary,
-            )
+            AstroWordmark(fontSize = 30.sp)
             Text(
                 "Project Artemisa · " + subtitle,
                 style = MaterialTheme.typography.bodySmall,
