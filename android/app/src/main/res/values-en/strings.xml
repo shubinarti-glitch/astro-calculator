@@ -121,4 +121,7 @@
     <string name="premium_info_2">Unlimited saved charts in the app</string>
     <string name="premium_info_3">Tarot readings with no daily limit</string>
     <string name="premium_info_4">A subscription from the website works in the app right away</string>
+    <string name="tarot_day_title">Card of the day</string>
+    <string name="tarot_day_hint">Tap the deck, focus on your day, and draw a card.</string>
+    <string name="tarot_day_pick">Pick one of the three cards</string>
 </resources>

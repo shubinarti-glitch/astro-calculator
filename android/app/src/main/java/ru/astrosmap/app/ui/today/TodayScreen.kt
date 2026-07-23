@@ -244,6 +244,9 @@ fun TodayScreen(
             }
         }
 
+        // Карта дня — не зависит от натальной карты, показываем всегда.
+        ru.astrosmap.app.ui.tarot.CardOfDaySection()
+
         if (state.chartName == null) {
             if (!state.loading) {
                 AstroPanel {

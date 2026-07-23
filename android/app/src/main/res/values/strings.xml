@@ -124,4 +124,7 @@
     <string name="premium_info_2">Безлимитное сохранение карт в приложении</string>
     <string name="premium_info_3">Гадание на Таро без ограничений по дням</string>
     <string name="premium_info_4">Подписка с сайта работает и в приложении сразу</string>
+    <string name="tarot_day_title">Карта дня</string>
+    <string name="tarot_day_hint">Нажмите на колоду, сосредоточьтесь на дне — и вытяните карту.</string>
+    <string name="tarot_day_pick">Выберите одну из трёх карт</string>
 </resources>
