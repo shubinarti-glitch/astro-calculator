@@ -124,4 +124,20 @@
     <string name="tarot_day_title">Card of the day</string>
     <string name="tarot_day_hint">Tap the deck, focus on your day, and draw a card.</string>
     <string name="tarot_day_pick">Pick one of the three cards</string>
+    <string name="section_tarot">Tarot</string>
+    <string name="tarot_disclaimer">Tarot spreads are for entertainment and do not replace a doctor, psychologist, lawyer or financial advisor. Make important decisions with professionals.</string>
+    <string name="tarot_live_reader">🔮 A live reading with a tarot reader</string>
+    <string name="tarot_choose_spread">Choose a spread</string>
+    <string name="tarot_spread_situation">Situation spread</string>
+    <string name="tarot_spread_mfa">Thoughts · feelings · actions</string>
+    <string name="tarot_pos_essence">The essence</string>
+    <string name="tarot_pos_obstacle">What hinders</string>
+    <string name="tarot_pos_advice">Advice</string>
+    <string name="tarot_pos_thoughts">Thoughts</string>
+    <string name="tarot_pos_feelings">Feelings</string>
+    <string name="tarot_pos_actions">Actions</string>
+    <string name="tarot_tap_to_open">Tap each card to reveal it.</string>
+    <string name="tarot_face_down">Tap to reveal</string>
+    <string name="tarot_cooldown">Next free spread in %d days. Premium — every day.</string>
+    <string name="tarot_done">Done</string>
 </resources>

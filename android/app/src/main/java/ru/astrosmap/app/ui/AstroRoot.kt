@@ -33,6 +33,7 @@ enum class Section(val route: String, val titleRes: Int, val iconRes: Int) {
     Chart("chart", R.string.section_chart, R.drawable.ic_chart),
     Saved("saved", R.string.section_saved, R.drawable.ic_saved),
     Tools("tools", R.string.section_tools, R.drawable.ic_tools),
+    Tarot("tarot", R.string.section_tarot, R.drawable.ic_tarot),
     Account("account", R.string.section_account, R.drawable.ic_account),
 }
 
@@ -96,6 +97,7 @@ fun AstroRoot() {
                 SavedScreen(onOpen = { id -> navController.navigate("view/$id") })
             }
             composable(Section.Account.route) { ru.astrosmap.app.ui.account.AccountScreen() }
+            composable(Section.Tarot.route) { ru.astrosmap.app.ui.tarot.TarotScreen() }
             composable(Section.Tools.route) {
                 ru.astrosmap.app.ui.tools.ToolsScreen(
                     onTransits = { id -> navController.navigate("transit/$id") },

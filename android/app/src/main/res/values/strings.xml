@@ -127,4 +127,20 @@
     <string name="tarot_day_title">Карта дня</string>
     <string name="tarot_day_hint">Нажмите на колоду, сосредоточьтесь на дне — и вытяните карту.</string>
     <string name="tarot_day_pick">Выберите одну из трёх карт</string>
+    <string name="section_tarot">Таро</string>
+    <string name="tarot_disclaimer">Расклады Таро носят развлекательный характер и не заменяют консультацию врача, психолога, юриста или финансового специалиста. Важные решения принимайте с профессионалами.</string>
+    <string name="tarot_live_reader">🔮 Живой расклад у таролога</string>
+    <string name="tarot_choose_spread">Выберите расклад</string>
+    <string name="tarot_spread_situation">Расклад на ситуацию</string>
+    <string name="tarot_spread_mfa">Мысли · чувства · действия</string>
+    <string name="tarot_pos_essence">Суть ситуации</string>
+    <string name="tarot_pos_obstacle">Что мешает</string>
+    <string name="tarot_pos_advice">Совет</string>
+    <string name="tarot_pos_thoughts">Мысли</string>
+    <string name="tarot_pos_feelings">Чувства</string>
+    <string name="tarot_pos_actions">Действия</string>
+    <string name="tarot_tap_to_open">Нажмите на каждую карту, чтобы открыть.</string>
+    <string name="tarot_face_down">Нажмите, чтобы открыть</string>
+    <string name="tarot_cooldown">Следующий бесплатный расклад через %d дн. Премиум — каждый день.</string>
+    <string name="tarot_done">Готово</string>
 </resources>
