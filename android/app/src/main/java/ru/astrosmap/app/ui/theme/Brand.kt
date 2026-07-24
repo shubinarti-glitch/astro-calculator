@@ -47,17 +47,17 @@ fun AstroWordmark(fontSize: TextUnit = 34.sp, modifier: Modifier = Modifier) {
         withStyle(SpanStyle(color = WordmarkGold)) { append("AstroS") }
         withStyle(SpanStyle(color = WordmarkPurple)) { append("Map") }
     }
-    // Блик пробегает за ~0,9 с, затем пауза ~2,3 с — сверкание, а не мельтешение.
+    // Мягкий тёплый отблеск неспешно проходит по буквам (~1,6 с), затем долгая пауза.
     val shine = rememberInfiniteTransition(label = "wordmark-shine")
     val pos by shine.animateFloat(
-        initialValue = -0.4f,
-        targetValue = 1.4f,
+        initialValue = -0.6f,
+        targetValue = 1.6f,
         animationSpec = infiniteRepeatable(
             keyframes {
-                durationMillis = 3200
-                -0.4f at 0
-                1.4f at 900 using LinearEasing
-                1.4f at 3200
+                durationMillis = 4800
+                -0.6f at 0
+                1.6f at 1600 using LinearEasing
+                1.6f at 4800
             },
             RepeatMode.Restart,
         ),
@@ -67,13 +67,18 @@ fun AstroWordmark(fontSize: TextUnit = 34.sp, modifier: Modifier = Modifier) {
         text = text,
         modifier = modifier.drawWithContent {
             drawContent()
-            val band = size.width * 0.32f
+            // Широкая мягкая полоса, тёплый оттенок, низкая прозрачность — деликатный блеск.
+            val band = size.width * 0.55f
             val cx = pos * size.width
             drawRect(
                 brush = Brush.linearGradient(
-                    colors = listOf(Color.Transparent, Color.White.copy(alpha = 0.6f), Color.Transparent),
+                    colors = listOf(
+                        Color.Transparent,
+                        Color(0xFFFFF4DE).copy(alpha = 0.22f),
+                        Color.Transparent,
+                    ),
                     start = Offset(cx - band, 0f),
-                    end = Offset(cx + band, size.height),
+                    end = Offset(cx + band, 0f),
                 ),
                 blendMode = BlendMode.SrcAtop,
             )
