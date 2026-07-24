@@ -85,9 +85,6 @@ object LenientStringSerializer : kotlinx.serialization.KSerializer<String?> {
     }
 }
 
-@Serializable
-data class ApiError(val detail: String = "")
-
 /** Тело POST /api/natal — как BirthData на бэке. */
 @Serializable
 data class NatalRequest(

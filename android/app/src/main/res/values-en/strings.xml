@@ -69,6 +69,7 @@
     <string name="auth_username_or_email">Username or email</string>
     <string name="auth_email">Email</string>
     <string name="auth_password">Password</string>
+    <string name="auth_pwd_hint">At least 8 characters</string>
     <string name="auth_do_login">Sign in</string>
     <string name="auth_do_register">Create account</string>
     <string name="auth_no_account">No account? Sign up</string>

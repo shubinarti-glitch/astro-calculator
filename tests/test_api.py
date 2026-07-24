@@ -118,6 +118,15 @@ def test_register_short_password():
     assert client.post("/api/auth/register", json={"username": "x", "password": "1234"}).status_code == 422
 
 
+def test_validation_error_detail_shape():
+    """Мобильное приложение читает msg из detail-списка (AccountViewModel.parseDetail).
+    Если форма 422 изменится — там снова вылезет невнятное «HTTP 422»."""
+    r = client.post("/api/auth/register", json={"username": "x", "password": "1234", "email": "a@b.ru"})
+    detail = r.json()["detail"]
+    assert isinstance(detail, list) and detail
+    assert all(isinstance(item.get("msg"), str) and item["msg"] for item in detail)
+
+
 def test_login_nonexistent():
     r = client.post("/api/auth/login", json={"username": _rnd("nouser_"), "password": "wrongpass123"})
     assert r.status_code == 401

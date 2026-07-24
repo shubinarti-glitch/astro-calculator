@@ -72,6 +72,7 @@
     <string name="auth_username_or_email">Имя пользователя или почта</string>
     <string name="auth_email">Почта</string>
     <string name="auth_password">Пароль</string>
+    <string name="auth_pwd_hint">Минимум 8 символов</string>
     <string name="auth_do_login">Войти</string>
     <string name="auth_do_register">Зарегистрироваться</string>
     <string name="auth_no_account">Нет аккаунта? Регистрация</string>

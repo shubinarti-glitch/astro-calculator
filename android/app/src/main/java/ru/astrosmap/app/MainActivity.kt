@@ -8,7 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.Crossfade
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
@@ -43,9 +43,13 @@ class MainActivity : ComponentActivity() {
         }
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        // Заставка — только на холодном запуске. При пересоздании активности (смена темы,
+        // поворот, системный шрифт) системная заставка не показывается, слушатель её ухода
+        // не срабатывает — и заставка висела бы вечно.
+        val coldStart = savedInstanceState == null
         setContent {
             AstroTheme {
-                var showSplash by remember { mutableStateOf(true) }
+                var showSplash by rememberSaveable { mutableStateOf(coldStart) }
                 Crossfade(targetState = showSplash, label = "splash") { splash ->
                     if (splash) {
                         ru.astrosmap.app.ui.SplashScreen(

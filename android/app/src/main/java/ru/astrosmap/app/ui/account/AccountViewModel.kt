@@ -11,11 +11,14 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import retrofit2.HttpException
 import ru.astrosmap.app.R
 import ru.astrosmap.app.data.SyncManager
 import ru.astrosmap.app.data.TokenStore
-import ru.astrosmap.app.data.api.ApiError
 import ru.astrosmap.app.data.api.AstroApi
 import ru.astrosmap.app.data.api.LoginRequest
 import ru.astrosmap.app.data.api.MeResponse
@@ -124,8 +127,18 @@ class AccountViewModel @Inject constructor(
 
     private fun parseDetail(e: HttpException): String {
         val body = e.response()?.errorBody()?.string().orEmpty()
+        // FastAPI отдаёт detail двумя формами: строкой (HTTPException) и списком
+        // объектов с полем msg (422 от pydantic). Раньше читали только строку —
+        // на 422 декод падал и пользователь видел голое «HTTP 422».
         return runCatching {
-            Json { ignoreUnknownKeys = true }.decodeFromString<ApiError>(body).detail
+            when (val detail = Json.parseToJsonElement(body).jsonObject["detail"]) {
+                is JsonPrimitive -> detail.content
+                is JsonArray -> detail.joinToString("; ") {
+                    it.jsonObject["msg"]?.jsonPrimitive?.content.orEmpty()
+                        .removePrefix("Value error, ")
+                }
+                else -> null
+            }
         }.getOrNull().takeUnless { it.isNullOrBlank() } ?: "HTTP ${e.code()}"
     }
 

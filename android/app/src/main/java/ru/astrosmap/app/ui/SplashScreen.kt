@@ -60,8 +60,15 @@ fun SplashScreen(start: Boolean, onFinished: () -> Unit) {
     )
 
     // Анимация запускается только когда системная заставка ушла (start=true).
+    // Если её ухода так и не дождались — уходим сами: лучше без анимации, чем навсегда
+    // застрять на заставке. Когда start станет true, эффект перезапустится, а эта ветка
+    // отменится.
     LaunchedEffect(start) {
-        if (!start) return@LaunchedEffect
+        if (!start) {
+            delay(1500)
+            onFinished()
+            return@LaunchedEffect
+        }
         logoAlpha.animateTo(1f, tween(450))
         logoScale.animateTo(1f, tween(650))
         textAlpha.animateTo(1f, tween(550))

@@ -100,7 +100,7 @@ private fun AuthForm(viewModel: AccountViewModel) {
         )
         OutlinedTextField(
             value = username,
-            onValueChange = { username = it.take(80) },
+            onValueChange = { username = it.take(50) }, // предел сервера: 2..50
             label = { Text(stringResource(if (registerMode) R.string.auth_username else R.string.auth_username_or_email)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
@@ -117,8 +117,11 @@ private fun AuthForm(viewModel: AccountViewModel) {
         }
         OutlinedTextField(
             value = password,
-            onValueChange = { password = it },
+            onValueChange = { password = it.take(200) }, // предел сервера: 8..200
             label = { Text(stringResource(R.string.auth_password)) },
+            supportingText = if (registerMode) {
+                { Text(stringResource(R.string.auth_pwd_hint)) }
+            } else null,
             singleLine = true,
             visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -161,8 +164,11 @@ private fun AuthForm(viewModel: AccountViewModel) {
                 if (registerMode) viewModel.register(username, email, password)
                 else viewModel.login(username, password)
             },
+            // Пределы те же, что у сервера, иначе форма отправит заведомо невалидное и вернётся 422.
+            // На входе не ограничиваем: у старых аккаунтов пароль мог быть короче 8.
             enabled = !viewModel.busy && username.isNotBlank() && password.isNotBlank() &&
-                (!registerMode || (email.isNotBlank() && consent)),
+                (!registerMode || (email.isNotBlank() && consent &&
+                    username.trim().length >= 2 && password.length >= 8)),
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(stringResource(if (registerMode) R.string.auth_do_register else R.string.auth_do_login))
