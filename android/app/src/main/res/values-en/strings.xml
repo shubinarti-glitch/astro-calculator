@@ -143,5 +143,7 @@
     <string name="tarot_cooldown_daily">This spread is once a day. Come back tomorrow.</string>
     <string name="sky_now_title">The sky right now</string>
     <string name="sky_now_sub">Where the planets are now, for how long, and what it means. Tap a planet to reveal the meaning.</string>
+    <string name="widget_today_label">AstroSMap — day</string>
+    <string name="widget_today_desc">Date, Moon phase and the mood of the day on your home screen</string>
     <string name="tarot_done">Done</string>
 </resources>

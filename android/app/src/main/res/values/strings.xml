@@ -146,5 +146,7 @@
     <string name="tarot_cooldown_daily">Этот расклад — раз в день. Возвращайтесь завтра.</string>
     <string name="sky_now_title">Небо сейчас</string>
     <string name="sky_now_sub">Где сейчас планеты, на какой период и что это значит. Нажмите на планету — раскроется значение.</string>
+    <string name="widget_today_label">AstroSMap — день</string>
+    <string name="widget_today_desc">Дата, фаза Луны и настрой дня на домашнем экране</string>
     <string name="tarot_done">Готово</string>
 </resources>
