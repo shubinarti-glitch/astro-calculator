@@ -80,6 +80,8 @@
     <string name="premium_none">Free plan</string>
     <string name="premium_expired_banner">Premium has expired. Your charts are saved. Renew on the website to restore all features.</string>
     <string name="premium_renew">Renew on the website</string>
+    <string name="pdf_cta">📄 Detailed PDF report</string>
+    <string name="pdf_cta_hint">A full chart breakdown as a PDF — get it on astrosmap.ru.</string>
     <string name="net_error">No connection to the server</string>
     <string name="retry">Retry</string>
 

@@ -83,6 +83,8 @@
     <string name="premium_none">Бесплатный тариф</string>
     <string name="premium_expired_banner">Премиум истёк. Ваши карты сохранены. Продлите на сайте, чтобы вернуть все функции.</string>
     <string name="premium_renew">Продлить на сайте</string>
+    <string name="pdf_cta">📄 Подробный PDF-отчёт</string>
+    <string name="pdf_cta_hint">Полный разбор карты в PDF — оформить на сайте astrosmap.ru.</string>
     <string name="net_error">Нет соединения с сервером</string>
     <string name="retry">Повторить</string>
 

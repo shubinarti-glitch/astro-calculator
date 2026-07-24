@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.Button
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -164,6 +165,23 @@ fun ChartViewScreen(
                     texts.spheres.map { Titled(sphereLabel(it.title), it.text) }.takeIf { it.isNotEmpty() },
                     R.string.spheres,
                 )
+            }
+            // Проверенный продажами продукт — PDF-отчёт. Покупок в приложении нет (правила
+            // магазинов + ФЗ), поэтому просто переход на сайт.
+            item {
+                val ctx = androidx.compose.ui.platform.LocalContext.current
+                Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                    Button(
+                        onClick = { ru.astrosmap.app.ui.openSite(ctx, "https://astrosmap.ru/#premium") },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text(stringResource(R.string.pdf_cta)) }
+                    Text(
+                        stringResource(R.string.pdf_cta_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 6.dp),
+                    )
+                }
             }
         }
     }
