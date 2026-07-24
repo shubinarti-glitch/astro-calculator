@@ -58,6 +58,12 @@ class ChartViewViewModel @Inject constructor(
                 savedId = entity.id.takeIf { it > 0 },
             )
             loadTexts(entity)
+            // Без трения: самую первую построенную карту сразу считаем «моей» — авто-сохраняем,
+            // чтобы личные транзиты появились на «Сегодня» без отдельного нажатия. Дальнейшие
+            // карты (друзей) сохраняются вручную. PrimaryChart.resolve сам возьмёт её как раннюю.
+            if (id == 0L && _state.value.savedId == null && dao.allOnce().none { !it.pendingDelete }) {
+                save()
+            }
         }
     }
 

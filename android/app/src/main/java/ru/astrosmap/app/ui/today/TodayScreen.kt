@@ -25,6 +25,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonPrimitive
@@ -89,7 +91,14 @@ class TodayViewModel @Inject constructor(
 
     init {
         analytics.track("today_viewed")
-        load()
+        // Реактивно: перечитываем «Сегодня» при изменении набора карт (в т.ч. при авто-сохранении
+        // первой карты) — иначе личные транзиты появлялись только после перезапуска приложения.
+        viewModelScope.launch {
+            dao.search("")
+                .map { list -> list.filter { !it.pendingDelete }.map { it.id }.toSet() }
+                .distinctUntilChanged()
+                .collect { load() }
+        }
     }
 
     /** Сменить карту «это я» — выбор запоминается между запусками. */

@@ -54,6 +54,13 @@ data class MeResponse(
     val premiumUntil: String? = null,
     @SerialName("report_credits") val reportCredits: Int = 0,
 ) {
+    /** Был премиум, но срок вышел (для мягкого баннера «продлите»). Никогда не имел — false. */
+    fun premiumExpired(): Boolean {
+        if (premium) return false
+        val ts = premiumUntil?.toLongOrNull() ?: return false
+        return java.time.Instant.ofEpochSecond(ts).isBefore(java.time.Instant.now())
+    }
+
     /** «до 12.08.2026» из unix-времени или ISO-строки. */
     fun premiumUntilDate(): String? {
         val raw = premiumUntil ?: return null

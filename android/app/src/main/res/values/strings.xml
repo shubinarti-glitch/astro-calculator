@@ -81,6 +81,8 @@
     <string name="email_unverified">не подтверждена</string>
     <string name="premium_active">Премиум до %s</string>
     <string name="premium_none">Бесплатный тариф</string>
+    <string name="premium_expired_banner">Премиум истёк. Ваши карты сохранены. Продлите на сайте, чтобы вернуть все функции.</string>
+    <string name="premium_renew">Продлить на сайте</string>
     <string name="net_error">Нет соединения с сервером</string>
     <string name="retry">Повторить</string>
 
