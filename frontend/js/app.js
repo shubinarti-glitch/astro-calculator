@@ -412,6 +412,41 @@ document.querySelectorAll(".lang-opt").forEach((b) => {
 applyI18n();
 syncLangButtons();
 updateCalcBtn();
+
+// «Небо сейчас» — общие транзиты планет (публичный эндпоинт, без регистрации).
+function skyEsc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"]/g, (c) => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]
+  ));
+}
+function skyDate(iso) {
+  if (!iso) return "…";
+  const p = iso.split("-");
+  return p.length === 3 ? `${p[2]}.${p[1]}.${p[0]}` : iso;
+}
+async function renderSkyNow() {
+  const grid = document.getElementById("sky-now-grid");
+  if (!grid) return;
+  try {
+    const r = await fetch("/api/transits/current?lang=" + LANG);
+    if (!r.ok) throw new Error("http " + r.status);
+    const data = await r.json();
+    grid.innerHTML = (data.transits || []).map((tr) => {
+      const retro = tr.retrograde
+        ? ` <span class="sky-retro" title="${skyEsc(t("sky_retro"))}">℞</span>` : "";
+      return `<article class="sky-card">
+        <div class="sky-card-head"><span class="sky-planet">${skyEsc(tr.planet_ru)}</span>${retro}</div>
+        <div class="sky-sign">${skyEsc(tr.sign_symbol || "")} ${skyEsc(tr.sign_ru)}</div>
+        <div class="sky-period">${skyDate(tr.since)} — ${skyDate(tr.until)}</div>
+        <p class="sky-meaning">${skyEsc(tr.meaning)}</p>
+      </article>`;
+    }).join("");
+  } catch (e) {
+    grid.innerHTML = `<p class="sky-err">${skyEsc(t("sky_err"))}</p>`;
+  }
+}
+renderSkyNow();
+document.addEventListener("langchange", renderSkyNow);
 (function initVedicMonth() {
   const el = $("vedic-month");
   if (el && !el.value) {

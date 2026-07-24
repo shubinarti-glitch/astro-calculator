@@ -2189,3 +2189,80 @@ def synastry_report(
         result.update(_render_chart_svgs(chart_data, person_a.get("lang", "ru")))
 
     return result
+
+
+# --------------------------------------------------------------------------- #
+#  Общие транзиты: где сейчас планеты и на какой период (сайт + приложение)
+# --------------------------------------------------------------------------- #
+# Горизонт поиска границы знака (дней) — с запасом больше макс. времени в знаке.
+_SIGN_HORIZON = {
+    "sun": 60, "moon": 5, "mercury": 90, "venus": 100, "mars": 120,
+    "jupiter": 500, "saturn": 1200, "uranus": 3200, "neptune": 6200, "pluto": 9500,
+}
+
+
+def _planet_abs(attr: str, dt: datetime) -> float:
+    """Эклиптическая долгота планеты в полдень UTC на дату dt."""
+    m = build_subject(
+        name="t", year=dt.year, month=dt.month, day=dt.day,
+        hour=12, minute=0, lat=0.0, lng=0.0, tz_str="UTC",
+    )
+    return float(getattr(m, attr).abs_pos) % 360.0
+
+
+def _sign_change(attr: str, when: datetime, cur_idx: int, direction: int, horizon: int):
+    """Ближайший день (direction=±1), где планета уже в ДРУГОМ знаке.
+    Экспоненциальный поиск + бисекция — O(log горизонта).
+    ponytail: у ретро-планет у самой границы возможна погрешность ±1–2 дня — для обзора ок."""
+    lo, hi = 0, 1
+    while True:
+        probe = min(hi, horizon)  # последняя проба — ровно горизонт, чтобы не перепрыгнуть границу
+        d = when + timedelta(days=direction * probe)
+        if int(_planet_abs(attr, d) // 30.0) != cur_idx:
+            hi = probe
+            break
+        if probe >= horizon:
+            return None  # в пределах горизонта знак не меняется
+        lo, hi = probe, hi * 2
+    while hi - lo > 1:
+        mid = (lo + hi) // 2
+        d = when + timedelta(days=direction * mid)
+        if int(_planet_abs(attr, d) // 30.0) != cur_idx:
+            hi = mid
+        else:
+            lo = mid
+    return when + timedelta(days=direction * hi)
+
+
+def current_transits(lang: str = "ru", when: Optional[datetime] = None) -> list[dict]:
+    """Все 10 планет: в каком знаке, ретро ли, с какого по какое число и что это значит.
+    Не зависит от натальной карты — общий небесный фон. Значения — из корпуса interpret_sign
+    (редактируется в админке). Считается на полдень UTC; кэшируется вызывающей стороной на день."""
+    lang = _set_lang(lang)
+    when = when or datetime.utcnow()
+    base = build_subject(
+        name="t", year=when.year, month=when.month, day=when.day,
+        hour=12, minute=0, lat=0.0, lng=0.0, tz_str="UTC",
+    )
+    out: list[dict] = []
+    for attr in C.PLANET_ORDER[:10]:
+        p = getattr(base, attr)
+        d = p.model_dump() if hasattr(p, "model_dump") else dict(p)
+        name = d["name"]
+        sign = d["sign"]
+        cur_idx = int(float(d["abs_pos"]) % 360.0 // 30.0)
+        horizon = _SIGN_HORIZON.get(attr, 400)
+        back = _sign_change(attr, when, cur_idx, -1, horizon)
+        fwd = _sign_change(attr, when, cur_idx, +1, horizon)
+        out.append({
+            "planet": name,
+            "planet_ru": C.point_name(name, lang),
+            "sign": sign,
+            "sign_ru": C.sign_name(sign, lang),
+            "sign_symbol": C.sign_symbol(sign),
+            "retrograde": bool(d.get("retrograde")),
+            "since": (back + timedelta(days=1)).date().isoformat() if back else None,
+            "until": fwd.date().isoformat() if fwd else None,
+            "meaning": I.interpret_sign(name, sign, lang),
+        })
+    return out

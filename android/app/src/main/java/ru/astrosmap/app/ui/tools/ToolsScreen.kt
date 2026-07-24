@@ -1,8 +1,10 @@
 package ru.astrosmap.app.ui.tools
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -25,7 +27,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -40,8 +44,23 @@ import ru.astrosmap.app.ui.theme.AstroPanel
 import javax.inject.Inject
 
 @HiltViewModel
-class ToolsViewModel @Inject constructor(dao: ChartDao) : ViewModel() {
+class ToolsViewModel @Inject constructor(
+    dao: ChartDao,
+    private val api: ru.astrosmap.app.data.api.AstroApi,
+) : ViewModel() {
     val charts = dao.search("").stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // Общие транзиты (общий небесный фон) — не требуют карты; при офлайне просто пусто.
+    var transits by mutableStateOf<List<ru.astrosmap.app.data.api.PlanetTransit>>(emptyList())
+        private set
+
+    init {
+        viewModelScope.launch {
+            transits = runCatching {
+                api.currentTransits(if (ru.astrosmap.app.ui.AstroLabels.isRu()) "ru" else "en").transits
+            }.getOrDefault(emptyList())
+        }
+    }
 }
 
 /** Раздел «Прогнозы»: карта + все техники. ✦ — по подписке «Премиум». */
@@ -101,6 +120,23 @@ fun ToolsScreen(
             ToolButton("🔮 " + stringResource(R.string.section_tarot)) { onTarot() }
         }
 
+        // Общий небесный фон — где сейчас планеты. Не требует карты, показываем всем.
+        if (viewModel.transits.isNotEmpty()) {
+            AstroPanel {
+                Text(
+                    "🪐 " + stringResource(R.string.sky_now_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Text(
+                    stringResource(R.string.sky_now_sub),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                viewModel.transits.forEach { TransitRow(it) }
+            }
+        }
+
         if (charts.isEmpty()) {
             AstroPanel {
                 Text(
@@ -148,5 +184,41 @@ fun ToolsScreen(
 private fun ToolButton(text: String, enabled: Boolean = true, onClick: () -> Unit) {
     OutlinedButton(onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
         Text(text)
+    }
+}
+
+/** «2026-08-23» → «23.08.2026»; пусто → «…». */
+private fun fmtTransitDate(iso: String?): String {
+    if (iso.isNullOrBlank()) return "…"
+    val p = iso.split("-")
+    return if (p.size == 3) "${p[2]}.${p[1]}.${p[0]}" else iso
+}
+
+/** Строка планеты: знак и период всегда, значение — по тапу. */
+@Composable
+private fun TransitRow(t: ru.astrosmap.app.data.api.PlanetTransit) {
+    var open by rememberSaveable(t.planetRu) { mutableStateOf(false) }
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clickable { open = !open }
+            .padding(vertical = 6.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(t.planetRu, fontWeight = FontWeight.SemiBold)
+            if (t.retrograde) {
+                Text(" ℞", color = MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.Bold)
+            }
+            Spacer(Modifier.weight(1f))
+            Text((t.signSymbol + " " + t.signRu).trim(), color = MaterialTheme.colorScheme.primary)
+        }
+        Text(
+            fmtTransitDate(t.since) + " — " + fmtTransitDate(t.until),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (open) {
+            Text(t.meaning, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 4.dp))
+        }
     }
 }

@@ -6,6 +6,7 @@ import logging
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
+from functools import lru_cache
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
@@ -1157,6 +1158,21 @@ def api_planets(lang: str = "ru"):
     from . import interpretations as interp
 
     return interp.planets_info(lang)
+
+
+@lru_cache(maxsize=8)
+def _transits_current_cached(day_iso: str, lang: str) -> tuple:
+    # day_iso в ключе → раз в сутки пересчёт; кортеж, т.к. lru_cache требует хешируемое.
+    return tuple(astrology.current_transits(lang))
+
+
+@app.get("/api/transits/current")
+def api_transits_current(lang: str = "ru"):
+    """Общий небесный фон: все 10 планет — знак, ретро, период, значение.
+    Без авторизации; считается на полдень UTC, кэш на сутки. Для сайта и приложения."""
+    lang = "en" if str(lang).lower().startswith("en") else "ru"
+    day_iso = datetime.now(timezone.utc).date().isoformat()
+    return {"date": day_iso, "transits": list(_transits_current_cached(day_iso, lang))}
 
 
 @app.get("/api/meta")

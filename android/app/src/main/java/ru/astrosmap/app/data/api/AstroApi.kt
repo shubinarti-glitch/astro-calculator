@@ -101,8 +101,31 @@ data class NatalRequest(
     val lang: String = "ru",
 )
 
+/** Одна планета в общих транзитах: знак, ретро, период и значение. */
+@Serializable
+data class PlanetTransit(
+    @SerialName("planet_ru") val planetRu: String = "",
+    val sign: String = "",
+    @SerialName("sign_ru") val signRu: String = "",
+    @SerialName("sign_symbol") val signSymbol: String = "",
+    val retrograde: Boolean = false,
+    val since: String? = null,
+    val until: String? = null,
+    val meaning: String = "",
+)
+
+@Serializable
+data class TransitsResponse(
+    val date: String = "",
+    val transits: List<PlanetTransit> = emptyList(),
+)
+
 /** REST-клиент бэкенда astrosmap.ru (backend/main.py). */
 interface AstroApi {
+    /** Общий небесный фон: где сейчас планеты, период и значение. Без авторизации. */
+    @GET("api/transits/current")
+    suspend fun currentTransits(@retrofit2.http.Query("lang") lang: String): TransitsResponse
+
     @POST("api/auth/login")
     suspend fun login(@Body body: LoginRequest): AuthResponse
 

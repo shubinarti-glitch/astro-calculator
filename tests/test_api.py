@@ -35,6 +35,19 @@ def test_meta():
     assert client.get("/api/meta").status_code == 200
 
 
+def test_transits_current():
+    r = client.get("/api/transits/current")
+    assert r.status_code == 200
+    data = r.json()
+    tr = data["transits"]
+    assert len(tr) == 10  # Солнце … Плутон
+    first = tr[0]
+    # Каждая планета: знак, локализованное значение и период (until обязателен).
+    for key in ("planet", "sign", "sign_ru", "meaning", "until"):
+        assert first.get(key), f"пусто поле {key}"
+    assert isinstance(first["retrograde"], bool)
+
+
 def test_natal_ok():
     r = client.post("/api/natal", json=NATAL)
     assert r.status_code == 200
