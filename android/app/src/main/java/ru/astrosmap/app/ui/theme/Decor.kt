@@ -13,7 +13,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -65,9 +67,28 @@ fun AstroPanel(
     }
 }
 
-/** Шапка приложения: звезда-логотип + название, как на сайте. */
+/** Шапка приложения: живой логотип-звёзды + название, как на сайте. */
 @Composable
 fun AppHeader(subtitle: String) {
+    // Две звезды пульсируют поочерёдно: одна разгорается, пока вторая гаснет.
+    val pulse = androidx.compose.animation.core.rememberInfiniteTransition(label = "logo")
+    val bigStar by pulse.animateFloat(
+        initialValue = 0.75f, targetValue = 1f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+            androidx.compose.animation.core.tween(1400, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+            androidx.compose.animation.core.RepeatMode.Reverse,
+        ),
+        label = "big",
+    )
+    val smallStar by pulse.animateFloat(
+        initialValue = 1f, targetValue = 0.55f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+            androidx.compose.animation.core.tween(1400, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+            androidx.compose.animation.core.RepeatMode.Reverse,
+        ),
+        label = "small",
+    )
+
     Row(verticalAlignment = Alignment.CenterVertically) {
         Canvas(Modifier.size(40.dp)) {
             fun star(cx: Float, cy: Float, rl: Float, rs: Float, color: Color) {
@@ -82,8 +103,17 @@ fun AppHeader(subtitle: String) {
                 p.close()
                 drawPath(p, color)
             }
-            star(size.width * 0.45f, size.height * 0.55f, size.width * 0.42f, size.width * 0.10f, Color(0xFFC9A86A))
-            star(size.width * 0.78f, size.height * 0.22f, size.width * 0.13f, size.width * 0.035f, Color(0xFF8B7BD8))
+            // Пульсация — через яркость и размер лучей.
+            star(
+                size.width * 0.45f, size.height * 0.55f,
+                size.width * 0.42f * bigStar, size.width * 0.10f,
+                Color(0xFFC9A86A).copy(alpha = bigStar),
+            )
+            star(
+                size.width * 0.78f, size.height * 0.22f,
+                size.width * 0.13f * smallStar, size.width * 0.035f,
+                Color(0xFF8B7BD8).copy(alpha = smallStar),
+            )
         }
         Column(Modifier.padding(start = 10.dp)) {
             AstroWordmark(fontSize = 30.sp)

@@ -244,9 +244,6 @@ fun TodayScreen(
             }
         }
 
-        // Карта дня — не зависит от натальной карты, показываем всегда.
-        ru.astrosmap.app.ui.tarot.CardOfDaySection()
-
         if (state.chartName == null) {
             if (!state.loading) {
                 AstroPanel {
@@ -258,6 +255,8 @@ fun TodayScreen(
                         Text(stringResource(R.string.today_make_chart))
                     }
                 }
+                // Без натальной карты транзитов нет, но карта дня доступна всегда.
+                ru.astrosmap.app.ui.tarot.CardOfDaySection()
             }
             return@Column
         }
@@ -309,5 +308,8 @@ fun TodayScreen(
                 )
             }
         }
+
+        // Карта дня — под транзитами: сначала астрология дня, потом Таро.
+        ru.astrosmap.app.ui.tarot.CardOfDaySection()
     }
 }
