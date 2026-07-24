@@ -70,5 +70,9 @@ class MainActivity : ComponentActivity() {
         }
         // Синхронизация карт при каждом запуске (если выполнен вход и есть сеть).
         lifecycleScope.launch { syncManager.sync() }
+        // Обновить виджеты на домашнем экране — подхватить свежие данные и выбранный язык.
+        if (ru.astrosmap.app.widget.WidgetUpdater.hasAnyWidget(this)) {
+            ru.astrosmap.app.widget.WidgetUpdater.refreshNow(this)
+        }
     }
 }

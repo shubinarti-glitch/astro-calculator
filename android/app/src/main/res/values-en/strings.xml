@@ -149,5 +149,10 @@
     <string name="sky_now_sub">Where the planets are now, for how long, and what it means. Tap a planet to reveal the meaning.</string>
     <string name="widget_today_label">AstroSMap — day</string>
     <string name="widget_today_desc">Date, Moon phase and the mood of the day on your home screen</string>
+    <string name="widget_moon_label">AstroSMap — Moon</string>
+    <string name="widget_moon_desc">Moon phase and sign with a short lunar tip</string>
+    <string name="widget_advice_label">AstroSMap — daily tip</string>
+    <string name="widget_advice_desc">A short tip for the day based on the Moon phase</string>
+    <string name="widget_advice_title">Tip of the day</string>
     <string name="tarot_done">Done</string>
 </resources>

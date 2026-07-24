@@ -152,5 +152,10 @@
     <string name="sky_now_sub">Где сейчас планеты, на какой период и что это значит. Нажмите на планету — раскроется значение.</string>
     <string name="widget_today_label">AstroSMap — день</string>
     <string name="widget_today_desc">Дата, фаза Луны и настрой дня на домашнем экране</string>
+    <string name="widget_moon_label">AstroSMap — Луна</string>
+    <string name="widget_moon_desc">Фаза и знак Луны с коротким лунным советом</string>
+    <string name="widget_advice_label">AstroSMap — совет дня</string>
+    <string name="widget_advice_desc">Короткая рекомендация дня по фазе Луны</string>
+    <string name="widget_advice_title">Совет дня</string>
     <string name="tarot_done">Готово</string>
 </resources>
