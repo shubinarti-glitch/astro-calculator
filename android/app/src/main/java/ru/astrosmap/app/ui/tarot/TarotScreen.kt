@@ -114,7 +114,8 @@ fun TarotScreen(viewModel: TarotViewModel = hiltViewModel()) {
                     ) { Text(stringResource(s.titleRes)) }
                     if (cooldown > 0) {
                         Text(
-                            stringResource(R.string.tarot_cooldown, cooldown),
+                            if (viewModel.premium) stringResource(R.string.tarot_cooldown_daily)
+                            else stringResource(R.string.tarot_cooldown, cooldown),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

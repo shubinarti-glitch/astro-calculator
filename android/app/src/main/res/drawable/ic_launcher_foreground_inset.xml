@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- «A» вылезала за края: под маской адаптивной иконки обрезались углы и звезда.
+     Ужимаем передний план в безопасную зону, фон остаётся во весь кадр. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@mipmap/ic_launcher_foreground"
+    android:inset="17%" />

@@ -14,6 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.keyframes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -21,6 +22,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -88,6 +91,21 @@ fun AppHeader(subtitle: String) {
         ),
         label = "small",
     )
+    // Резкая вспышка-блик: логотип «сверкает» поверх плавной пульсации.
+    val sparkle by pulse.animateFloat(
+        initialValue = 0f, targetValue = 0f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+            keyframes {
+                durationMillis = 2600
+                0f at 0
+                1f at 240 using androidx.compose.animation.core.FastOutSlowInEasing
+                0f at 760
+                0f at 2600
+            },
+            androidx.compose.animation.core.RepeatMode.Restart,
+        ),
+        label = "sparkle",
+    )
 
     Row(verticalAlignment = Alignment.CenterVertically) {
         Canvas(Modifier.size(40.dp)) {
@@ -103,17 +121,28 @@ fun AppHeader(subtitle: String) {
                 p.close()
                 drawPath(p, color)
             }
-            // Пульсация — через яркость и размер лучей.
+            // Пульсация — через яркость и размер лучей; на пике блика цвет уходит в белый.
             star(
                 size.width * 0.45f, size.height * 0.55f,
                 size.width * 0.42f * bigStar, size.width * 0.10f,
-                Color(0xFFC9A86A).copy(alpha = bigStar),
+                lerp(Color(0xFFC9A86A), Color.White, sparkle).copy(alpha = maxOf(bigStar, sparkle)),
             )
             star(
                 size.width * 0.78f, size.height * 0.22f,
                 size.width * 0.13f * smallStar, size.width * 0.035f,
                 Color(0xFF8B7BD8).copy(alpha = smallStar),
             )
+            // Блик-крестовина поверх большой звезды — короткая яркая вспышка.
+            if (sparkle > 0.02f) {
+                val cx = size.width * 0.45f
+                val cy = size.height * 0.55f
+                val white = Color.White.copy(alpha = sparkle)
+                drawCircle(white, radius = size.width * 0.05f * sparkle, center = Offset(cx, cy))
+                val len = size.width * 0.5f * sparkle
+                val sw = size.width * 0.02f
+                drawLine(white, Offset(cx, cy - len), Offset(cx, cy + len), strokeWidth = sw, cap = StrokeCap.Round)
+                drawLine(white, Offset(cx - len, cy), Offset(cx + len, cy), strokeWidth = sw, cap = StrokeCap.Round)
+            }
         }
         Column(Modifier.padding(start = 10.dp)) {
             AstroWordmark(fontSize = 30.sp)

@@ -140,5 +140,6 @@
     <string name="tarot_tap_to_open">Tap each card to reveal it.</string>
     <string name="tarot_face_down">Tap to reveal</string>
     <string name="tarot_cooldown">Next free spread in %d days. Premium — every day.</string>
+    <string name="tarot_cooldown_daily">This spread is once a day. Come back tomorrow.</string>
     <string name="tarot_done">Done</string>
 </resources>

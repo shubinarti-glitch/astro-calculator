@@ -143,5 +143,6 @@
     <string name="tarot_tap_to_open">Нажмите на каждую карту, чтобы открыть.</string>
     <string name="tarot_face_down">Нажмите, чтобы открыть</string>
     <string name="tarot_cooldown">Следующий бесплатный расклад через %d дн. Премиум — каждый день.</string>
+    <string name="tarot_cooldown_daily">Этот расклад — раз в день. Возвращайтесь завтра.</string>
     <string name="tarot_done">Готово</string>
 </resources>

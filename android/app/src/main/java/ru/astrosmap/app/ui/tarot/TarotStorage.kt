@@ -34,15 +34,15 @@ object TarotStorage {
     }
 
     /**
-     * Дней до следующего бесплатного использования КОНКРЕТНОГО расклада (0 — можно сейчас).
-     * Премиум — каждый день; бесплатно — раз в 7 дней, и каждый расклад считается отдельно.
+     * Дней до следующего использования КОНКРЕТНОГО расклада (0 — можно сейчас).
+     * Бесплатно — раз в 7 дней, премиум — раз в день. Каждый расклад считается отдельно.
      */
     fun spreadCooldownDays(context: Context, spreadKey: String, premium: Boolean): Int {
-        if (premium) return 0
         val last = prefs(context).getLong("tarot_spread_$spreadKey", -8)
         if (last < 0) return 0
         val passed = (today() - last).toInt()
-        return (7 - passed).coerceAtLeast(0)
+        val period = if (premium) 1 else 7
+        return (period - passed).coerceAtLeast(0)
     }
 
     fun markSpreadDone(context: Context, spreadKey: String) {
