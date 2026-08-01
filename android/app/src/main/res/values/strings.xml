@@ -158,4 +158,11 @@
     <string name="widget_advice_desc">Короткая рекомендация дня по фазе Луны</string>
     <string name="widget_advice_title">Совет дня</string>
     <string name="tarot_done">Готово</string>
+    <string name="tarot_spread_yesno">Да или нет</string>
+    <string name="tarot_pos_yes">ДА</string>
+    <string name="tarot_pos_no">НЕТ</string>
+    <string name="tarot_yesno_rule">Две карты — по одной на «да» и «нет». Побеждает та позиция, где карта старше по градации колоды: старший аркан выше любого младшего, у старших решает номер, у младших — достоинство.</string>
+    <string name="tarot_answer_yes">ДА</string>
+    <string name="tarot_answer_no">НЕТ</string>
+    <string name="tarot_yesno_why">Старше карта «%1$s» — перевешивает позиция «%2$s».</string>
 </resources>

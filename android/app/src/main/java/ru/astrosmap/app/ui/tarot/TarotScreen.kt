@@ -47,12 +47,19 @@ import javax.inject.Inject
 /** Живой таролог — контакт для консультации (тот же, что у астролога на сайте). */
 private const val TAROLOGIST_TG = "https://t.me/Astrosmap"
 
-/** Два расклада-триплета: позиции задают, о чём каждая из трёх карт. */
+/**
+ * Расклады. `positions` задают и смысл позиций, и число карт.
+ *
+ * YES_NO — по карте на «да» и на «нет» из полной колоды: выигрывает позиция, где карта
+ * старше по градации колоды. Исход определён самими картами, а не случайной меткой.
+ */
 private enum class Spread(val titleRes: Int, val positions: List<Int>) {
     SITUATION(R.string.tarot_spread_situation, listOf(
         R.string.tarot_pos_essence, R.string.tarot_pos_obstacle, R.string.tarot_pos_advice)),
     MFA(R.string.tarot_spread_mfa, listOf(
         R.string.tarot_pos_thoughts, R.string.tarot_pos_feelings, R.string.tarot_pos_actions)),
+    YES_NO(R.string.tarot_spread_yesno, listOf(
+        R.string.tarot_pos_yes, R.string.tarot_pos_no)),
 }
 
 @HiltViewModel
@@ -105,7 +112,7 @@ fun TarotScreen(viewModel: TarotViewModel = hiltViewModel()) {
                     Button(
                         onClick = {
                             spread = s
-                            cards = TarotDeck.draw(3)
+                            cards = TarotDeck.draw(s.positions.size)
                             revealed = emptySet()
                             TarotStorage.markSpreadDone(context, s.name)
                         },
@@ -143,6 +150,13 @@ fun TarotScreen(viewModel: TarotViewModel = hiltViewModel()) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                if (spread == Spread.YES_NO) {
+                    Text(
+                        stringResource(R.string.tarot_yesno_rule),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 cards.forEachIndexed { i, card ->
                     SpreadRow(
                         position = stringResource(spread!!.positions[i]),
@@ -151,12 +165,55 @@ fun TarotScreen(viewModel: TarotViewModel = hiltViewModel()) {
                         onOpen = { revealed = revealed + i },
                     )
                 }
+                // Вердикт «да / нет» — только когда обе карты открыты.
+                if (spread == Spread.YES_NO && revealed.size == cards.size && cards.size == 2) {
+                    YesNoVerdict(yes = cards[0], no = cards[1])
+                }
                 OutlinedButton(
                     onClick = { spread = null },
                     modifier = Modifier.fillMaxWidth(),
                 ) { Text(stringResource(R.string.tarot_done)) }
             }
         }
+    }
+}
+
+/**
+ * Итог расклада «да / нет»: сравниваем старшинство карт на двух позициях
+ * по градации всей колоды. Побеждает старшая — она и даёт ответ.
+ * Ничьей не бывает: карты в раскладе всегда разные, а ранги уникальны.
+ */
+@Composable
+private fun YesNoVerdict(yes: TarotCard, no: TarotCard) {
+    val isYes = TarotDeck.rank(yes.id) > TarotDeck.rank(no.id)
+    val winner = if (isYes) yes else no
+
+    Column(
+        Modifier.fillMaxWidth().padding(top = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            stringResource(if (isYes) R.string.tarot_answer_yes else R.string.tarot_answer_no),
+            style = MaterialTheme.typography.headlineMedium,
+            color = if (isYes) ru.astrosmap.app.ui.theme.GoodColor else MaterialTheme.colorScheme.error,
+        )
+        Text(
+            stringResource(
+                R.string.tarot_yesno_why,
+                winner.name,
+                stringResource(if (isYes) R.string.tarot_pos_yes else R.string.tarot_pos_no),
+            ),
+            style = MaterialTheme.typography.bodyMedium,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 6.dp),
+        )
+        Text(
+            winner.advice,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 6.dp),
+        )
     }
 }
 

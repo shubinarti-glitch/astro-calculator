@@ -155,4 +155,11 @@
     <string name="widget_advice_desc">A short tip for the day based on the Moon phase</string>
     <string name="widget_advice_title">Tip of the day</string>
     <string name="tarot_done">Done</string>
+    <string name="tarot_spread_yesno">Yes or no</string>
+    <string name="tarot_pos_yes">YES</string>
+    <string name="tarot_pos_no">NO</string>
+    <string name="tarot_yesno_rule">Two cards — one for “yes”, one for “no”. The side whose card ranks higher in the deck wins: any Major Arcanum outranks any Minor; among Majors the number decides, among Minors the face value.</string>
+    <string name="tarot_answer_yes">YES</string>
+    <string name="tarot_answer_no">NO</string>
+    <string name="tarot_yesno_why">The higher card is “%1$s” — the “%2$s” side prevails.</string>
 </resources>

@@ -436,4 +436,27 @@ object TarotDeck {
 
     /** n различных случайных карт — для выбора «трёх рубашек» и для раскладов. */
     fun draw(n: Int): List<TarotCard> = cards.shuffled().take(n)
+
+    /**
+     * Старшинство карты по градации колоды — им расклад «да / нет» решает исход.
+     *
+     * Любой старший аркан весомее любого младшего; внутри старших — по номеру (Мир 21
+     * старше Шута 0); внутри младших — по достоинству (Король выше Туза), масть —
+     * лишь тай-брейк в порядке колоды. Ранги уникальны, поэтому ничьей не бывает.
+     */
+    fun rank(id: String): Int {
+        majorNumber(id)?.let { return 1000 + it }
+        val value = id.takeLast(2).toIntOrNull() ?: 0
+        val suit = when {
+            id.startsWith("wands") -> 0
+            id.startsWith("cups") -> 1
+            id.startsWith("swords") -> 2
+            else -> 3
+        }
+        return value * 10 + suit
+    }
+
+    /** Номер старшего аркана из id: "major_19_sun" → 19; у младших номера нет. */
+    fun majorNumber(id: String): Int? =
+        id.removePrefix("major_").takeIf { it != id }?.take(2)?.toIntOrNull()
 }
