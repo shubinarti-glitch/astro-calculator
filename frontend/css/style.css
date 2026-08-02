@@ -1906,3 +1906,47 @@ html[data-theme="light"] .adm-tab.active { background: rgba(139,123,216,0.14); }
   font-weight: 700;
 }
 .auth-btn.premium-on:hover { background: rgba(201, 168, 106, 0.24); }
+
+/* --- Ссылки на страницу «Об авторе» --- */
+/* Выглядит как соседние info-секции, но стрелка «→» честно говорит: это переход, а не раскрытие. */
+.info-section .info-link {
+  display: block;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  padding: 20px 22px;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 20px;
+  color: var(--accent);
+  text-decoration: none;
+  transition: border-color 0.18s ease;
+}
+.info-section .info-link::after { content: " →"; color: var(--text-dim); }
+.info-section .info-link:hover { border-color: var(--accent); }
+
+/* Автор рядом с тарифом «подписка + консультация»: лицо снимает вопрос «кому я плачу» */
+.consult-author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+  background: var(--inset);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  transition: border-color 0.18s ease;
+}
+.consult-author:hover { border-color: var(--accent); }
+.consult-author img {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center 18%;
+  flex-shrink: 0;
+}
+.consult-author > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.consult-author-name { font-size: 13px; color: var(--text); line-height: 1.4; }
+.consult-author-more { font-size: 12px; color: var(--accent); }

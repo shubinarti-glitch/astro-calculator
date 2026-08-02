@@ -299,10 +299,15 @@ def api_login(req: AuthRequest, request: Request):
     key = f"login:{ip}:{req.username.strip().lower()}"
     if _rate_limited(key, max_n=5, window=300):
         raise HTTPException(status_code=429, detail="Слишком много попыток входа. Попробуйте через несколько минут.")
-    # Вход по имени пользователя или по почте — что ввели, то и ищем.
+    # Вход по имени пользователя или по почте. Проверяем обоих кандидатов:
+    # username сам может выглядеть как e-mail, и тогда поиск только по почте
+    # находил чужую запись (или ничего) — вход становился невозможен.
     ident = req.username.strip()
-    user = db.get_user_by_email(ident) if "@" in ident else db.get_user_by_username(ident)
-    if not user or not db.verify_password(req.password, user["password_hash"]):
+    candidates = [db.get_user_by_username(ident)]
+    if "@" in ident:
+        candidates.append(db.get_user_by_email(ident))
+    user = next((u for u in candidates if u and db.verify_password(req.password, u["password_hash"])), None)
+    if not user:
         _rate_record(key)  # учитываем только НЕудачные попытки
         raise HTTPException(status_code=401, detail="Неверное имя пользователя или пароль")
     if user["is_banned"]:
@@ -1192,6 +1197,11 @@ app.include_router(seo.router)  # SEO-страницы трактовок, sitem
 @app.get("/")
 def index():
     return FileResponse(FRONTEND_DIR / "index.html")
+
+
+@app.get("/about")
+def about():
+    return FileResponse(FRONTEND_DIR / "about.html")
 
 
 app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="static")
