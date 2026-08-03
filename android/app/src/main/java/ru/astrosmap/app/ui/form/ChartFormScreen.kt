@@ -186,14 +186,17 @@ fun ChartFormScreen(
                 }
             }
             // Оформление подписки идёт на сайте — диплинк открывает окно «Премиум».
-            Button(
-                onClick = {
-                    viewModel.trackPremiumTap()
-                    ru.astrosmap.app.ui.openSite(context, "https://astrosmap.ru/#premium")
-                },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(stringResource(R.string.premium_cta))
+            // В googleplay-сборке скрыто: увод на внешнюю оплату там запрещён.
+            if (ru.astrosmap.app.BuildConfig.SHOW_BILLING) {
+                Button(
+                    onClick = {
+                        viewModel.trackPremiumTap()
+                        ru.astrosmap.app.ui.openSite(context, "https://astrosmap.ru/#premium")
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(stringResource(R.string.premium_cta))
+                }
             }
         }
     }

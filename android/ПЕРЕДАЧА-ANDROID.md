@@ -29,15 +29,22 @@ $env:JAVA_HOME = "$env:ProgramFiles\Android\Android Studio\jbr"
 
 Все команды — из папки `android/`.
 
+**Два флейвора** (`store`-измерение), с версии 1.5.0:
+- **`standard`** — RuStore / AppGallery / сайт. `SHOW_BILLING=true` (кнопки покупки премиума на сайте видны).
+- **`googleplay`** — Google Play. `SHOW_BILLING=false` (весь увод на оплату скрыт — см. `GOOGLE-PLAY.md`).
+
 ```powershell
-.\gradlew.bat :app:assembleDebug     # отладочный APK (эмулятор/тесты)
-.\gradlew.bat :app:assembleRelease   # боевой APK — ЭТО и есть релизный файл
+.\gradlew.bat :app:assembleStandardDebug      # отладочный APK (эмулятор/тесты)
+.\gradlew.bat :app:assembleStandardRelease    # боевой APK для RuStore/AppGallery/сайта
+.\gradlew.bat :app:bundleGoogleplayRelease    # AAB для Google Play (только там нужен AAB)
 ```
 
-Артефакт релиза: `app/build/outputs/apk/release/app-release.apk` (~9 МБ на 1.5.0).
+Артефакты релиза:
+- `app/build/outputs/apk/standard/release/app-standard-release.apk` (~9 МБ) — RuStore/AppGallery/сайт
+- `app/build/outputs/bundle/googleplayRelease/app-googleplay-release.aab` (~11.6 МБ) — Google Play
 
-> ⚠️ **AAB НЕ НУЖЕН.** И в магазины (RuStore, AppGallery), и на сайт идёт **APK**.
-> Не запускать `:app:bundleRelease` — это лишняя трата времени.
+> ⚠️ Для RuStore/AppGallery/сайта — **APK** (флейвор `standard`), AAB им не нужен.
+> **AAB нужен только Google Play** — и только из флейвора `googleplay` (без монетизации).
 
 **Путь репозитория с кириллицей** (`…\Рабочий стол\…`) ломает часть тулинга.
 Спасает `android.overridePathCheck=true` в `gradle.properties` — не удалять.
@@ -91,7 +98,7 @@ APK раздаётся статикой с сервера, публичный а
 
 ```bash
 # из корня репозитория, ключ ~/.ssh/astro_key
-APK=android/app/build/outputs/apk/release/app-release.apk
+APK=android/app/build/outputs/apk/standard/release/app-standard-release.apk
 ssh -i ~/.ssh/astro_key root@77.222.42.168 "cp -f /opt/astro/frontend/astrosmap.apk /opt/astro/frontend/astrosmap.apk.bak"
 scp -i ~/.ssh/astro_key -O "$APK" root@77.222.42.168:/opt/astro/frontend/astrosmap.apk
 ```

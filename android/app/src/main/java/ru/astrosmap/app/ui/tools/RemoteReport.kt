@@ -58,8 +58,11 @@ fun ReportScaffold(
             CircularProgressIndicator()
         }
         ReportState.NeedPremium -> CenteredNote(stringResource(R.string.premium_required)) {
-            val context = LocalContext.current
-            Button(onClick = { openSite(context) }) { Text(stringResource(R.string.premium_buy)) }
+            // В googleplay-сборке без кнопки покупки — только пояснение (текст нейтральный, см. флейвор).
+            if (ru.astrosmap.app.BuildConfig.SHOW_BILLING) {
+                val context = LocalContext.current
+                Button(onClick = { openSite(context) }) { Text(stringResource(R.string.premium_buy)) }
+            }
         }
         ReportState.NeedAuth -> CenteredNote(stringResource(R.string.solar_need_auth)) {}
         ReportState.Offline -> CenteredNote(stringResource(R.string.net_error)) {

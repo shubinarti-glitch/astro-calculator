@@ -167,8 +167,8 @@ fun ChartViewScreen(
                 )
             }
             // Проверенный продажами продукт — PDF-отчёт. Покупок в приложении нет (правила
-            // магазинов + ФЗ), поэтому просто переход на сайт.
-            item {
+            // магазинов + ФЗ), поэтому просто переход на сайт. В googleplay-сборке скрыт целиком.
+            if (ru.astrosmap.app.BuildConfig.SHOW_BILLING) item {
                 val ctx = androidx.compose.ui.platform.LocalContext.current
                 Column(Modifier.fillMaxWidth().padding(16.dp)) {
                     Button(

@@ -56,6 +56,20 @@ android {
             }
         }
     }
+    // Флейворы по магазину. googleplay-сборка прячет любую продажу/увод на оплату
+    // (SHOW_BILLING=false) — Google Play запрещает уводить на внешнюю оплату цифровых функций.
+    // standard — RuStore/AppGallery/сайт, где премиум оформляется на astrosmap.ru.
+    flavorDimensions += "store"
+    productFlavors {
+        create("standard") {
+            dimension = "store"
+            buildConfigField("boolean", "SHOW_BILLING", "true")
+        }
+        create("googleplay") {
+            dimension = "store"
+            buildConfigField("boolean", "SHOW_BILLING", "false")
+        }
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

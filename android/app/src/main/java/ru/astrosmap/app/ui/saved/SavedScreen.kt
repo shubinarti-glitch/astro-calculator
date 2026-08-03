@@ -86,10 +86,12 @@ fun SavedScreen(
                         stringResource(R.string.premium_expired_banner),
                         style = MaterialTheme.typography.bodyMedium,
                     )
-                    TextButton(
-                        onClick = { openSite(context, "https://astrosmap.ru/#premium") },
-                        modifier = Modifier.align(Alignment.End),
-                    ) { Text(stringResource(R.string.premium_renew)) }
+                    if (ru.astrosmap.app.BuildConfig.SHOW_BILLING) {
+                        TextButton(
+                            onClick = { openSite(context, "https://astrosmap.ru/#premium") },
+                            modifier = Modifier.align(Alignment.End),
+                        ) { Text(stringResource(R.string.premium_renew)) }
+                    }
                 }
             }
         }

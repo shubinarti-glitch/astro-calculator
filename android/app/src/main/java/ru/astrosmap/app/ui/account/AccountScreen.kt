@@ -215,10 +215,12 @@ private fun Profile(me: MeResponse, viewModel: AccountViewModel) {
             )
         } else {
             Text(stringResource(R.string.premium_none), color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Button(
-                onClick = { openSite(context) },
-                modifier = Modifier.fillMaxWidth(),
-            ) { Text(stringResource(R.string.premium_buy)) }
+            if (ru.astrosmap.app.BuildConfig.SHOW_BILLING) {
+                Button(
+                    onClick = { openSite(context) },
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text(stringResource(R.string.premium_buy)) }
+            }
         }
         Text(
             stringResource(R.string.acc_charts_count, chartsCount),
@@ -233,9 +235,10 @@ private fun Profile(me: MeResponse, viewModel: AccountViewModel) {
     }
 }
 
-/** Памятка: что даёт подписка «Премиум». */
+/** Памятка: что даёт подписка «Премиум». В googleplay-сборке скрыта (без увода на оплату). */
 @Composable
 private fun PremiumInfoPanel() {
+    if (!ru.astrosmap.app.BuildConfig.SHOW_BILLING) return
     ru.astrosmap.app.ui.theme.AstroPanel {
         Text(
             "✦ " + stringResource(R.string.premium_info_title),
