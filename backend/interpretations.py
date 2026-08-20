@@ -115,6 +115,81 @@ def interpret_transit(t_name: str, aspect: str, n_name: str, lang: str = "ru") -
     )
 
 
+_PROGRESSION_GUIDANCE = {
+    "conjunction": (
+        "Эта тема постепенно становится частью нового внутреннего этапа и требует внимательного осмысления.",
+        "This theme gradually becomes part of a new inner phase and calls for attentive reflection.",
+    ),
+    "harmony": (
+        "Изменения созревают естественно: новые качества легче встроить в привычный образ жизни.",
+        "The change matures naturally, making new qualities easier to integrate into everyday life.",
+    ),
+    "tension": (
+        "Внутреннее противоречие обозначает точку взросления: важно дать переменам время и найти более зрелый способ выражения этой темы.",
+        "The inner contradiction marks a point of growth: give the change time and find a more mature way to express this theme.",
+    ),
+}
+
+
+def interpret_progression(p_name: str, aspect: str, n_name: str, lang: str = "ru") -> str:
+    """Вторичная прогрессия: медленно созревающий внутренний этап, а не событие дня."""
+    role = PLANET_ROLE.get(n_name)
+    category = _ASPECT_CATEGORY.get(aspect)
+    if not role or not category:
+        return ""
+    progressed = C.point_name(p_name, lang)
+    natal = C.point_name(n_name, lang)
+    aspect_name = C.aspect_name(aspect, lang).lower()
+    guidance = g(_PROGRESSION_GUIDANCE[category], lang)
+    if lang == "en":
+        return (
+            f"Progressed {progressed} forms a “{aspect_name}” aspect to natal “{natal}”. "
+            f"This describes a slowly maturing inner process in the area of “{g(role, lang)}”. {guidance}"
+        )
+    return (
+        f"Прогрессивная точка «{progressed}» образует аспект «{aspect_name}» к натальной точке «{natal}». "
+        f"Это описывает постепенно созревающий внутренний процесс в сфере «{g(role, lang)}». {guidance}"
+    )
+
+
+_DIRECTION_GUIDANCE = {
+    "conjunction": (
+        "Тема входит в заметную фазу жизненного цикла и просит определить свою позицию в этой сфере.",
+        "The theme enters a visible phase of the life cycle and asks you to define your position in this area.",
+    ),
+    "harmony": (
+        "Период помогает последовательно закрепить результат и использовать уже накопленный опыт.",
+        "The period supports steady consolidation and constructive use of experience already gained.",
+    ),
+    "tension": (
+        "Период обозначает рубеж, где прежний способ действия требует пересмотра и большей ответственности.",
+        "The period marks a threshold where the previous way of acting needs revision and greater responsibility.",
+    ),
+}
+
+
+def interpret_direction(d_name: str, aspect: str, n_name: str, lang: str = "ru") -> str:
+    """Дирекция солнечной дуги: символический жизненный рубеж, отдельный от транзита и прогрессии."""
+    role = PLANET_ROLE.get(n_name)
+    category = _ASPECT_CATEGORY.get(aspect)
+    if not role or not category:
+        return ""
+    directed = C.point_name(d_name, lang)
+    natal = C.point_name(n_name, lang)
+    aspect_name = C.aspect_name(aspect, lang).lower()
+    guidance = g(_DIRECTION_GUIDANCE[category], lang)
+    if lang == "en":
+        return (
+            f"Solar-arc directed “{directed}” forms a “{aspect_name}” aspect to natal “{natal}”. "
+            f"This symbolic timing highlights a developmental milestone in the area of “{g(role, lang)}”. {guidance}"
+        )
+    return (
+        f"Дирекционная точка «{directed}» по солнечной дуге образует аспект «{aspect_name}» "
+        f"к натальной точке «{natal}». Этот символический показатель отмечает жизненный рубеж "
+        f"в сфере «{g(role, lang)}». {guidance}"
+    )
+
+
 def prog_moon_text(sign: str, house, lang: str = "ru") -> str:
     """Прогрессивная Луна — «эмоциональная глава» периода (~2,5 года)."""
     essence = g(SIGN_ARCHETYPE.get(sign, {}).get("essence", ("", "")), lang)
@@ -230,7 +305,7 @@ HOUSE_FOCUS = {
     3: ("на общение, обучение, ближнее окружение и повседневные связи", "toward communication, learning, the immediate circle and everyday connections"),
     4: ("на дом, семью, корни и внутреннюю опору", "toward home, family, roots and inner support"),
     5: ("на творчество, любовь, детей и радость самовыражения", "toward creativity, love, children and the joy of self-expression"),
-    6: ("на работу, здоровье, рутину и служение", "toward work, health, routine and service"),
+    6: ("на работу, обязанности, рутину и служение", "toward work, duties, routine and service"),
     7: ("на партнёрство, брак, союзы и отношения «один на один»", "toward partnership, marriage, alliances and one-to-one relationships"),
     8: ("на кризисы, трансформации, интимность и чужие ресурсы", "toward crises, transformation, intimacy and shared resources"),
     9: ("на мировоззрение, путешествия, высшее образование и поиск смысла", "toward worldview, travel, higher education and the search for meaning"),
@@ -543,7 +618,7 @@ _OVERLAY_HOUSE = {
     3: ("повседневное общение и быт", "everyday communication and routine"),
     4: ("дом, семью и корни", "home, family and roots"),
     5: ("романтику, флирт и творчество", "romance, flirtation and creativity"),
-    6: ("быт, заботу и здоровье", "daily life, care and health"),
+    6: ("быт, заботу и повседневный порядок", "daily life, care and everyday order"),
     7: ("партнёрство и брак", "partnership and marriage"),
     8: ("близость, страсть и общие ресурсы", "intimacy, passion and shared resources"),
     9: ("взгляды, путешествия и развитие", "worldview, travel and growth"),
@@ -991,8 +1066,8 @@ HOUSE_EXP = {
         "The roots of everything — home, family, parents and the past; here you seek support and a sense of belonging."),
     5: ("Это территория радости и самопроявления: творчество, влюблённости, удовольствия, дети и игра.",
         "This is the ground of joy and self-expression: creativity, romance, pleasures, children and play."),
-    6: ("Будни и порядок: работа, режим, забота о здоровье и привычка приносить пользу.",
-        "Daily life and order: work, routine, care for health and the habit of being useful."),
+    6: ("Будни и порядок: работа, режим, повседневные обязанности и привычка приносить пользу.",
+        "Daily life and order: work, routine, everyday duties and the habit of being useful."),
     7: ("Всё разворачивается через других: партнёрство, брак и близкие отношения «один на один».",
         "Everything unfolds through others: partnership, marriage and close one-to-one relationships."),
     8: ("Глубокие и сильные темы: близость, кризисы, чужие ресурсы, трансформация и то, что обычно скрыто.",
@@ -1025,7 +1100,7 @@ HOUSE_SPHERE = {
     3: ("общение и учёба", "communication and learning"),
     4: ("дом и семья", "home and family"),
     5: ("творчество, любовь и дети", "creativity, romance and children"),
-    6: ("работа и здоровье", "work and health"),
+    6: ("работа и повседневный режим", "work and daily routine"),
     7: ("партнёрство и брак", "partnership and marriage"),
     8: ("кризисы, близость и общие финансы", "crises, intimacy and shared finances"),
     9: ("кругозор, учёба и путешествия", "outlook, study and travel"),
@@ -1231,43 +1306,45 @@ def plain_story(signs: dict, aspects: list, lang: str = "ru") -> dict:
             f"By nature you are {tr(sun)}. Deep down you are driven by {fc(sun,'motive')}. "
             f"At first meeting you come across as {tr(asc)} — that is your “calling card”.")
         add("Feelings", "Feelings",
-            f"In your feelings and moods you are {tr(moon)}. To feel calm and safe you need {fc(moon,'motive')}. "
-            f"In hard moments, watch that this does not turn into {fc(moon,'shadow')}.")
+            f"Your emotional style: {tr(moon)}. What supports a sense of calm and security: {fc(moon,'motive')}. "
+            f"In difficult moments, these tendencies may become more visible: {fc(moon,'shadow')}.")
         add("Mind", "Mind",
             f"You think, learn and communicate {fc(me,'manner')}. At best this gives {ar(me,'light')}, "
             f"but sometimes — {fc(me,'shadow')}.")
         add("Love", "Love and relationships",
-            f"In love it matters to you {fc(ve,'motive')}; you show tenderness {fc(ve,'manner')}. "
-            f"Attraction and passion you express {fc(ma,'manner')}. In a partner you instinctively look for {tr(h7)} qualities.")
+            f"Your main relationship needs: {fc(ve,'motive')}. Your way of showing tenderness: {fc(ve,'manner')}. "
+            f"The style of attraction and passion: {fc(ma,'manner')}. Qualities you notice in a partner: {tr(h7)}.")
         add("Energy", "Energy and drive",
-            f"You act and pursue what you want {fc(ma,'manner')}. At its best this is {ar(ma,'light')}; "
-            f"under pressure you may {fc(ma,'shadow')}.")
+            f"Your way of taking action and pursuing a goal: {fc(ma,'manner')}. "
+            f"At its best, this brings out {ar(ma,'light')}; under pressure, the following may become more visible: {fc(ma,'shadow')}.")
         add("Money", "Money and values",
-            f"Toward money, things and stability you are {fc(h2,'manner')}. Most of all you value {fc(h2,'motive')}.")
+            f"Your approach to material matters and stability: {fc(h2,'manner')}. "
+            f"Your main reference points in this area: {fc(h2,'motive')}.")
         add("Work", "Work and vocation",
-            f"At work and in your career, the approach that suits you is {fc(mc,'manner')}. Your strength in business is {ar(mc,'light')}. "
-            f"Focus and discipline come to you {fc(sat,'manner')}.")
+            f"Your preferred approach to work and vocation: {fc(mc,'manner')}. Strengths that support your work: {ar(mc,'light')}. "
+            f"Your style of focus and discipline: {fc(sat,'manner')}.")
     else:
         add("Характер", "Character",
             f"По характеру вы {tr(sun)}. В глубине вами движет {fc(sun,'motive')}. "
             f"Первое впечатление, которое вы производите на людей: {tr(asc)} — это ваша «визитная карточка».")
         add("Эмоции и внутренний мир", "Feelings",
-            f"В чувствах и настроении вы {tr(moon)}. Чтобы чувствовать себя спокойно и в безопасности, вам важно {fc(moon,'motive')}. "
-            f"В трудные моменты следите, чтобы это не перешло в {fc(moon,'shadow')}.")
+            f"Ваш эмоциональный стиль: {tr(moon)}. То, что поддерживает ощущение спокойствия и безопасности: {fc(moon,'motive')}. "
+            f"В трудные моменты могут ярче проявляться следующие тенденции: {fc(moon,'shadow')}.")
         add("Ум и общение", "Mind",
             f"Думаете, учитесь и общаетесь вы {fc(me,'manner')}. Это даёт {ar(me,'light')}, "
             f"но иногда — {fc(me,'shadow')}.")
         add("Любовь и отношения", "Love",
-            f"В любви вам важно {fc(ve,'motive')}; нежность вы проявляете {fc(ve,'manner')}. "
-            f"Влечение и страсть — {fc(ma,'manner')}. В партнёре вам близки такие черты: {tr(h7)}.")
+            f"Основные потребности в отношениях: {fc(ve,'motive')}. Способ проявлять нежность: {fc(ve,'manner')}. "
+            f"Стиль влечения и страсти: {fc(ma,'manner')}. Черты, которые вы замечаете в партнёре: {tr(h7)}.")
         add("Энергия и действие", "Energy",
-            f"Действуете и добиваетесь своего вы {fc(ma,'manner')}. В лучшем виде это {ar(ma,'light')}; "
-            f"под давлением можете {fc(ma,'shadow')}.")
+            f"Ваш способ действовать и добиваться цели: {fc(ma,'manner')}. "
+            f"В сильном проявлении заметны {ar(ma,'light')}; в напряжённых обстоятельствах могут ярче проявляться: {fc(ma,'shadow')}.")
         add("Деньги и ценности", "Money",
-            f"К деньгам, вещам и стабильности вы относитесь {fc(h2,'manner')}. Больше всего вы цените {fc(h2,'motive')}.")
+            f"Ваш подход к материальной сфере и стабильности: {fc(h2,'manner')}. "
+            f"Основные ориентиры в этой области: {fc(h2,'motive')}.")
         add("Работа и призвание", "Work",
-            f"В работе и карьере вам ближе всего подход {fc(mc,'manner')}. Ваша сильная сторона в деле — {ar(mc,'light')}. "
-            f"Собранность и дисциплина даются вам {fc(sat,'manner')}.")
+            f"Предпочтительный подход к работе и призванию: {fc(mc,'manner')}. Сильные стороны, поддерживающие вас в деле: {ar(mc,'light')}. "
+            f"Стиль собранности и дисциплины: {fc(sat,'manner')}.")
 
     # Плюсы и минусы личности — наглядные списки черт (из ключевых точек карты).
     def collect(key):
@@ -1878,18 +1955,18 @@ def sphere_love(venus_sign, mars_sign, dsc_sign, lang="ru"):
     sv, sm, sd = C.sign_in(venus_sign, lang), C.sign_in(mars_sign, lang), C.sign_in(dsc_sign, lang)
     if lang == "en":
         return (
-            f"How you love (Venus {sv}): you express feelings through {_af(venus_sign,'essence',lang)}; "
-            f"in closeness you especially value {_af(venus_sign,'light',lang)}. "
+            f"How you love (Venus {sv}): the main emotional theme is {_af(venus_sign,'essence',lang)}; "
+            f"supportive qualities in closeness are {_af(venus_sign,'light',lang)}. "
             f"Passion and attraction (Mars {sm}): {_af(mars_sign,'essence',lang)}. "
-            f"In a partner (Descendant {sd}) you are drawn to {_af(dsc_sign,'essence',lang)}; "
-            f"but do not idealize — the shadow side of the attraction is {_af(dsc_sign,'shadow',lang)}."
+            f"Partner image (Descendant {sd}): qualities that attract your attention — {_af(dsc_sign,'essence',lang)}; "
+            f"possible shadow tendencies — {_af(dsc_sign,'shadow',lang)}."
         )
     return (
-        f"Как вы любите (Венера {sv}): проявляете чувства через {_af(venus_sign,'essence',lang)}; "
-        f"в близости особенно цените {_af(venus_sign,'light',lang)}. "
+        f"Как вы любите (Венера {sv}): основная эмоциональная тема — {_af(venus_sign,'essence',lang)}; "
+        f"поддерживающие качества в близости — {_af(venus_sign,'light',lang)}. "
         f"Страсть и влечение (Марс {sm}): {_af(mars_sign,'essence',lang)}. "
-        f"В партнёре (Десцендент {sd}) вас притягивает {_af(dsc_sign,'essence',lang)}; "
-        f"но не идеализируйте — теневая сторона притяжения это {_af(dsc_sign,'shadow',lang)}."
+        f"Образ партнёра (Десцендент {sd}): качества, привлекающие внимание, — {_af(dsc_sign,'essence',lang)}; "
+        f"возможные теневые тенденции — {_af(dsc_sign,'shadow',lang)}."
     )
 
 
@@ -1897,15 +1974,15 @@ def sphere_career(mc_sign, sun_sign, saturn_sign, lang="ru"):
     smc, ss, ssat = C.sign_in(mc_sign, lang), C.sign_in(sun_sign, lang), C.sign_in(saturn_sign, lang)
     if lang == "en":
         return (
-            f"Vocation and public role (MC {smc}): you are led by {_af(mc_sign,'essence',lang)}; "
-            f"your strengths in work are {_af(mc_sign,'light',lang)}. "
+            f"Vocation and public role (MC {smc}): the main professional theme is {_af(mc_sign,'essence',lang)}; "
+            f"supportive strengths in work are {_af(mc_sign,'light',lang)}. "
             f"Inner driver (Sun {ss}): {_af(sun_sign,'essence',lang)}. "
             f"Discipline and career endurance (Saturn {ssat}): {_af(saturn_sign,'light',lang)}; "
             f"the risk zone for growth is {_af(saturn_sign,'shadow',lang)}."
         )
     return (
-        f"Призвание и публичная роль (MC {smc}): вас ведёт {_af(mc_sign,'essence',lang)}; "
-        f"сильные стороны в деле — {_af(mc_sign,'light',lang)}. "
+        f"Призвание и публичная роль (MC {smc}): основная профессиональная тема — {_af(mc_sign,'essence',lang)}; "
+        f"поддерживающие сильные стороны в деле — {_af(mc_sign,'light',lang)}. "
         f"Внутренний двигатель (Солнце {ss}): {_af(sun_sign,'essence',lang)}. "
         f"Дисциплина и карьерная выдержка (Сатурн {ssat}): {_af(saturn_sign,'light',lang)}; "
         f"зона риска для роста — {_af(saturn_sign,'shadow',lang)}."
@@ -1992,18 +2069,18 @@ def sphere_health(asc_sign, moon_sign, h6_sign, lang="ru"):
     sa, smo, sh = C.sign_in(asc_sign, lang), C.sign_in(moon_sign, lang), C.sign_in(h6_sign, lang)
     if lang == "en":
         return (
-            f"Vitality and the body (Ascendant {sa}): {_af(asc_sign,'essence',lang)}; "
-            f"your resource is {_af(asc_sign,'light',lang)}. "
-            f"Emotions and psychosomatics (Moon {smo}): you react through {_af(moon_sign,'essence',lang)}, "
-            f"and under prolonged stress tension seeks an outlet — watch out for {_af(moon_sign,'shadow',lang)}. "
-            f"Care for health and routine (6th house {sh}): an approach through {_af(h6_sign,'essence',lang)} suits you."
+            f"Everyday resources (Ascendant {sa}): the underlying pattern is {_af(asc_sign,'essence',lang)}; "
+            f"a supportive quality is {_af(asc_sign,'light',lang)}. "
+            f"Emotional balance (Moon {smo}): familiar reactions are connected with these themes: {_af(moon_sign,'essence',lang)}. "
+            f"During demanding periods, the following tendencies may become more visible: {_af(moon_sign,'shadow',lang)}. "
+            f"Rhythm and everyday habits (6th house {sh}): useful reference points are {_af(h6_sign,'essence',lang)}."
         )
     return (
-        f"Жизненный тонус и тело (Асцендент {sa}): {_af(asc_sign,'essence',lang)}; "
-        f"ваш ресурс — {_af(asc_sign,'light',lang)}. "
-        f"Эмоции и психосоматика (Луна {smo}): вы реагируете через {_af(moon_sign,'essence',lang)}, "
-        f"и при длительном стрессе напряжение ищет выход — обратите внимание на {_af(moon_sign,'shadow',lang)}. "
-        f"Забота о здоровье и режим (6-й дом {sh}): вам подходит подход через {_af(h6_sign,'essence',lang)}."
+        f"Повседневный ресурс (Асцендент {sa}): основная настройка — {_af(asc_sign,'essence',lang)}; "
+        f"поддерживающая сторона — {_af(asc_sign,'light',lang)}. "
+        f"Эмоциональный баланс (Луна {smo}): привычные реакции связаны с темами: {_af(moon_sign,'essence',lang)}. "
+        f"В напряжённые периоды могут ярче проявляться следующие тенденции: {_af(moon_sign,'shadow',lang)}. "
+        f"Ритм и повседневные привычки (6-й дом {sh}): полезные ориентиры — {_af(h6_sign,'essence',lang)}."
     )
 
 
@@ -2094,8 +2171,8 @@ MOON_IN_SIGN_MOOD = {
             "A sensitive, homey day — you're drawn to loved ones, care and comfort; sensitivity and the need for safety rise."),
     "Leo": ("День яркий и щедрый — хочется творить, блистать и получать признание; берегитесь гордости и жажды внимания.",
             "A bright, generous day — you want to create, shine and be recognised; watch for pride and a craving for attention."),
-    "Vir": ("День практичный и аккуратный — удобно наводить порядок, заниматься делами, здоровьем и мелочами; не придирайтесь к себе.",
-            "A practical, tidy day — good for order, chores, health and details; don't be too hard on yourself."),
+    "Vir": ("День практичный и аккуратный — удобно наводить порядок, заниматься делами и мелочами; не придирайтесь к себе.",
+            "A practical, tidy day — good for order, chores and details; don't be too hard on yourself."),
     "Lib": ("День про отношения и красоту — тянет к гармонии, партнёрству и эстетике; решения даются трудно, хочется компромисса.",
             "A day of relationships and beauty — drawn to harmony, partnership and aesthetics; decisions come hard, you seek compromise."),
     "Sco": ("День глубокий и напряжённый — сильные чувства и тяга к самой сути; возможны страсти, ревность и желание контроля.",

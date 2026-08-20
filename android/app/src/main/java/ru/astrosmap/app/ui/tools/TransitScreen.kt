@@ -152,12 +152,16 @@ fun TransitScreen(viewModel: TransitViewModel = hiltViewModel()) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(AstroLabels.pointGlyphs[p.name] ?: "", color = MaterialTheme.colorScheme.primary)
-                Text(AstroLabels.point(p.name), Modifier.weight(1f))
-                if (p.retrograde) {
-                    Text("R", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+                Column(Modifier.weight(1f)) {
+                    Text(AstroLabels.point(p.name))
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        if (p.retrograde) {
+                            Text("R", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+                        }
+                        Text("${AstroLabels.signGlyphs[p.sign]} ${AstroLabels.sign(p.sign)}")
+                        Text(AstroLabels.degMin(p.position))
+                    }
                 }
-                Text("${AstroLabels.signGlyphs[p.sign]} ${AstroLabels.sign(p.sign)}")
-                Text(AstroLabels.degMin(p.position))
             }
         }
         item { Section(stringResource(R.string.transit_aspects)) }

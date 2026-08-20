@@ -15,7 +15,7 @@
         android:textColor="#C9A86A"
         android:textSize="14sp"
         android:textStyle="bold"
-        android:text="💡 Совет дня" />
+        android:text="@string/widget_advice_title" />
 
     <TextView
         android:id="@+id/wa_text"

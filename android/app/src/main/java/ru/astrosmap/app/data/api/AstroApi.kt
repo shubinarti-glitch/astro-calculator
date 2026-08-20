@@ -53,7 +53,17 @@ data class MeResponse(
     @Serializable(with = LenientStringSerializer::class)
     val premiumUntil: String? = null,
     @SerialName("report_credits") val reportCredits: Int = 0,
+    /** Новые поля необязательны: старый сервер и сохранённые ответы остаются совместимыми. */
+    val plan: String? = null,
+    @SerialName("subscription_source") val subscriptionSource: String? = null,
+    // null = ответ старого сервера; [] = новый сервер явно не выдал ни одного права.
+    // Различие обязательно, иначе пустой серверный список можно ошибочно заменить
+    // полным набором Premium-прав.
+    val entitlements: List<String>? = null,
 ) {
+    fun accessState(): ru.astrosmap.app.data.access.AccessState =
+        ru.astrosmap.app.data.access.AccessState.from(this)
+
     /** Был премиум, но срок вышел (для мягкого баннера «продлите»). Никогда не имел — false. */
     fun premiumExpired(): Boolean {
         if (premium) return false

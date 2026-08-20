@@ -29,6 +29,7 @@ object PrimaryChart {
     fun resolve(context: Context, charts: List<ChartEntity>): ChartEntity? {
         if (charts.isEmpty()) return null
         val chosen = get(context)
-        return charts.firstOrNull { it.id == chosen } ?: charts.minByOrNull { it.id }
+        charts.firstOrNull { it.id == chosen }?.let { return it }
+        return charts.minByOrNull { it.id }?.also { fallback -> set(context, fallback.id) }
     }
 }

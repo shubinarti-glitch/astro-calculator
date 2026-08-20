@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -116,7 +117,7 @@ fun SplashScreen(start: Boolean, onFinished: () -> Unit) {
                 modifier = Modifier.padding(top = 22.dp).alpha(textAlpha.value),
             )
             Text(
-                "ВАША КАРТА. ВАШ КОСМОС.",
+                stringResource(R.string.splash_tagline),
                 color = Color(0xFF9A98B8),
                 fontSize = 12.sp,
                 letterSpacing = 3.sp,
@@ -127,7 +128,7 @@ fun SplashScreen(start: Boolean, onFinished: () -> Unit) {
         }
 
         Text(
-            "ПОЗНАЙ СЕБЯ. ПОЙМИ ВСЕЛЕННУЮ.",
+            stringResource(R.string.splash_footer),
             color = Color(0xFF6A6890),
             fontFamily = Cormorant,
             fontSize = 13.sp,

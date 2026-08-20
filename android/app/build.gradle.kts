@@ -57,17 +57,25 @@ android {
         }
     }
     // Флейворы по магазину. googleplay-сборка прячет любую продажу/увод на оплату
-    // (SHOW_BILLING=false) — Google Play запрещает уводить на внешнюю оплату цифровых функций.
+    // (SHOW_EXTERNAL_PURCHASE_LINKS=false) — Google Play запрещает уводить на
+    // внешнюю оплату цифровых функций. SHOW_BILLING зарезервирован под
+    // нативную биллинг-интеграцию магазина.
     // standard — RuStore/AppGallery/сайт, где премиум оформляется на astrosmap.ru.
     flavorDimensions += "store"
     productFlavors {
         create("standard") {
             dimension = "store"
+            buildConfigField("String", "STORE_ID", "\"standard\"")
+            buildConfigField("String", "PAYMENT_PROVIDER", "\"external_web\"")
             buildConfigField("boolean", "SHOW_BILLING", "true")
+            buildConfigField("boolean", "SHOW_EXTERNAL_PURCHASE_LINKS", "true")
         }
         create("googleplay") {
             dimension = "store"
+            buildConfigField("String", "STORE_ID", "\"googleplay\"")
+            buildConfigField("String", "PAYMENT_PROVIDER", "\"none\"")
             buildConfigField("boolean", "SHOW_BILLING", "false")
+            buildConfigField("boolean", "SHOW_EXTERNAL_PURCHASE_LINKS", "false")
         }
     }
     compileOptions {

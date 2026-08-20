@@ -1,5 +1,6 @@
 package ru.astrosmap.app.ui.today
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,25 +9,31 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonPrimitive
@@ -51,7 +58,10 @@ import ru.astrosmap.app.ui.theme.AppHeader
 import ru.astrosmap.app.ui.theme.AstroPanel
 import ru.astrosmap.app.ui.tools.LunarTexts
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.time.format.TextStyle
+import java.time.temporal.ChronoUnit
 import java.util.Locale
 import javax.inject.Inject
 import kotlin.math.abs
@@ -64,11 +74,15 @@ data class TodayState(
     val chartName: String? = null,     // null — нет сохранённых карт
     val moonPhaseKey: String = "",
     val moonSign: String = "",
+    val lunarDay: Int = 1,
     val aspects: List<DayAspect> = emptyList(),
+    val insights: DayInsights? = null,
     val textsOffline: Boolean = false,
     /** Все карты — для выбора «кто я»; переключатель показываем только когда их больше одной. */
     val charts: List<ChartEntity> = emptyList(),
     val chartId: Long = 0,
+    val upcomingEvent: UpcomingDayEvent? = null,
+    val upcomingEventLoading: Boolean = false,
 )
 
 /**
@@ -88,6 +102,7 @@ class TodayViewModel @Inject constructor(
 
     private val _state = MutableStateFlow(TodayState())
     val state: StateFlow<TodayState> = _state
+    private var loadJob: Job? = null
 
     init {
         analytics.track("today_viewed")
@@ -95,23 +110,32 @@ class TodayViewModel @Inject constructor(
         // первой карты) — иначе личные транзиты появлялись только после перезапуска приложения.
         viewModelScope.launch {
             dao.search("")
-                .map { list -> list.filter { !it.pendingDelete }.map { it.id }.toSet() }
                 .distinctUntilChanged()
-                .collect { load() }
+                .collect { list -> scheduleLoad(list.filter { !it.pendingDelete }) }
         }
     }
 
     /** Сменить карту «это я» — выбор запоминается между запусками. */
     fun selectChart(id: Long) {
         PrimaryChart.set(context, id)
-        load()
+        scheduleLoad(_state.value.charts)
     }
 
     fun load() {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
+            val all = runCatching { dao.allOnce() }.getOrDefault(emptyList()).filter { !it.pendingDelete }
+            calculate(all)
+        }
+    }
+
+    private fun scheduleLoad(charts: List<ChartEntity>) {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch { calculate(charts) }
+    }
+
+    private suspend fun calculate(all: List<ChartEntity>) {
             val today = LocalDate.now()
-            val all = runCatching { dao.allOnce() }.getOrDefault(emptyList())
-                .filter { !it.pendingDelete }
             // Карта «это я»: выбранная пользователем, иначе самая ранняя.
             val chart = PrimaryChart.resolve(context, all)
             if (chart == null) {
@@ -122,8 +146,10 @@ class TodayViewModel @Inject constructor(
                     chartName = null,
                     moonPhaseKey = moon.first,
                     moonSign = moon.second,
+                    lunarDay = lunarDay(today),
+                    charts = all,
                 )
-                return@launch
+                return
             }
             val natal = chart.toBirthInput()
             val transitInput = BirthInput(
@@ -132,18 +158,46 @@ class TodayViewModel @Inject constructor(
             )
             val tc = withContext(Dispatchers.Default) { engine.transit(natal, transitInput) }
             val moonSign = tc.transitPoints.firstOrNull { it.name == "Moon" }?.sign ?: ""
-            val top = tc.aspects.sortedByDescending { strength(it) }.take(3).map { DayAspect(it, null) }
+            val sorted = tc.aspects.sortedByDescending { strength(it) }
+            val top = sorted.take(3).map { DayAspect(it, null) }
             _state.value = TodayState(
                 loading = false,
                 chartName = chart.name,
                 moonPhaseKey = tc.lunarPhase.name,
                 moonSign = moonSign,
+                lunarDay = lunarDay(today),
                 aspects = top,
+                insights = DayInsightCalculator.calculate(sorted),
                 charts = all,
                 chartId = chart.id,
+                upcomingEventLoading = true,
             )
             loadTexts(chart.name, natal, chart.city, today)
-        }
+            val upcomingEvent = withContext(Dispatchers.Default) {
+                val future = (1..14).map { offset ->
+                    val date = today.plusDays(offset.toLong())
+                    val input = BirthInput(
+                        date.year, date.monthValue, date.dayOfMonth, 12, 0,
+                        natal.lat, natal.lng, natal.tzId,
+                    )
+                    date to engine.transit(natal, input).aspects
+                }
+                DayForecastCalculator.nearestImportant(future)
+            }
+            if (_state.value.chartId == chart.id) {
+                _state.value = _state.value.copy(
+                    upcomingEvent = upcomingEvent,
+                    upcomingEventLoading = false,
+                )
+            }
+    }
+
+    /** Approximate astronomical lunar day (1–30), derived from the synodic Moon age at local noon. */
+    private fun lunarDay(date: LocalDate): Int {
+        val knownNewMoon = LocalDateTime.of(2000, 1, 6, 18, 14).toEpochSecond(ZoneOffset.UTC)
+        val sample = date.atTime(12, 0).toEpochSecond(ZoneOffset.UTC)
+        val ageDays = Math.floorMod(sample - knownNewMoon, 2_551_443L) / 86_400.0
+        return (ageDays.toInt() + 1).coerceIn(1, 30)
     }
 
     /** Фаза и знак Луны без данных рождения — точка 0/0, полдень. */
@@ -183,6 +237,8 @@ class TodayViewModel @Inject constructor(
                 },
                 textsOffline = false,
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             _state.value = _state.value.copy(textsOffline = true)
         }
@@ -203,7 +259,11 @@ class TodayViewModel @Inject constructor(
             val planet = PLANET_W[a.p2] ?: 0.5
             val aspect = ASPECT_W[a.aspect] ?: 0.5
             val tightness = (1.0 - (abs(a.orbit) / 10.0)).coerceIn(0.0, 1.0)
-            val movement = if (a.movement == "Applying") 1.15 else 0.9
+            val movement = when (a.movement) {
+                "Applying" -> 1.15
+                "Separating" -> 0.9
+                else -> 1.0
+            }
             return planet * aspect * tightness * movement
         }
     }
@@ -243,6 +303,11 @@ fun TodayScreen(
                     "${LunarTexts.phaseEmoji[state.moonPhaseKey] ?: ""} ${LunarTexts.phaseName(state.moonPhaseKey)} · " +
                         "${AstroLabels.signGlyphs[state.moonSign] ?: ""} ${AstroLabels.sign(state.moonSign)}",
                     style = MaterialTheme.typography.titleSmall,
+                )
+                Text(
+                    stringResource(R.string.today_lunar_day, state.lunarDay),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.secondary,
                 )
                 Text(LunarTexts.moonMood(state.moonSign), style = MaterialTheme.typography.bodyMedium)
                 Text(
@@ -293,8 +358,13 @@ fun TodayScreen(
             if (state.aspects.isEmpty()) {
                 Text(stringResource(R.string.today_quiet), style = MaterialTheme.typography.bodyMedium)
             }
-            state.aspects.forEach { da ->
+            state.aspects.firstOrNull()?.let { da ->
                 Column(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                    Text(
+                        stringResource(R.string.today_main_transit),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.secondary,
+                    )
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -309,6 +379,27 @@ fun TodayScreen(
                     }
                 }
             }
+            if (state.aspects.size > 1) {
+                Text(
+                    stringResource(R.string.today_other_influences),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+                state.aspects.drop(1).forEach { da ->
+                    Row(
+                        Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(AstroLabels.pointGlyphs[da.hit.p2] ?: "", color = MaterialTheme.colorScheme.primary)
+                        Text(
+                            "${AstroLabels.point(da.hit.p2)} ${AstroLabels.aspectGlyphs[da.hit.aspect] ?: ""} ${AstroLabels.point(da.hit.p1)}",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
+            }
             if (state.textsOffline) {
                 Text(
                     stringResource(R.string.today_texts_offline),
@@ -318,7 +409,152 @@ fun TodayScreen(
             }
         }
 
+        state.insights?.let { insights ->
+            AstroPanel {
+                Text(
+                    stringResource(R.string.today_forecast_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Text(
+                    stringResource(
+                        R.string.today_forecast_text,
+                        dayDomainName(insights.strongest.domain),
+                        dayDomainName(insights.mostSensitive.domain),
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+
+            AstroPanel {
+                Text(
+                    stringResource(R.string.today_indices),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Text(
+                    stringResource(R.string.today_indices_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                insights.indicators.forEach { DayIndicatorRow(it) }
+            }
+
+            AstroPanel {
+                AdviceBlock(
+                    title = stringResource(R.string.today_useful),
+                    indicator = insights.strongest,
+                    textRes = R.string.today_useful_text,
+                )
+                AdviceBlock(
+                    title = stringResource(R.string.today_protect),
+                    indicator = insights.mostSensitive,
+                    textRes = R.string.today_protect_text,
+                )
+            }
+        }
+
         // Карта дня — под транзитами: сначала астрология дня, потом Таро.
+        AstroPanel {
+            Text(
+                stringResource(R.string.today_next_event_title),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            val event = state.upcomingEvent
+            if (state.upcomingEventLoading) {
+                Text(
+                    stringResource(R.string.today_next_event_loading),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else if (event == null) {
+                Text(
+                    stringResource(R.string.today_next_event_none),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                val days = ChronoUnit.DAYS.between(today, event.date).toInt()
+                Text(
+                    "${AstroLabels.point(event.hit.p2)} " +
+                        "${AstroLabels.aspectGlyphs[event.hit.aspect] ?: ""} " +
+                        AstroLabels.point(event.hit.p1),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                val dateText = "${event.date.dayOfMonth} " +
+                    event.date.month.getDisplayName(TextStyle.FULL, locale)
+                Text(
+                    stringResource(R.string.today_next_event_date, dateText) + " · " +
+                        pluralStringResource(R.plurals.today_next_event_in_days, days, days),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.secondary,
+                )
+                Text(
+                    stringResource(R.string.today_next_event_advice),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+
         ru.astrosmap.app.ui.tarot.CardOfDaySection()
     }
 }
+
+@Composable
+private fun DayIndicatorRow(indicator: DayIndicator) {
+    var expanded by remember(indicator.domain) { mutableStateOf(false) }
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clickable { expanded = !expanded }
+            .padding(vertical = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(dayDomainName(indicator.domain), style = MaterialTheme.typography.bodyMedium)
+            Text("${indicator.score}/100 ${if (expanded) "−" else "+"}", style = MaterialTheme.typography.labelLarge)
+        }
+        LinearProgressIndicator(
+            progress = { indicator.score / 100f },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        if (expanded) {
+            if (indicator.contributors.isEmpty()) {
+                Text(
+                    stringResource(R.string.today_no_contributors),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                indicator.contributors.forEach { hit ->
+                    Text(
+                        "• ${AstroLabels.point(hit.p2)} ${AstroLabels.aspectGlyphs[hit.aspect] ?: ""} ${AstroLabels.point(hit.p1)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AdviceBlock(title: String, indicator: DayIndicator, textRes: Int) {
+    Column(Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
+        Text(title, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
+        Text(stringResource(textRes, dayDomainName(indicator.domain)), style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+@Composable
+private fun dayDomainName(domain: DayDomain): String = stringResource(
+    when (domain) {
+        DayDomain.ENERGY -> R.string.today_domain_energy
+        DayDomain.EMOTIONS -> R.string.today_domain_emotions
+        DayDomain.RELATIONSHIPS -> R.string.today_domain_relationships
+        DayDomain.COMMUNICATION -> R.string.today_domain_communication
+        DayDomain.PRODUCTIVITY -> R.string.today_domain_productivity
+    },
+)

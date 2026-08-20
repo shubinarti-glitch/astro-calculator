@@ -131,7 +131,7 @@ fun TarotScreen(viewModel: TarotViewModel = hiltViewModel()) {
                 val anyLocked = Spread.entries.any {
                     TarotStorage.spreadCooldownDays(context, it.name, viewModel.premium) > 0
                 }
-                if (anyLocked && !viewModel.premium && ru.astrosmap.app.BuildConfig.SHOW_BILLING) {
+                if (anyLocked && !viewModel.premium && ru.astrosmap.app.BuildConfig.SHOW_EXTERNAL_PURCHASE_LINKS) {
                     Button(onClick = { openSite(context, "https://astrosmap.ru/#premium") },
                         modifier = Modifier.fillMaxWidth()) {
                         Text(stringResource(R.string.premium_buy))

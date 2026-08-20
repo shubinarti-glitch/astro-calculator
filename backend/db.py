@@ -19,6 +19,25 @@ SECRET_FILE = DATA_DIR / "secret.key"
 TOKEN_TTL_DAYS = 30
 PBKDF2_ROUNDS = 120_000
 
+# Stable capability identifiers shared by the API and mobile clients.  Keep
+# these values backwards-compatible: persisted overrides refer to them.
+ENTITLEMENTS = frozenset({
+    "charts_unlimited",
+    "advanced_forecasts",
+    "full_calendar",
+    "journal_history",
+    "tarot_daily_spreads",
+    "pdf_export",
+    "advanced_widget",
+    "ai_assistant",
+    "professional_tools",
+})
+PREMIUM_ENTITLEMENTS = ENTITLEMENTS - {"professional_tools"}
+PROFESSIONAL_ENTITLEMENTS = ENTITLEMENTS
+SUBSCRIPTION_SOURCES = frozenset({
+    "website", "admin", "rustore", "appgallery", "googleplay", "legacy",
+})
+
 
 def _load_secret() -> bytes:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -121,9 +140,42 @@ def init_db() -> None:
                 user_id INTEGER PRIMARY KEY,
                 plan TEXT NOT NULL,
                 expires_at INTEGER NOT NULL,
+                source TEXT NOT NULL DEFAULT 'legacy',
                 FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
             )"""
         )
+        # Existing databases have only (user_id, plan, expires_at).  A constant
+        # DEFAULT makes this a safe additive SQLite migration and marks all old
+        # purchases as legacy without changing their validity.
+        sub_cols = [r["name"] for r in c.execute("PRAGMA table_info(subscriptions)").fetchall()]
+        if "source" not in sub_cols:
+            c.execute("ALTER TABLE subscriptions ADD COLUMN source TEXT NOT NULL DEFAULT 'legacy'")
+        c.execute(
+            """CREATE TABLE IF NOT EXISTS entitlement_overrides (
+                user_id INTEGER NOT NULL,
+                entitlement TEXT NOT NULL,
+                effect TEXT NOT NULL CHECK(effect IN ('grant', 'deny')),
+                expires_at INTEGER,
+                reason TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                PRIMARY KEY (user_id, entitlement),
+                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+            )"""
+        )
+        c.execute(
+            """CREATE TABLE IF NOT EXISTS access_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                entitlement TEXT NOT NULL,
+                action TEXT NOT NULL,
+                expires_at INTEGER,
+                reason TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL,
+                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+            )"""
+        )
+        c.execute("CREATE INDEX IF NOT EXISTS idx_access_history_user ON access_history(user_id, created_at)")
         # Платежи ЮKassa: pending до подтверждения, succeeded после активации.
         c.execute(
             """CREATE TABLE IF NOT EXISTS payments (
@@ -579,8 +631,8 @@ def list_user_payments(user_id: int) -> list[dict]:
 # --------------------------------------------------------------------------- #
 def get_subscription(user_id: int) -> Optional[dict]:
     with get_conn() as c:
-        r = c.execute("SELECT plan, expires_at FROM subscriptions WHERE user_id = ?", (user_id,)).fetchone()
-    return {"plan": r["plan"], "expires_at": r["expires_at"]} if r else None
+        r = c.execute("SELECT plan, expires_at, source FROM subscriptions WHERE user_id = ?", (user_id,)).fetchone()
+    return {"plan": r["plan"], "expires_at": r["expires_at"], "source": r["source"]} if r else None
 
 
 def is_premium(user_id: int) -> bool:
@@ -588,19 +640,118 @@ def is_premium(user_id: int) -> bool:
     return bool(sub and sub["expires_at"] > time.time())
 
 
-def extend_subscription(user_id: int, plan: str, days: int) -> dict:
+def extend_subscription(user_id: int, plan: str, days: int, source: Optional[str] = None) -> dict:
     """Активировать/продлить подписку: срок добавляется к текущему, если он не истёк."""
     now = int(time.time())
+    source = source or ("admin" if plan == "admin" else "website")
+    if source not in SUBSCRIPTION_SOURCES:
+        raise ValueError(f"Unknown subscription source: {source}")
     with get_conn() as c:
         r = c.execute("SELECT expires_at FROM subscriptions WHERE user_id = ?", (user_id,)).fetchone()
         base = max(now, r["expires_at"]) if r else now
         expires = base + days * 86400
         c.execute(
-            "INSERT INTO subscriptions (user_id, plan, expires_at) VALUES (?, ?, ?) "
-            "ON CONFLICT(user_id) DO UPDATE SET plan = excluded.plan, expires_at = excluded.expires_at",
-            (user_id, plan, expires),
+            "INSERT INTO subscriptions (user_id, plan, expires_at, source) VALUES (?, ?, ?, ?) "
+            "ON CONFLICT(user_id) DO UPDATE SET plan = excluded.plan, "
+            "expires_at = excluded.expires_at, source = excluded.source",
+            (user_id, plan, expires, source),
         )
-    return {"plan": plan, "expires_at": expires}
+    return {"plan": plan, "expires_at": expires, "source": source}
+
+
+def _base_access(user_id: int, now: Optional[int] = None) -> tuple[str, Optional[dict], set[str]]:
+    now = int(time.time()) if now is None else int(now)
+    sub = get_subscription(user_id)
+    if not sub or sub["expires_at"] <= now:
+        return "free", sub, set()
+    # Product names (month/year/admin/plus_*) remain untouched in the database.
+    # The public plan is deliberately normalized for client feature checks.
+    public_plan = "professional" if str(sub["plan"]).startswith("professional") else "premium"
+    rights = PROFESSIONAL_ENTITLEMENTS if public_plan == "professional" else PREMIUM_ENTITLEMENTS
+    return public_plan, sub, set(rights)
+
+
+def get_access_state(user_id: int, now: Optional[int] = None) -> dict:
+    now = int(time.time()) if now is None else int(now)
+    plan, sub, rights = _base_access(user_id, now)
+    with get_conn() as c:
+        rows = c.execute(
+            "SELECT entitlement, effect, expires_at FROM entitlement_overrides "
+            "WHERE user_id = ? AND (expires_at IS NULL OR expires_at > ?)",
+            (user_id, now),
+        ).fetchall()
+    # An override replaces the plan decision for that single entitlement.
+    for row in rows:
+        if row["entitlement"] not in ENTITLEMENTS:
+            continue
+        if row["effect"] == "grant":
+            rights.add(row["entitlement"])
+        else:
+            rights.discard(row["entitlement"])
+    return {
+        "plan": plan,
+        "premium": plan in {"premium", "professional"},
+        "premium_until": sub["expires_at"] if sub else None,
+        "subscription_source": sub["source"] if sub else None,
+        "entitlements": sorted(rights),
+    }
+
+
+def has_entitlement(user_id: int, entitlement: str, now: Optional[int] = None) -> bool:
+    if entitlement not in ENTITLEMENTS:
+        return False
+    return entitlement in get_access_state(user_id, now)["entitlements"]
+
+
+def set_entitlement_override(
+    user_id: int,
+    entitlement: str,
+    effect: str,
+    expires_at: Optional[int] = None,
+    reason: str = "",
+) -> bool:
+    if not get_user_by_id(user_id):
+        return False
+    if entitlement not in ENTITLEMENTS:
+        raise ValueError(f"Unknown entitlement: {entitlement}")
+    if effect not in {"grant", "deny"}:
+        raise ValueError("effect must be 'grant' or 'deny'")
+    if expires_at is not None and int(expires_at) <= int(time.time()):
+        raise ValueError("expires_at must be in the future")
+    stamp = _now_iso()
+    with get_conn() as c:
+        c.execute(
+            "INSERT INTO entitlement_overrides "
+            "(user_id, entitlement, effect, expires_at, reason, created_at, updated_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT(user_id, entitlement) DO UPDATE SET effect = excluded.effect, "
+            "expires_at = excluded.expires_at, reason = excluded.reason, updated_at = excluded.updated_at",
+            (user_id, entitlement, effect, expires_at, reason, stamp, stamp),
+        )
+        c.execute(
+            "INSERT INTO access_history (user_id, entitlement, action, expires_at, reason, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (user_id, entitlement, effect, expires_at, reason, stamp),
+        )
+    return True
+
+
+def clear_entitlement_override(user_id: int, entitlement: str, reason: str = "") -> bool:
+    if entitlement not in ENTITLEMENTS:
+        raise ValueError(f"Unknown entitlement: {entitlement}")
+    stamp = _now_iso()
+    with get_conn() as c:
+        cur = c.execute(
+            "DELETE FROM entitlement_overrides WHERE user_id = ? AND entitlement = ?",
+            (user_id, entitlement),
+        )
+        if cur.rowcount:
+            c.execute(
+                "INSERT INTO access_history (user_id, entitlement, action, reason, created_at) "
+                "VALUES (?, ?, 'clear', ?, ?)",
+                (user_id, entitlement, reason, stamp),
+            )
+        return cur.rowcount > 0
 
 
 def add_report_credit(user_id: int, n: int = 1) -> None:
@@ -816,7 +967,7 @@ def admin_set_premium(user_id: int, days: int) -> bool:
         if days == 0:
             c.execute("DELETE FROM subscriptions WHERE user_id = ?", (user_id,))
             return True
-    extend_subscription(user_id, "admin", days)
+    extend_subscription(user_id, "admin", days, source="admin")
     return True
 
 

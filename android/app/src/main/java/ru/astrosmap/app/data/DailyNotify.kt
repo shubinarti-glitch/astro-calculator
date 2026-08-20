@@ -47,12 +47,19 @@ object DailyNotify {
     private const val KEY_ON = "notify_enabled"
     private const val KEY_HOUR = "notify_hour"
     private const val KEY_MIN = "notify_min"
+    private const val KEY_PROMPT_SHOWN = "notify_prompt_shown_v1"
 
     private fun prefs(context: Context) = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     fun isEnabled(context: Context): Boolean = prefs(context).getBoolean(KEY_ON, false)
     fun hour(context: Context): Int = prefs(context).getInt(KEY_HOUR, 9)
     fun minute(context: Context): Int = prefs(context).getInt(KEY_MIN, 0)
+    fun shouldShowPrompt(context: Context): Boolean =
+        !isEnabled(context) && !prefs(context).getBoolean(KEY_PROMPT_SHOWN, false)
+
+    fun markPromptShown(context: Context) {
+        prefs(context).edit().putBoolean(KEY_PROMPT_SHOWN, true).apply()
+    }
 
     fun setTime(context: Context, h: Int, m: Int) {
         prefs(context).edit().putInt(KEY_HOUR, h).putInt(KEY_MIN, m).apply()

@@ -25,8 +25,9 @@ class CityStore(private val context: Context) {
 
     private val db: SQLiteDatabase by lazy {
         // openFd для сжатых assets не работает — копируем при первом запуске.
-        // При обновлении базы городов сменить имя файла (cities_v2.db и т.д.).
-        val target = File(File(context.filesDir, "db").apply { mkdirs() }, "cities.db")
+        // Версионированное имя гарантирует замену asset-базы у существующих установок.
+        // При следующем обновлении справочника увеличить суффикс.
+        val target = File(File(context.filesDir, "db").apply { mkdirs() }, "cities_v2.db")
         if (!target.exists()) {
             context.assets.open("db/cities.db").use { input ->
                 target.outputStream().use { input.copyTo(it) }

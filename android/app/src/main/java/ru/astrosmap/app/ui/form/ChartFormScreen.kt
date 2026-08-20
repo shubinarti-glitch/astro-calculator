@@ -167,8 +167,10 @@ fun ChartFormScreen(
             }
         }
 
-        // Ссылка на сайт: там больше функций (ректификация, PDF, подписка и т.д.).
-        AstroPanel {
+        // Коммерческая витрина сайта доступна только сборкам, которым разрешены
+        // внешние переходы. В Google Play она скрыта целиком, поскольку главная
+        // страница сайта содержит путь к покупке цифровых функций.
+        if (ru.astrosmap.app.BuildConfig.SHOW_EXTERNAL_PURCHASE_LINKS) AstroPanel {
             val context = androidx.compose.ui.platform.LocalContext.current
             Surface(
                 onClick = { ru.astrosmap.app.ui.openSite(context) },
@@ -187,7 +189,7 @@ fun ChartFormScreen(
             }
             // Оформление подписки идёт на сайте — диплинк открывает окно «Премиум».
             // В googleplay-сборке скрыто: увод на внешнюю оплату там запрещён.
-            if (ru.astrosmap.app.BuildConfig.SHOW_BILLING) {
+            if (ru.astrosmap.app.BuildConfig.SHOW_EXTERNAL_PURCHASE_LINKS) {
                 Button(
                     onClick = {
                         viewModel.trackPremiumTap()

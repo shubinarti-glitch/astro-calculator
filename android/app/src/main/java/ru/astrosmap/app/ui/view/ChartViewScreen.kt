@@ -168,7 +168,7 @@ fun ChartViewScreen(
             }
             // Проверенный продажами продукт — PDF-отчёт. Покупок в приложении нет (правила
             // магазинов + ФЗ), поэтому просто переход на сайт. В googleplay-сборке скрыт целиком.
-            if (ru.astrosmap.app.BuildConfig.SHOW_BILLING) item {
+            if (ru.astrosmap.app.BuildConfig.SHOW_EXTERNAL_PURCHASE_LINKS) item {
                 val ctx = androidx.compose.ui.platform.LocalContext.current
                 Column(Modifier.fillMaxWidth().padding(16.dp)) {
                     Button(
@@ -190,7 +190,7 @@ fun ChartViewScreen(
 private fun sphereLabel(key: String): String = when (key) {
     "love" -> if (AstroLabels.isRu()) "Любовь" else "Love"
     "career" -> if (AstroLabels.isRu()) "Карьера" else "Career"
-    "health" -> if (AstroLabels.isRu()) "Здоровье" else "Health"
+    "health" -> if (AstroLabels.isRu()) "Самочувствие и баланс" else "Wellbeing & balance"
     else -> key
 }
 
@@ -244,16 +244,20 @@ private fun PlanetRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(AstroLabels.pointGlyphs[p.name] ?: "", color = MaterialTheme.colorScheme.primary)
-            Text(AstroLabels.point(p.name), Modifier.weight(1f))
-            if (p.retrograde) {
-                Text("R", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+            Column(Modifier.weight(1f)) {
+                Text(AstroLabels.point(p.name))
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (p.retrograde) {
+                        Text("R", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+                    }
+                    Text("${AstroLabels.signGlyphs[p.sign]} ${AstroLabels.sign(p.sign)}", color = GoodColor)
+                    Text(AstroLabels.degMin(p.position))
+                    Text(
+                        stringResource(R.string.house_short, p.houseNum),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
-            Text("${AstroLabels.signGlyphs[p.sign]} ${AstroLabels.sign(p.sign)}", color = GoodColor)
-            Text(AstroLabels.degMin(p.position))
-            Text(
-                stringResource(R.string.house_short, p.houseNum),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
             if (paragraphs != null) {
                 Text(
                     if (key in expanded.value) "⌄" else "›",

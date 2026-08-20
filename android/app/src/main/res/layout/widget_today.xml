@@ -14,7 +14,7 @@
         android:textColor="#C9A86A"
         android:textSize="15sp"
         android:textStyle="bold"
-        android:text="24 июля, пятница" />
+        android:text="@string/widget_preview_date" />
 
     <TextView
         android:id="@+id/w_moon"
@@ -23,7 +23,7 @@
         android:layout_marginTop="4dp"
         android:textColor="#F2F0FA"
         android:textSize="13sp"
-        android:text="🌔 Растущая Луна · Стрелец" />
+        android:text="@string/widget_preview_moon" />
 
     <TextView
         android:id="@+id/w_mood"

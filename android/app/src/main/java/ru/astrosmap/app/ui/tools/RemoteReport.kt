@@ -59,7 +59,7 @@ fun ReportScaffold(
         }
         ReportState.NeedPremium -> CenteredNote(stringResource(R.string.premium_required)) {
             // В googleplay-сборке без кнопки покупки — только пояснение (текст нейтральный, см. флейвор).
-            if (ru.astrosmap.app.BuildConfig.SHOW_BILLING) {
+            if (ru.astrosmap.app.BuildConfig.SHOW_EXTERNAL_PURCHASE_LINKS) {
                 val context = LocalContext.current
                 Button(onClick = { openSite(context) }) { Text(stringResource(R.string.premium_buy)) }
             }

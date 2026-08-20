@@ -58,8 +58,8 @@ object LunarTexts {
             "A sensitive, homey day — you're drawn to loved ones, care and comfort; sensitivity and the need for safety rise."),
         "Leo" to ("День яркий и щедрый — хочется творить, блистать и получать признание; берегитесь гордости и жажды внимания." to
             "A bright, generous day — you want to create, shine and be recognised; watch for pride and a craving for attention."),
-        "Vir" to ("День практичный и аккуратный — удобно наводить порядок, заниматься делами, здоровьем и мелочами; не придирайтесь к себе." to
-            "A practical, tidy day — good for order, chores, health and details; don't be too hard on yourself."),
+        "Vir" to ("День практичный и аккуратный — удобно наводить порядок, заниматься делами и важными мелочами; не придирайтесь к себе." to
+            "A practical, tidy day — good for order, chores and details; don't be too hard on yourself."),
         "Lib" to ("День про отношения и красоту — тянет к гармонии, партнёрству и эстетике; решения даются трудно, хочется компромисса." to
             "A day of relationships and beauty — drawn to harmony, partnership and aesthetics; decisions come hard, you seek compromise."),
         "Sco" to ("День глубокий и напряжённый — сильные чувства и тяга к самой сути; возможны страсти, ревность и желание контроля." to

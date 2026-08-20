@@ -77,8 +77,8 @@ _QUALITY_EN = {"good": "favorable", "neutral": "neutral", "bad": "unfavorable"}
 
 # Человеческое описание дня по накшатре (что за энергия, для чего хорош) — простым языком.
 NAKSHATRA_GUIDE = [
-    ("быстрая, лёгкая энергия — хорош для начала дел, поездок, лечения и спорта",
-     "fast, light energy — good for starting things, travel, healing and sport"),
+    ("быстрая, лёгкая энергия — хорош для начала дел, поездок, восстановления сил и спорта",
+     "fast, light energy — good for starting things, travel, restoring energy and sport"),
     ("интенсивный день — лучше завершать начатое, чем браться за новое",
      "intense day — better to finish things than to start new ones"),
     ("острая, очищающая энергия — подходит для решительных действий и порядка, но возможны вспышки",
@@ -123,8 +123,8 @@ NAKSHATRA_GUIDE = [
      "listening day — study, negotiations, music and connections"),
     ("ритмичный, щедрый день — музыка, группы, финансы и активность",
      "rhythmic, generous day — music, groups, finance and activity"),
-    ("целительный, нестандартный день — медицина, тайны, технологии и уединение",
-     "healing, unconventional day — medicine, mysteries, technology and solitude"),
+    ("восстанавливающий, нестандартный день — отдых, тайны, технологии и уединение",
+     "restorative, unconventional day — rest, mysteries, technology and solitude"),
     ("серьёзный, интенсивный день — глубокие темы, но осторожнее с резкостью и риском",
      "serious, intense day — deep matters, but be careful with harshness and risk"),
     ("глубокий, спокойный день — мудрость, благотворительность и долгие решения",

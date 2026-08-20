@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.random.Random
@@ -144,12 +145,14 @@ fun AppHeader(subtitle: String) {
                 drawLine(white, Offset(cx - len, cy), Offset(cx + len, cy), strokeWidth = sw, cap = StrokeCap.Round)
             }
         }
-        Column(Modifier.padding(start = 10.dp)) {
+        Column(Modifier.weight(1f).padding(start = 10.dp)) {
             AstroWordmark(fontSize = 30.sp)
             Text(
                 "Project Artemisa · " + subtitle,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }

@@ -206,7 +206,7 @@ _NODE_FALLBACK = {
 
 
 def _apply_transit_interp(aspects: list[dict]) -> list[dict]:
-    """Трактовка «транзитная»: действующая планета — p2 (транзит/прогрессия), цель — p1 (натал).
+    """Трактовка «транзитная»: действующая планета — p2 (транзит), цель — p1 (натал).
 
     В dual_chart_aspects(natal, moving) первый субъект (p1) — натальный, второй (p2) — действующий.
     """
@@ -215,6 +215,16 @@ def _apply_transit_interp(aspects: list[dict]) -> list[dict]:
         t = I.interpret_transit(a["p2"], a["aspect"], a["p1"], lang)
         if t:
             a["interp"] = t
+    return aspects
+
+
+def _apply_progression_interp(aspects: list[dict]) -> list[dict]:
+    """Трактовка вторичных прогрессий: p2 — прогрессивная точка, p1 — натальная."""
+    lang = _lang()
+    for a in aspects:
+        text = I.interpret_progression(a["p2"], a["aspect"], a["p1"], lang)
+        if text:
+            a["interp"] = text
     return aspects
 
 
@@ -665,7 +675,15 @@ def return_report(
     ret_model = prf.next_return_from_date(year, start_month, 1, return_type=rtype)
 
     lang = natal_params.get("lang", "ru")
-    payload = _single_chart_payload(ret_model, with_svg=with_svg, lang=lang)
+    # Карта возвращения описывает период, а не формирует новый портрет личности.
+    # Поэтому натальные profile/deep/psych/spheres/essentials здесь не создаём,
+    # но сохраняем big_three, который используется Android ReturnScreen.
+    payload = _single_chart_payload(ret_model, with_svg=with_svg, with_profile=False, lang=lang)
+    payload["big_three"] = {
+        "sun": I.luminary_info("Sun", ret_model.sun.sign, lang),
+        "moon": I.luminary_info("Moon", ret_model.moon.sign, lang),
+        "asc": I.luminary_info("Ascendant", ret_model.first_house.sign, lang),
+    }
     payload["return_type"] = rtype
     if lang == "en":
         payload["return_type_ru"] = "Solar return" if rtype == "Solar" else "Lunar return"
@@ -833,6 +851,7 @@ def _solar_arc(natal_model, arc: float) -> tuple[list[dict], list[dict]]:
                         "aspect_symbol": C.aspect_symbol(kind),
                         "nature": C.ASPECTS.get(kind, {}).get("nature", ""),
                         "orbit": round(orb, 2), "degrees": angle, "movement": "",
+                        "interp": I.interpret_direction(d["name"], kind, n_name, lang),
                     })
     aspects.sort(key=lambda a: a["orbit"])
     return directed, aspects
@@ -883,7 +902,7 @@ def progression_report(
         "target_date": target.strftime("%Y-%m-%dT%H:%M"),
         "elapsed_years": round(elapsed_years, 2),
         "prog_planets": _collect_points(prog_model),
-        "aspects": _apply_transit_interp([serialize_aspect(a) for a in dual.aspects]),
+        "aspects": _apply_progression_interp([serialize_aspect(a) for a in dual.aspects]),
         "solar_arc": {"value": round(arc, 2), "deg": arc_deg, "min": arc_min},
         "directed": directed,
         "directed_aspects": directed_aspects,
@@ -939,7 +958,7 @@ _SPHERE_OF = {
     "Sun": {"ru": "Самореализация", "en": "Self-realization"},
     "Saturn": {"ru": "Карьера и ответственность", "en": "Career & responsibility"},
     "Medium_Coeli": {"ru": "Карьера и статус", "en": "Career & status"},
-    "Ascendant": {"ru": "Личность и здоровье", "en": "Self & health"},
+    "Ascendant": {"ru": "Личность и жизненный ритм", "en": "Self & life rhythm"},
     "Mercury": {"ru": "Общение и дела", "en": "Communication & affairs"},
     "Jupiter": {"ru": "Рост и возможности", "en": "Growth & opportunities"},
     "Uranus": {"ru": "Перемены и свобода", "en": "Change & freedom"},
@@ -956,7 +975,7 @@ _LIFE_SPHERES = [
      {"Venus", "Descendant", "Mars"}),
     ("career", ("Карьера и финансы", "Career & finances"), "💼",
      {"Medium_Coeli", "Saturn", "Sun", "Jupiter"}),
-    ("health", ("Здоровье и энергия", "Health & vitality"), "🌿",
+    ("health", ("Самочувствие и баланс", "Wellbeing & balance"), "🌿",
      {"Ascendant", "Moon", "Mars"}),
     ("home", ("Дом и семья", "Home & family"), "🏠",
      {"Imum_Coeli", "Moon"}),

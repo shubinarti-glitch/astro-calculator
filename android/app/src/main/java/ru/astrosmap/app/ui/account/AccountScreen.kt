@@ -215,7 +215,7 @@ private fun Profile(me: MeResponse, viewModel: AccountViewModel) {
             )
         } else {
             Text(stringResource(R.string.premium_none), color = MaterialTheme.colorScheme.onSurfaceVariant)
-            if (ru.astrosmap.app.BuildConfig.SHOW_BILLING) {
+            if (BuildConfig.SHOW_EXTERNAL_PURCHASE_LINKS) {
                 Button(
                     onClick = { openSite(context) },
                     modifier = Modifier.fillMaxWidth(),
@@ -238,7 +238,7 @@ private fun Profile(me: MeResponse, viewModel: AccountViewModel) {
 /** Памятка: что даёт подписка «Премиум». В googleplay-сборке скрыта (без увода на оплату). */
 @Composable
 private fun PremiumInfoPanel() {
-    if (!ru.astrosmap.app.BuildConfig.SHOW_BILLING) return
+    if (!BuildConfig.SHOW_EXTERNAL_PURCHASE_LINKS) return
     ru.astrosmap.app.ui.theme.AstroPanel {
         Text(
             "✦ " + stringResource(R.string.premium_info_title),
@@ -265,11 +265,13 @@ private fun LegalPanel() {
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         DailyNotifyRow(context)
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        TextButton(onClick = { openSite(context) }) { Text(stringResource(R.string.acc_site)) }
-        TextButton(onClick = { openSite(context, "https://astrosmap.ru/#glossary") }) {
-            Text(stringResource(R.string.acc_glossary))
+        if (BuildConfig.SHOW_EXTERNAL_PURCHASE_LINKS) {
+            TextButton(onClick = { openSite(context) }) { Text(stringResource(R.string.acc_site)) }
+            TextButton(onClick = { openSite(context, "https://astrosmap.ru/#glossary") }) {
+                Text(stringResource(R.string.acc_glossary))
+            }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         }
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         TextButton(onClick = { openSite(context, PRIVACY_URL) }) { Text(stringResource(R.string.acc_privacy)) }
         TextButton(onClick = { openSite(context, TERMS_URL) }) { Text(stringResource(R.string.acc_terms)) }
         Text(

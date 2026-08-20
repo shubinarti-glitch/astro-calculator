@@ -313,15 +313,19 @@ fun RemotePlanetRow(p: JsonObject) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(AstroLabels.pointGlyphs[name] ?: p.s("symbol") ?: "", color = MaterialTheme.colorScheme.primary)
-        Text(if (AstroLabels.isRu()) p.s("name_ru") ?: name else AstroLabels.point(name), Modifier.weight(1f))
-        if (p.b("retrograde")) {
-            Text("R", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
-        }
-        val sign = p.s("sign") ?: ""
-        Text("${AstroLabels.signGlyphs[sign] ?: ""} ${if (AstroLabels.isRu()) p.s("sign_ru") ?: "" else AstroLabels.sign(sign)}")
-        Text("${p.i("deg") ?: 0}°${(p.i("min") ?: 0).toString().padStart(2, '0')}′")
-        p.i("house_num")?.let {
-            Text(stringResource(R.string.house_short, it), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Column(Modifier.weight(1f)) {
+            Text(if (AstroLabels.isRu()) p.s("name_ru") ?: name else AstroLabels.point(name))
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (p.b("retrograde")) {
+                    Text("R", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+                }
+                val sign = p.s("sign") ?: ""
+                Text("${AstroLabels.signGlyphs[sign] ?: ""} ${if (AstroLabels.isRu()) p.s("sign_ru") ?: "" else AstroLabels.sign(sign)}")
+                Text("${p.i("deg") ?: 0}°${(p.i("min") ?: 0).toString().padStart(2, '0')}′")
+                p.i("house_num")?.let {
+                    Text(stringResource(R.string.house_short, it), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
         }
     }
 }

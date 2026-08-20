@@ -1,6 +1,12 @@
 package ru.astrosmap.app.ui.tarot
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -32,7 +38,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.MaterialTheme
@@ -63,7 +71,7 @@ fun CardOfDaySection() {
     LaunchedEffect(phase) {
         if (phase == DayPhase.SHUFFLE) {
             three = TarotDeck.draw(3)
-            delay(900)
+            delay(1_500)
             phase = DayPhase.PICK
         }
     }
@@ -100,20 +108,12 @@ fun CardOfDaySection() {
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
                 ) {
-                    three.forEach { card ->
-                        CardBack(
-                            Modifier
-                                .weight(1f)
-                                .aspectRatio(0.58f)
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = null,
-                                ) {
-                                    chosen = card
-                                    TarotStorage.saveDayCard(context, card)
-                                    phase = DayPhase.REVEAL
-                                },
-                        )
+                    three.forEachIndexed { index, card ->
+                        PickableDayCard(index, Modifier.weight(1f)) {
+                            chosen = card
+                            TarotStorage.saveDayCard(context, card)
+                            phase = DayPhase.REVEAL
+                        }
                     }
                 }
             }
@@ -163,26 +163,67 @@ fun CardBack(modifier: Modifier = Modifier) {
     }
 }
 
-/** Простая анимация перетасовки: три рубашки веером покачиваются и сходятся. */
+/** Живая перетасовка: пять карт перекладываются из руки в руку и снова собираются. */
 @Composable
 private fun ShuffleAnimation() {
-    var t by remember { mutableStateOf(0f) }
-    val a by animateFloatAsState(targetValue = t, animationSpec = tween(800), label = "shuffle")
-    LaunchedEffect(Unit) { t = 1f }
-    Box(Modifier.width(160.dp).aspectRatio(0.9f), contentAlignment = Alignment.Center) {
-        val angles = listOf(-18f, 0f, 18f)
-        angles.forEachIndexed { i, base ->
+    val transition = rememberInfiniteTransition(label = "tarot_shuffle")
+    val motion by transition.animateFloat(
+        initialValue = -1f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(420, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "tarot_shuffle_motion",
+    )
+    Box(Modifier.width(190.dp).aspectRatio(1.05f), contentAlignment = Alignment.Center) {
+        repeat(5) { i ->
+            val depth = i - 2
+            val side = if (i % 2 == 0) 1f else -1f
             CardBack(
                 Modifier
-                    .width(96.dp)
+                    .width(104.dp)
                     .aspectRatio(0.58f)
                     .graphicsLayer {
-                        rotationZ = base * (1f - a) + (i - 1) * 2f * a
-                        translationX = (i - 1) * 46.dp.toPx() * a
+                        translationX = side * motion * (34f + i * 4f) * density
+                        translationY = kotlin.math.abs(motion) * (8f + i) * density - i * 2f * density
+                        rotationZ = depth * 3.5f + side * motion * 10f
+                        scaleX = 1f - i * 0.012f
+                        scaleY = scaleX
+                        alpha = 1f - i * 0.055f
                     },
             )
         }
     }
+}
+
+/** Три карты не появляются резко: каждая по очереди выезжает из собранной колоды. */
+@Composable
+private fun PickableDayCard(index: Int, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    val appear = remember { Animatable(0f) }
+    val haptic = LocalHapticFeedback.current
+    LaunchedEffect(Unit) {
+        delay(index * 120L)
+        appear.animateTo(1f, tween(520, easing = FastOutSlowInEasing))
+    }
+    CardBack(
+        modifier
+            .aspectRatio(0.58f)
+            .graphicsLayer {
+                alpha = appear.value
+                translationY = (1f - appear.value) * 54f * density
+                rotationZ = (index - 1) * 7f * appear.value
+                scaleX = 0.88f + 0.12f * appear.value
+                scaleY = scaleX
+            }
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ) {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onClick()
+            },
+    )
 }
 
 /** Выбранная карта переворачивается лицом и показывает трактовку. */

@@ -93,7 +93,7 @@ HOUSE_MEANINGS = {
     3: {"ru": "Общение, обучение, ближнее окружение", "en": "Communication, learning, immediate surroundings"},
     4: {"ru": "Дом, семья, корни", "en": "Home, family, roots"},
     5: {"ru": "Творчество, дети, любовь", "en": "Creativity, children, romance"},
-    6: {"ru": "Работа, здоровье, рутина", "en": "Work, health, daily routine"},
+    6: {"ru": "Работа, обязанности, рутина", "en": "Work, duties, daily routine"},
     7: {"ru": "Партнёрство, брак, отношения", "en": "Partnership, marriage, relationships"},
     8: {"ru": "Кризисы, трансформация, чужие ресурсы", "en": "Crises, transformation, shared resources"},
     9: {"ru": "Мировоззрение, путешествия, высшее образование", "en": "Worldview, travel, higher education"},

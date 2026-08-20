@@ -99,7 +99,7 @@ fun ProgressionScreen(viewModel: ProgressionViewModel = hiltViewModel()) {
             item { ToolSection(stringResource(R.string.prog_positions)) }
             items(data.a("prog_planets")) { p -> RemotePlanetRow(p) }
             item { ToolSection(stringResource(R.string.prog_aspects)) }
-            items(data.a("aspects")) { a -> RemoteAspectRow(a) }
+            items(data.a("aspects")) { a -> RemoteAspectRow(a, movingFirst = true) }
         }
     }
 }
@@ -116,9 +116,14 @@ fun ToolSection(text: String) {
 
 /** Аспект из серверного отчёта: символы + русские подписи + трактовка по тапу. */
 @Composable
-fun RemoteAspectRow(a: kotlinx.serialization.json.JsonObject) {
+fun RemoteAspectRow(
+    a: kotlinx.serialization.json.JsonObject,
+    movingFirst: Boolean = false,
+) {
     var expanded by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     val interp = a.s("interp") ?: a.s("text")
+    val first = if (movingFirst) "p2" else "p1"
+    val second = if (movingFirst) "p1" else "p2"
     Column(
         Modifier
             .fillMaxWidth()
@@ -129,11 +134,11 @@ fun RemoteAspectRow(a: kotlinx.serialization.json.JsonObject) {
             horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
         ) {
-            Text(a.s("p1_symbol") ?: "", color = MaterialTheme.colorScheme.primary)
+            Text(a.s("${first}_symbol") ?: "", color = MaterialTheme.colorScheme.primary)
             Text(a.s("aspect_symbol") ?: "", color = MaterialTheme.colorScheme.secondary)
-            Text(a.s("p2_symbol") ?: "", color = MaterialTheme.colorScheme.primary)
+            Text(a.s("${second}_symbol") ?: "", color = MaterialTheme.colorScheme.primary)
             Text(
-                "${a.s("p1_ru") ?: a.s("p1")} · ${a.s("aspect_ru") ?: ""} · ${a.s("p2_ru") ?: a.s("p2")}",
+                "${a.s("${first}_ru") ?: a.s(first)} · ${a.s("aspect_ru") ?: ""} · ${a.s("${second}_ru") ?: a.s(second)}",
                 Modifier.weight(1f),
                 style = MaterialTheme.typography.bodySmall,
             )

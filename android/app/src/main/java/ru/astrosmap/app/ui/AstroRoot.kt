@@ -1,22 +1,40 @@
 package ru.astrosmap.app.ui
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -41,29 +59,75 @@ fun AstroRoot() {
     val navController = rememberNavController()
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
+    var hintedIndex by remember { mutableIntStateOf(-1) }
+    var hintStopped by remember { mutableStateOf(false) }
+    val compactLabels = LocalDensity.current.fontScale >= 1.3f
+
+    NotificationOptInPrompt()
+
+    // Один ненавязчивый проход после входа: показывает, что нижняя панель интерактивна.
+    // Любой тап немедленно прекращает подсказку.
+    LaunchedEffect(hintStopped) {
+        if (hintStopped) return@LaunchedEffect
+        delay(900)
+        Section.entries.indices.forEach { index ->
+            hintedIndex = index
+            delay(360)
+        }
+        hintedIndex = -1
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             NavigationBar {
                 Section.entries.forEach { section ->
+                    val index = Section.entries.indexOf(section)
+                    val pulse by animateFloatAsState(
+                        targetValue = if (hintedIndex == index) 1f else 0f,
+                        animationSpec = tween(240, easing = FastOutSlowInEasing),
+                        label = "bottom_nav_hint_${section.route}",
+                    )
                     NavigationBarItem(
                         selected = currentRoute == section.route,
+                        alwaysShowLabel = !compactLabels,
                         onClick = {
+                            hintStopped = true
+                            hintedIndex = -1
                             navController.navigate(section.route) {
                                 popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                                 launchSingleTop = true
                                 restoreState = true
                             }
                         },
-                        icon = { Icon(painterResource(section.iconRes), contentDescription = null) },
+                        icon = {
+                            val defaultTint = LocalContentColor.current
+                            Box(
+                                Modifier
+                                    .size(42.dp)
+                                    .graphicsLayer {
+                                        scaleX = 1f + pulse * 0.16f
+                                        scaleY = scaleX
+                                    }
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = pulse * 0.16f)),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    painterResource(section.iconRes),
+                                    contentDescription = stringResource(section.titleRes),
+                                    tint = if (pulse > 0.01f) MaterialTheme.colorScheme.primary
+                                    else defaultTint,
+                                )
+                            }
+                        },
                         label = {
                             // Двухстрочные подписи допускаем осознанно — иначе длинные обрезаются.
                             Text(
                                 stringResource(section.titleRes),
-                                maxLines = 2,
+                                maxLines = 1,
                                 textAlign = TextAlign.Center,
-                                lineHeight = 13.sp,
+                                overflow = TextOverflow.Ellipsis,
                             )
                         },
                     )
@@ -107,9 +171,11 @@ fun AstroRoot() {
                     onSynastry = { a, b -> navController.navigate("synastry/$a/$b") },
                     onLunarCalendar = { navController.navigate("luncal") },
                     onTarot = { navController.navigate("tarot") },
+                    onJournal = { navController.navigate("journal") },
                 )
             }
             composable("luncal") { ru.astrosmap.app.ui.tools.LunarCalendarScreen() }
+            composable("journal") { ru.astrosmap.app.ui.journal.JournalScreen() }
             composable("transit/{id}") { ru.astrosmap.app.ui.tools.TransitScreen() }
             composable("progression/{id}") { ru.astrosmap.app.ui.tools.ProgressionScreen() }
             composable("forecast/{id}") { ru.astrosmap.app.ui.tools.ForecastScreen() }

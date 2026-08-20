@@ -5,11 +5,11 @@ from __future__ import annotations
 import logging
 import time
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import date as date_type, datetime, timedelta, timezone
 from functools import lru_cache
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 import requests
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
@@ -401,11 +401,14 @@ def api_me(uid: int = Depends(current_user_id)):
     user = db.get_user_by_id(uid)
     if not user:
         raise HTTPException(status_code=401, detail="Пользователь не найден")
-    sub = db.get_subscription(uid)
+    access = db.get_access_state(uid)
     return {"username": user["username"], "is_admin": bool(user["is_admin"]),
             "email": user["email"], "email_verified": bool(user["email_verified"]),
-            "premium": db.is_premium(uid),
-            "premium_until": sub["expires_at"] if sub else None,
+            "premium": access["premium"],
+            "premium_until": access["premium_until"],
+            "plan": access["plan"],
+            "subscription_source": access["subscription_source"],
+            "entitlements": access["entitlements"],
             "consultation": db.has_consultation(uid),
             "report_credits": db.get_report_credits(uid),
             "primary_profile_id": user["primary_profile_id"],
@@ -416,6 +419,19 @@ def require_premium(uid: int = Depends(current_user_id)) -> int:
     if not db.is_premium(uid):
         raise HTTPException(status_code=402, detail="Доступно по подписке «Премиум»")
     return uid
+
+
+def require_entitlement(entitlement: str):
+    """FastAPI dependency factory for capability-specific access checks."""
+    if entitlement not in db.ENTITLEMENTS:
+        raise ValueError(f"Unknown entitlement: {entitlement}")
+
+    def dependency(uid: int = Depends(current_user_id)) -> int:
+        if not db.has_entitlement(uid, entitlement):
+            raise HTTPException(status_code=402, detail="Функция доступна по вашему тарифу")
+        return uid
+
+    return dependency
 
 
 # --------------------------------------------------------------------------- #
@@ -524,6 +540,39 @@ def api_admin_premium(user_id: int, body: PremiumGrant, uid: int = Depends(requi
     if not db.admin_set_premium(user_id, body.days):
         raise HTTPException(status_code=404, detail="Пользователь не найден")
     return {"ok": True}
+
+
+class EntitlementOverrideRequest(BaseModel):
+    entitlement: str
+    effect: str = Field(..., pattern="^(grant|deny)$")
+    expires_at: Optional[int] = None
+    reason: str = Field("", max_length=500)
+
+
+@app.post("/api/admin/users/{user_id}/entitlements")
+def api_admin_entitlement(user_id: int, body: EntitlementOverrideRequest, uid: int = Depends(require_admin)):
+    try:
+        changed = db.set_entitlement_override(
+            user_id, body.entitlement, body.effect, body.expires_at, body.reason
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    if not changed:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    return {"ok": True, "access": db.get_access_state(user_id)}
+
+
+@app.delete("/api/admin/users/{user_id}/entitlements/{entitlement}")
+def api_admin_clear_entitlement(
+    user_id: int, entitlement: str, reason: str = "", uid: int = Depends(require_admin)
+):
+    try:
+        changed = db.clear_entitlement_override(user_id, entitlement, reason)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    if not changed:
+        raise HTTPException(status_code=404, detail="Индивидуальное право не найдено")
+    return {"ok": True, "access": db.get_access_state(user_id)}
 
 
 class BanRequest(BaseModel):
@@ -702,37 +751,86 @@ def api_report_consume(uid: int = Depends(current_user_id)):
 # --------------------------------------------------------------------------- #
 #  Транзит дня и еженедельная рассылка
 # --------------------------------------------------------------------------- #
+_DAILY_PLANET_WEIGHT = {
+    "Sun": 1.0, "Moon": 0.6, "Mercury": 0.8, "Venus": 0.8, "Mars": 0.9,
+    "Jupiter": 1.0, "Saturn": 1.0, "Uranus": 0.7, "Neptune": 0.7, "Pluto": 0.7,
+}
+_DAILY_ASPECT_WEIGHT = {
+    "conjunction": 1.0, "opposition": 1.0, "square": 0.95,
+    "trine": 0.9, "sextile": 0.7, "quintile": 0.4,
+}
+
+
+def _daily_orbit(aspect: dict) -> float:
+    try:
+        return abs(float(aspect.get("orbit", 99.0)))
+    except (TypeError, ValueError):
+        return 99.0
+
+
+def _daily_aspect_strength(aspect: dict) -> float:
+    """Content strength aligned with the Android Today ranking."""
+    planet = _DAILY_PLANET_WEIGHT.get(aspect.get("p2"), 0.5)
+    aspect_type = _DAILY_ASPECT_WEIGHT.get(aspect.get("aspect"), 0.5)
+    orbit = _daily_orbit(aspect)
+    tightness = max(0.0, min(1.0, 1.0 - orbit / 10.0))
+
+    # Only apply a movement coefficient when the engine provided a real value.
+    movement_value = str(aspect.get("movement") or "").strip().lower()
+    if movement_value in {"applying", "сходящийся"}:
+        movement = 1.15
+    elif movement_value in {"separating", "расходящийся"}:
+        movement = 0.9
+    else:
+        movement = 1.0
+    return planet * aspect_type * tightness * movement
+
+
 def daily_top_aspects(natal_params: dict, when: datetime, limit: int = 3) -> list[dict]:
-    """Топ-N самых точных транзитов к натальной карте на дату (для карточки «Ваш день»)."""
+    """Топ-N наиболее содержательно сильных транзитов для карточки «Ваш день»."""
     rep = astrology.transit_report(
         natal_params=natal_params,
         transit_dt={"year": when.year, "month": when.month, "day": when.day, "hour": 12, "minute": 0},
         with_svg=False,
     )
     asp = [a for a in rep.get("aspects", []) if a.get("interp")]
-    asp.sort(key=lambda a: a.get("orbit", 99))
+    asp.sort(key=lambda a: (-_daily_aspect_strength(a), _daily_orbit(a)))
     keep = ("p1_ru", "p1_symbol", "p2_ru", "p2_symbol", "aspect_ru", "aspect_symbol",
             "nature", "nature_label", "orbit", "interp")
-    return [{k: a.get(k) for k in keep} for a in asp[:limit]]
+    result = []
+    for aspect in asp[:limit]:
+        item = {key: aspect.get(key) for key in keep}
+        if aspect.get("movement"):
+            item["movement"] = aspect["movement"]
+        result.append(item)
+    return result
 
 
 @app.get("/api/daily")
-def api_daily(uid: int = Depends(current_user_id)):
+def api_daily(
+    lang: Literal["ru", "en"] = Query("ru"),
+    date: Optional[date_type] = Query(None),
+    uid: int = Depends(current_user_id),
+):
     """Транзит дня для основного человека. Free-функция; премиуму открыт прогноз вперёд."""
     primary = db.get_primary_profile(uid)
     if not primary:
         return {"has_primary": False, "premium": db.is_premium(uid)}
     params = dict(primary["data"])
-    params["lang"] = "ru"
+    params["lang"] = lang
+    requested_date = date or datetime.now(timezone.utc).date()
     try:
-        aspects = daily_top_aspects(params, datetime.now(timezone.utc))
+        aspects = daily_top_aspects(
+            params,
+            datetime.combine(requested_date, datetime.min.time(), tzinfo=timezone.utc),
+        )
     except Exception:
         logger.exception("Ошибка расчёта транзита дня")
         raise HTTPException(status_code=400, detail="Не удалось рассчитать транзит дня")
     return {
         "has_primary": True,
         "person": primary["label"],
-        "date": datetime.now(timezone.utc).date().isoformat(),
+        "date": requested_date.isoformat(),
         "aspects": aspects,
         "premium": db.is_premium(uid),
     }

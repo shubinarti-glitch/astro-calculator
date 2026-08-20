@@ -74,6 +74,7 @@ fun ToolsScreen(
     onSynastry: (Long, Long) -> Unit,
     onLunarCalendar: () -> Unit,
     onTarot: () -> Unit,
+    onJournal: () -> Unit,
     viewModel: ToolsViewModel = hiltViewModel(),
 ) {
     val charts by viewModel.charts.collectAsState()
@@ -81,8 +82,8 @@ fun ToolsScreen(
     var selectedId by rememberSaveable { mutableStateOf<Long?>(null) }
     var pickPartner by remember { mutableStateOf(false) }
     // По умолчанию — та же карта «это я», что и на экране «Сегодня».
-    val selected = charts.firstOrNull { it.id == selectedId }
-        ?: ru.astrosmap.app.data.PrimaryChart.resolve(context, charts)
+    val primary = ru.astrosmap.app.data.PrimaryChart.resolve(context, charts)
+    val selected = charts.firstOrNull { it.id == selectedId } ?: primary
 
     if (pickPartner && selected != null) {
         AlertDialog(
@@ -117,6 +118,7 @@ fun ToolsScreen(
         // Лунный календарь и Таро не требуют сохранённой карты — доступны всегда.
         AstroPanel {
             ToolButton("🌙 " + stringResource(R.string.tools_luncal)) { onLunarCalendar() }
+            ToolButton("✎ " + stringResource(R.string.journal_title)) { onJournal() }
             ToolButton("🔮 " + stringResource(R.string.section_tarot)) { onTarot() }
         }
 
@@ -155,9 +157,9 @@ fun ToolsScreen(
                 selectedId = selected?.id ?: 0L,
                 onSelect = { id ->
                     selectedId = id
-                    ru.astrosmap.app.data.PrimaryChart.set(context, id)
                 },
                 modifier = Modifier.fillMaxWidth(),
+                primaryId = primary?.id ?: 0L,
             )
 
             ToolButton(stringResource(R.string.tools_transits)) { selected?.let { onTransits(it.id) } }

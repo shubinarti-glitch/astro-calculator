@@ -69,10 +69,11 @@ class ChartViewViewModel @Inject constructor(
 
     private suspend fun loadTexts(entity: ChartEntity) {
         // 1) кэш на нужном языке
-        if (entity.textsJson != null && entity.textsLang == lang) {
-            textsRaw = entity.textsJson
-            _state.value = _state.value.copy(texts = parseSafe(entity.textsJson))
-            return
+        val cachedRaw = entity.textsJson?.takeIf { entity.textsLang == lang }
+        val cachedTexts = cachedRaw?.let(::parseSafe)
+        if (cachedTexts != null) {
+            textsRaw = cachedRaw
+            _state.value = _state.value.copy(texts = cachedTexts, textsOffline = false)
         }
         // 2) сервер
         try {
@@ -82,11 +83,13 @@ class ChartViewViewModel @Inject constructor(
                 tzStr = entity.tz, city = entity.city, lang = lang,
             )
             val raw = api.natal(body).toString()
+            val freshTexts = parseSafe(raw)
+                ?: throw IllegalStateException("Server returned invalid natal interpretation")
             textsRaw = raw
-            _state.value = _state.value.copy(texts = parseSafe(raw), textsOffline = false)
+            _state.value = _state.value.copy(texts = freshTexts, textsOffline = false)
             _state.value.savedId?.let { dao.updateTexts(it, raw, lang) }
         } catch (e: Exception) {
-            _state.value = _state.value.copy(textsOffline = true)
+            _state.value = _state.value.copy(texts = cachedTexts, textsOffline = true)
         }
     }
 

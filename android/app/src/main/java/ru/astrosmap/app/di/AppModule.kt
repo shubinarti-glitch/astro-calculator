@@ -30,6 +30,14 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun journalDb(@ApplicationContext context: Context): ru.astrosmap.app.data.JournalDb =
+        Room.databaseBuilder(context, ru.astrosmap.app.data.JournalDb::class.java, "journal_v2.db").build()
+
+    @Provides
+    fun journalDao(db: ru.astrosmap.app.data.JournalDb): ru.astrosmap.app.data.JournalDao = db.journalDao()
+
+    @Provides
+    @Singleton
     fun cityStore(@ApplicationContext context: Context): CityStore = CityStore(context)
 
     @Provides
