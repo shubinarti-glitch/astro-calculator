@@ -4,8 +4,8 @@ const I18N = {
   ru: {
     title: "Астрокалькулятор",
     brand: "Project Artemisa",
-    hero_title: "Натальная карта",
-    tagline: "Астрокалькулятор · составлено практикующими астрологами",
+    hero_title: "Натальная карта онлайн",
+    tagline: "Бесплатный расчёт · транзиты, прогрессии, соляр и прогноз",
     expand_hint: "нажмите, чтобы развернуть",
     scroll_top_title: "Наверх",
     password_repeat: "Повторите пароль",
@@ -815,8 +815,8 @@ const I18N = {
   en: {
     title: "Astro Calculator",
     brand: "Project Artemisa",
-    hero_title: "Natal chart",
-    tagline: "Astrocalculator · created by practicing astrologers",
+    hero_title: "Natal chart online",
+    tagline: "Free calculation · transits, progressions, returns and forecast",
     expand_hint: "click to expand",
     scroll_top_title: "Back to top",
     password_repeat: "Repeat password",

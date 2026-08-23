@@ -352,6 +352,106 @@ def test_seo_sitemap():
     assert r.text.count("<loc>") == 242  # главная + каталог + 240 страниц
 
 
+def test_uranus_priority_page_has_unique_seo_layer():
+    r = client.get("/opisanie/uran-v-3-dome")
+    assert r.status_code == 200
+    assert "<title>Уран в 3 доме — мышление и общение | Натальная карта</title>" in r.text
+    assert 'name="description" content="Что означает Уран в 3 доме:' in r.text
+    assert 'class="quick-answer"' in r.text
+    assert "нестандартное мышление" in r.text
+    assert 'href="/opisanie/uran-v-11-dome"' in r.text
+
+
+def test_uranus_in_leo_explains_generational_position():
+    r = client.get("/opisanie/uran-v-lve")
+    assert r.status_code == 200
+    assert "Уран во Льве — творчество и свобода" in r.text
+    assert "поколенческое положение" in r.text
+
+
+def test_non_priority_seo_page_keeps_generic_template():
+    r = client.get("/opisanie/luna-v-7-dome")
+    assert r.status_code == 200
+    assert "<title>Луна в 7 доме — значение в натальной карте</title>" in r.text
+    assert 'class="quick-answer"' not in r.text
+
+
+def test_seo_catalog_features_uranus_cluster():
+    r = client.get("/opisaniya")
+    assert r.status_code == 200
+    assert "Популярные материалы об Уране" in r.text
+    assert 'href="/opisanie/uran-v-3-dome"' in r.text
+
+
+def test_moon_priority_page_has_unique_seo_layer():
+    r = client.get("/opisanie/luna-v-2-dome")
+    assert r.status_code == 200
+    assert "Луна во 2 доме — деньги и чувство опоры" in r.text
+    assert 'name="description" content="Что означает Луна во 2 доме:' in r.text
+    assert 'class="quick-answer"' in r.text
+    assert "эмоциональную безопасность" in r.text
+    assert 'href="/opisanie/luna-v-4-dome"' in r.text
+
+
+def test_seo_catalog_features_moon_cluster_and_favicon():
+    r = client.get("/opisaniya")
+    assert r.status_code == 200
+    assert "Популярные материалы о Луне" in r.text
+    assert 'href="/opisanie/luna-v-11-dome"' in r.text
+    assert '<link rel="icon" href="/icon.svg" type="image/svg+xml">' in r.text
+
+    page = client.get("/opisanie/luna-v-5-dome")
+    assert '<link rel="icon" href="/icon.svg" type="image/svg+xml">' in page.text
+
+
+def test_mars_priority_page_has_unique_seo_layer():
+    r = client.get("/opisanie/mars-v-6-dome")
+    assert r.status_code == 200
+    assert "Марс в 6 доме — работа и повседневные дела" in r.text
+    assert 'name="description" content="Что означает Марс в 6 доме:' in r.text
+    assert 'class="quick-answer"' in r.text
+    assert "действовать через конкретные задачи" in r.text
+    assert 'href="/opisanie/mars-v-10-dome"' in r.text
+
+
+def test_mars_in_leo_has_unique_answer():
+    r = client.get("/opisanie/mars-v-lve")
+    assert r.status_code == 200
+    assert "Марс во Льве — воля и яркое действие" in r.text
+    assert "действовать заметно" in r.text
+
+
+def test_seo_catalog_features_mars_cluster():
+    r = client.get("/opisaniya")
+    assert r.status_code == 200
+    assert "Популярные материалы о Марсе" in r.text
+    assert 'href="/opisanie/mars-v-6-dome"' in r.text
+
+
+def test_sun_priority_page_has_unique_seo_layer():
+    r = client.get("/opisanie/solntse-v-8-dome")
+    assert r.status_code == 200
+    assert "Солнце в 8 доме — трансформация и общие ресурсы" in r.text
+    assert 'name="description" content="Что означает Солнце в 8 доме:' in r.text
+    assert 'class="quick-answer"' in r.text
+    assert "через глубокие перемены" in r.text
+    assert 'href="/opisanie/solntse-v-11-dome"' in r.text
+
+
+def test_seo_catalog_features_sun_cluster():
+    r = client.get("/opisaniya")
+    assert r.status_code == 200
+    assert "Популярные материалы о Солнце" in r.text
+    assert 'href="/opisanie/solntse-v-8-dome"' in r.text
+
+
+def test_homepage_targets_natal_chart_with_transits():
+    r = client.get("/")
+    assert r.status_code == 200
+    assert "Натальная карта онлайн бесплатно с транзитами" in r.text
+    assert '<link rel="canonical" href="https://astrosmap.ru/"' in r.text
+
+
 # ---- Подписка «Премиум» ----
 def test_premium_gate_when_not_overridden():
     # временно убираем override: без токена премиум-эндпоинты закрыты
