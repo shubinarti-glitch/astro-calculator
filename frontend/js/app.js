@@ -1768,8 +1768,9 @@ $("deep-modal").addEventListener("click", (e) => {
 // В iframe подгружается основной стиль сайта (светлая тема) + печатные правки,
 // поэтому любой результат (натал, синастрия, прогноз, Панчанг…) выглядит как на сайте.
 const PRINT_OVERRIDE = `
-  @page { margin: 12mm; }
-  html, body { background: #fff !important; margin: 0; padding: 18px; }
+  @page { size: A4 portrait; margin: 14mm 14mm 17mm; }
+  html, body { background: #fff !important; margin: 0; padding: 0; color: #29253a !important; }
+  body { font-family: Manrope, Arial, sans-serif; font-size: 10.5pt; line-height: 1.55; }
   /* Скрыть интерактив и служебное */
   button, .result-toolbar, .lang-switch, .tabs, .modal-close, .report-actions,
   .vedic-actions, #deep-report-btn, .bt-tip, .save-btn, .simple-toggle { display: none !important; }
@@ -1785,12 +1786,42 @@ const PRINT_OVERRIDE = `
   .modal { width: 100% !important; max-width: none !important; max-height: none !important; overflow: visible !important; border: none !important; padding: 0 !important; background: #fff !important; }
   /* Карта по центру и не на весь лист */
   .chart-area { display: block !important; }
-  .chart-svg { max-width: 480px; margin: 0 auto 14px; }
+  .chart-svg { max-width: 470px; margin: 0 auto 14px; }
   .chart-svg svg { width: 100%; height: auto; }
   /* Аккуратные разрывы страниц */
   .syn-item, .interp-card, .fc-event, .vedic-cell, .cal-cell, .big-card, .rc-asp,
-  .portrait-card, tr { page-break-inside: avoid; }
-  h1, h2, h3, h4 { page-break-after: avoid; }
+  .portrait-card, .summary, tr { break-inside: avoid; page-break-inside: avoid; }
+  .interp-card { break-inside: auto; page-break-inside: auto; }
+  .interp-card > h4, .interp-card > summary { break-after: avoid; page-break-after: avoid; }
+  h1, h2, h3, h4 { break-after: avoid; page-break-after: avoid; color: #2a2150 !important; }
+  p, li { orphans: 3; widows: 3; }
+  table { width: 100% !important; font-size: 8.5pt; }
+  .table-wrap { overflow: visible !important; }
+  .data-section { margin-top: 8mm; }
+  .print-document { max-width: 182mm; margin: 0 auto; }
+  .print-cover {
+    min-height: 250mm; box-sizing: border-box; display: flex; flex-direction: column;
+    justify-content: center; align-items: center; text-align: center; position: relative;
+    border: 1px solid #d8cda9; padding: 18mm 14mm; break-after: page; page-break-after: always;
+    background: linear-gradient(145deg, #fbf8ff 0%, #fff 48%, #faf6eb 100%) !important;
+  }
+  .print-cover::before, .print-cover::after {
+    content: ""; position: absolute; border: 1px solid #c9a86a; border-radius: 50%;
+    width: 122mm; height: 122mm; opacity: .22; left: 50%; top: 42%; transform: translate(-50%, -50%);
+  }
+  .print-cover::after { width: 92mm; height: 92mm; border-color: #7765c9; opacity: .16; }
+  .print-cover-mark { color: #c9a86a; font-size: 31pt; line-height: 1; position: relative; z-index: 1; }
+  .print-cover-brand { font: 700 31pt/1.05 "Cormorant Garamond", Georgia, serif; color: #2a2150; position: relative; z-index: 1; }
+  .print-cover-domain { color: #7765c9; letter-spacing: 3px; font-size: 9pt; margin-top: 3mm; position: relative; z-index: 1; }
+  .print-cover-rule { width: 42mm; border-top: 1.5px solid #c9a86a; margin: 12mm auto 9mm; position: relative; z-index: 1; }
+  .print-cover-type { font: 600 23pt/1.15 "Cormorant Garamond", Georgia, serif; color: #4b4168; position: relative; z-index: 1; }
+  .print-cover-name { font-size: 16pt; font-weight: 700; margin-top: 4mm; color: #29253a; position: relative; z-index: 1; }
+  .print-cover-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm 8mm; width: 128mm; margin-top: 13mm; position: relative; z-index: 1; }
+  .print-cover-meta div { border-top: 1px solid #ddd5e9; padding-top: 2.5mm; }
+  .print-cover-meta span { display: block; color: #8a8298; font-size: 7.5pt; text-transform: uppercase; letter-spacing: .7px; }
+  .print-cover-meta b { display: block; color: #39324d; font-size: 10pt; margin-top: 1mm; }
+  .print-cover-note { margin-top: auto; max-width: 135mm; color: #8a8298; font-size: 8pt; position: relative; z-index: 1; }
+  .print-body { padding-top: 2mm; }
   /* Фирменная шапка проекта — как на сайте (золото + фиолет, засечки) */
   .print-brand { text-align: center; border-bottom: 2px solid #c9a86a; padding-bottom: 10px; margin-bottom: 18px; }
   .print-brand-logo { font-size: 22pt; color: #c9a86a; line-height: 1; }
@@ -1801,6 +1832,37 @@ const PRINT_OVERRIDE = `
   /* Повторяющийся колонтитул внизу каждой страницы */
   .print-footer { position: fixed; bottom: 0; left: 0; right: 0; text-align: center; font-size: 8pt; color: #aaa; padding-bottom: 2mm; }
 `;
+
+function printCover(title, brandTitle, dateStr) {
+  const value = (id, fallback = "—") => {
+    const el = document.getElementById(id);
+    return escapeHtml(el && el.value ? el.value : fallback);
+  };
+  const name = value("name", LANG === "en" ? "Personal report" : "Персональный отчёт");
+  const city = value("city");
+  const birthDate = value("birth-date");
+  const birthTime = value("birth-time");
+  const houses = document.getElementById("houses-system");
+  const housesName = escapeHtml(houses && houses.selectedOptions.length ? houses.selectedOptions[0].textContent.trim() : "—");
+  const labels = LANG === "en"
+    ? { date: "Birth date", time: "Birth time", city: "Birth place", houses: "House system", note: "Astrological interpretations describe tendencies and opportunities and do not replace professional medical, financial or legal advice." }
+    : { date: "Дата рождения", time: "Время рождения", city: "Место рождения", houses: "Система домов", note: "Астрологические трактовки описывают тенденции и возможности и не заменяют профессиональные медицинские, финансовые или юридические рекомендации." };
+  return `<section class="print-cover">
+    <div class="print-cover-mark">✦</div>
+    <div class="print-cover-brand">${escapeHtml(brandTitle)}</div>
+    <div class="print-cover-domain">ASTROSMAP.RU</div>
+    <div class="print-cover-rule"></div>
+    <div class="print-cover-type">${escapeHtml(title || (LANG === "en" ? "Astrological report" : "Астрологический отчёт"))}</div>
+    <div class="print-cover-name">${name}</div>
+    <div class="print-cover-meta">
+      <div><span>${labels.date}</span><b>${birthDate}</b></div>
+      <div><span>${labels.time}</span><b>${birthTime}</b></div>
+      <div><span>${labels.city}</span><b>${city}</b></div>
+      <div><span>${labels.houses}</span><b>${housesName}</b></div>
+    </div>
+    <p class="print-cover-note">${labels.note}<br>${dateStr}</p>
+  </section>`;
+}
 
 // Собрать печатный документ во временном iframe. Одна раскладка на два сценария:
 // системная печать (printFrom) и одноклик-экспорт в PDF (downloadPdf).
@@ -1847,6 +1909,7 @@ function buildPrintFrame(srcId, title, extraHead) {
        <div class="print-brand-date">${dateStr}</div>
      </div>`;
   const brandFooter = `<div class="print-footer">${brandTitle} · astrosmap.ru</div>`;
+  const cover = printCover(title || brandSub, brandTitle, dateStr);
   const doc = frame.contentWindow.document;
   doc.open();
   doc.write(
@@ -1854,7 +1917,7 @@ function buildPrintFrame(srcId, title, extraHead) {
     `<title>${brandTitle} — ${title || brandSub}</title>` +
     `<link rel="stylesheet" href="${location.origin}/css/style.css">` +
     `<style>${PRINT_OVERRIDE}</style>${extraHead || ""}</head>` +
-    `<body data-theme="light">${brandHeader}${content}${brandFooter}</body></html>`
+    `<body data-theme="light"><main class="print-document">${cover}<div class="print-body">${brandHeader}${content}</div></main>${brandFooter}</body></html>`
   );
   doc.close();
   // Раскрыть все свёрнутые блоки, чтобы в вывод попало всё содержимое.

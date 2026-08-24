@@ -5,6 +5,8 @@
 """
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Optional
 
 from . import constants as C
@@ -94,7 +96,12 @@ _TRANSIT_GUIDANCE = {
 }
 
 
-def interpret_transit(t_name: str, aspect: str, n_name: str, lang: str = "ru") -> str:
+def interpret_transit(t_name: str, aspect: str, n_name: str, lang: str = "ru",
+                      orbit: Optional[float] = None, movement: str = "") -> str:
+    if lang != "en":
+        deep = _interpret_transit_deep(t_name, aspect, n_name, orbit, movement)
+        if deep:
+            return deep
     theme = TRANSIT_THEME.get(t_name)
     role = PLANET_ROLE.get(n_name)
     category = _ASPECT_CATEGORY.get(aspect)
@@ -129,6 +136,80 @@ _PROGRESSION_GUIDANCE = {
         "The inner contradiction marks a point of growth: give the change time and find a more mature way to express this theme.",
     ),
 }
+
+_TRANSIT_DEEP_NAME = {
+    "Mars": "Mars", "Jupiter": "Jupiter", "Saturn": "Saturn",
+    "Uranus": "Uranus", "Neptune": "Neptune", "Pluto": "Pluto", "Chiron": "Chiron",
+    "Mean_North_Lunar_Node": "North_Node", "True_North_Lunar_Node": "North_Node",
+    "Mean_South_Lunar_Node": "South_Node", "True_South_Lunar_Node": "South_Node",
+}
+
+_TRANSIT_ASPECT_RU = {
+    "conjunction": "Соединение сводит обе функции в один поток: тема становится заметной и требует прямого участия. Энергия действует концентрированно, поэтому особенно важно осознанно выбрать способ её выражения.",
+    "sextile": "Секстиль открывает возможность, которая раскрывается через инициативу, разговор или конкретный шаг. Поддержка периода не действует автоматически: шанс важно заметить и перевести в практику.",
+    "square": "Квадрат создаёт трение между привычным способом жить и новым требованием периода. Препятствия показывают слабое место, а накопленное напряжение просит действия, дисциплины и изменения навыка.",
+    "trine": "Трин даёт естественную поддержку и позволяет включить обе функции без острой внутренней борьбы. Лёгкость становится результатом, когда человек не успокаивается на хорошем фоне, а развивает доступный ресурс.",
+    "opposition": "Оппозиция проявляет тему через людей и внешние обстоятельства, сталкивая два полюса одной задачи. Вместо выбора одной крайности требуется договорённость, границы и возвращение себе качества, замеченного в другом.",
+}
+
+_TRANSIT_TIMING_RU = {
+    "Mars": "Влияние Марса обычно развивается быстро и ощущается от нескольких дней до нескольких недель.",
+    "Jupiter": "Юпитерианская тема развивается месяцами и может возвращаться при ретроградном прохождении.",
+    "Saturn": "Сатурнианский процесс длится месяцами и нередко проходит несколькими волнами, закрепляя новый уровень ответственности.",
+    "Uranus": "Уран действует длительно и волнообразно: внешнее событие может быть быстрым, но перестройка занимает месяцы.",
+    "Neptune": "Нептунианский фон созревает медленно, иногда оставаясь заметным больше года и повторяясь на ретроградной петле.",
+    "Pluto": "Плутоническая перестройка относится к длительным циклам и раскрывается этапами, а не одним событием.",
+    "Chiron": "Тема Хирона развивается постепенно и может возвращать к одной уязвимости несколько раз, каждый раз открывая новый способ обращения с ней.",
+    "North_Node": "Узловой акцент действует как этап цикла: он связывает текущий выбор с направлением дальнейшего развития.",
+    "South_Node": "Узловой акцент поднимает накопленный опыт и повторяющиеся сюжеты, чтобы отделить полезный навык от исчерпанной привычки.",
+}
+
+
+def _load_authored_transits() -> dict:
+    path = Path(__file__).resolve().parent.parent / "data" / "authored_transit_content.json"
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    return raw if isinstance(raw, dict) else {}
+
+
+AUTHORED_TRANSIT = _load_authored_transits()
+
+
+def _transit_phase_ru(orbit: Optional[float], movement: str) -> str:
+    if orbit is None:
+        return "Точный орбис, скорость и ретроградные повторы уточняют силу и этап этого влияния."
+    phase = "близок к точности" if orbit <= 1 else "находится в рабочем орбисе"
+    movement_l = (movement or "").lower()
+    if "расход" in movement_l or "separ" in movement_l:
+        direction = "Пик уже пройден, и сейчас важнее осмыслить последствия и закрепить результат."
+    elif "сход" in movement_l or "app" in movement_l:
+        direction = "Энергия нарастает, поэтому основные решения лучше готовить уже сейчас."
+    else:
+        direction = "Текущая фаза уточняется по скорости и возможному ретроградному повтору."
+    return f"При орбисе {orbit:.2f}° аспект {phase}. {direction}"
+
+
+def _interpret_transit_deep(t_name: str, aspect: str, n_name: str,
+                            orbit: Optional[float], movement: str) -> str:
+    moving = _TRANSIT_DEEP_NAME.get(t_name)
+    pair = AUTHORED_TRANSIT.get(f"transit|{moving}|{n_name}") if moving else None
+    dynamic = _TRANSIT_ASPECT_RU.get(aspect)
+    if not isinstance(pair, dict) or not dynamic:
+        return ""
+    required = ("energy", "psychology", "relationships", "realization", "risks", "advice")
+    if any(not isinstance(pair.get(key), str) or not pair[key].strip() for key in required):
+        return ""
+    return (
+        f"Суть транзита. {dynamic} {_TRANSIT_TIMING_RU.get(moving, '')}\n\n"
+        f"Энергия периода. {pair['energy']} {_transit_phase_ru(orbit, movement)}\n\n"
+        f"Психология. {pair['psychology']}\n\n"
+        f"Отношения. {pair['relationships']}\n\n"
+        f"Реализация. {pair['realization']}\n\n"
+        f"Сложные проявления. {pair['risks']}\n\n"
+        f"Рекомендации. {pair['advice']}"
+    )
 
 
 def interpret_progression(p_name: str, aspect: str, n_name: str, lang: str = "ru") -> str:

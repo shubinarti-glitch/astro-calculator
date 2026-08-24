@@ -212,7 +212,10 @@ def _apply_transit_interp(aspects: list[dict]) -> list[dict]:
     """
     lang = _lang()
     for a in aspects:
-        t = I.interpret_transit(a["p2"], a["aspect"], a["p1"], lang)
+        t = I.interpret_transit(
+            a["p2"], a["aspect"], a["p1"], lang,
+            orbit=a.get("orbit"), movement=a.get("movement", ""),
+        )
         if t:
             a["interp"] = t
     return aspects

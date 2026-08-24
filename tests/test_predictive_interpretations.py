@@ -38,6 +38,41 @@ def test_progression_interpretation_is_distinct_from_transit_in_both_languages()
     assert "accents of the day" not in en.lower()
 
 
+def test_deep_transit_uses_distinct_aspect_dynamics_and_phase(monkeypatch):
+    pair = {
+        "energy": "Энергия пары раскрывается в конкретной жизненной теме.",
+        "psychology": "Внутренний процесс становится заметнее и требует внимания.",
+        "relationships": "В отношениях меняются привычные способы обмена и границы.",
+        "realization": "В делах возникает возможность пересобрать практический подход.",
+        "risks": "При перегрузке возможны поспешность и попытка избежать перемен.",
+        "advice": "Полезно сверять решения с фактами и оставлять время на адаптацию.",
+    }
+    monkeypatch.setitem(I.AUTHORED_TRANSIT, "transit|Saturn|Sun", pair)
+
+    square = I.interpret_transit(
+        "Saturn", "square", "Sun", "ru", orbit=0.75, movement="сходящийся",
+    )
+    opposition = I.interpret_transit(
+        "Saturn", "opposition", "Sun", "ru", orbit=2.0, movement="расходящийся",
+    )
+
+    assert "Суть транзита." in square
+    assert "Квадрат создаёт трение" in square
+    assert "Энергия нарастает" in square
+    assert "Оппозиция проявляет тему через людей" in opposition
+    assert "Пик уже пройден" in opposition
+    assert square != opposition
+
+
+def test_fast_and_english_transits_keep_compact_fallback(monkeypatch):
+    monkeypatch.setattr(I, "AUTHORED_TRANSIT", {})
+    fast = I.interpret_transit("Mercury", "trine", "Sun", "ru")
+    english = I.interpret_transit("Saturn", "square", "Sun", "en")
+
+    assert "Меркурий транзитом приносит" in fast
+    assert "by transit brings" in english
+
+
 def test_direction_interpretation_is_separate_in_both_languages():
     ru = I.interpret_direction("Sun", "square", "Moon", "ru")
     en = I.interpret_direction("Sun", "square", "Moon", "en")
