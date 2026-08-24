@@ -69,8 +69,67 @@ def test_fast_and_english_transits_keep_compact_fallback(monkeypatch):
     fast = I.interpret_transit("Mercury", "trine", "Sun", "ru")
     english = I.interpret_transit("Saturn", "square", "Sun", "en")
 
-    assert "Меркурий транзитом приносит" in fast
+    assert "Суть транзита." in fast
+    assert "Меркурианская тема" in fast
     assert "by transit brings" in english
+
+
+def test_deep_transits_cover_fast_movers_and_quintile_without_authored_json(monkeypatch):
+    monkeypatch.setattr(I, "AUTHORED_TRANSIT", {})
+
+    for moving in ("Sun", "Moon", "Mercury", "Venus"):
+        text = I.interpret_transit(moving, "quintile", "Chiron", "ru", orbit=0.4)
+        assert "Суть транзита." in text
+        assert "Квинтиль раскрывает творческую связь" in text
+        assert "Рекомендации." in text
+
+    english = I.interpret_transit("Venus", "quintile", "Chiron", "en")
+    assert "creative aspect" in english
+
+
+def test_transit_target_aliases_normalize_nodes_chiron_and_lilith(monkeypatch):
+    monkeypatch.setattr(I, "AUTHORED_TRANSIT", {})
+    targets = (
+        "Mean_North_Lunar_Node", "True_North_Lunar_Node",
+        "Mean_South_Lunar_Node", "True_South_Lunar_Node",
+        "Chiron", "Mean_Lilith", "True_Lilith",
+    )
+    texts = [I.interpret_transit("Venus", "trine", target, "ru") for target in targets]
+
+    assert all("Суть транзита." in text for text in texts)
+    assert texts[0] == texts[1]
+    assert texts[2] == texts[3]
+    assert texts[5] == texts[6]
+
+
+def test_moving_angles_use_specialized_non_planetary_fallback():
+    text = I.interpret_transit(
+        "Ascendant", "square", "Sun", "ru", orbit=0.2, movement="сходящийся",
+    )
+
+    assert "Транзитный угол карты" in text
+    assert "не действие транзитной планеты" in text
+    assert "Суть транзита." not in text
+
+
+def test_all_transit_points_and_aspects_have_russian_interpretations():
+    points = (
+        "Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn",
+        "Uranus", "Neptune", "Pluto", "Chiron", "Mean_Lilith",
+        "True_North_Lunar_Node", "True_South_Lunar_Node",
+        "Ascendant", "Descendant", "Medium_Coeli", "Imum_Coeli",
+    )
+    aspects = ("conjunction", "sextile", "square", "trine", "opposition", "quintile")
+
+    missing = [
+        (moving, aspect, target)
+        for moving in points
+        for target in points
+        for aspect in aspects
+        if not I.interpret_transit(moving, aspect, target, "ru", orbit=0.5)
+    ]
+
+    assert missing == []
 
 
 def test_direction_interpretation_is_separate_in_both_languages():

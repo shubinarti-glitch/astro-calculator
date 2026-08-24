@@ -89,6 +89,10 @@ _TRANSIT_GUIDANCE = {
         "Благоприятное окно: энергия периода легко поддерживает эту сферу — удачное время действовать и развивать начатое.",
         "A favorable window: the energy of the period easily supports this area — a good time to act and develop what was begun.",
     ),
+    "creative": (
+        "Творческий аспект помогает найти необычный способ соединить эти темы; результат требует личного участия и практики.",
+        "A creative aspect helps find an unusual way to combine these themes; results require personal involvement and practice.",
+    ),
     "tension": (
         "Период проверки и роста: возникает напряжение, которое важно не избегать, а сознательно прорабатывать — оно ведёт к зрелости.",
         "A time of testing and growth: tension arises that is important not to avoid but to work through consciously — it leads to maturity.",
@@ -98,13 +102,16 @@ _TRANSIT_GUIDANCE = {
 
 def interpret_transit(t_name: str, aspect: str, n_name: str, lang: str = "ru",
                       orbit: Optional[float] = None, movement: str = "") -> str:
+    angle_text = _interpret_moving_angle(t_name, aspect, n_name, lang, orbit, movement)
+    if angle_text:
+        return angle_text
     if lang != "en":
         deep = _interpret_transit_deep(t_name, aspect, n_name, orbit, movement)
         if deep:
             return deep
     theme = TRANSIT_THEME.get(t_name)
     role = PLANET_ROLE.get(n_name)
-    category = _ASPECT_CATEGORY.get(aspect)
+    category = _ASPECT_CATEGORY.get(aspect) or ("creative" if aspect == "quintile" else None)
     if not theme or not role or not category:
         return ""
     t_ru = C.point_name(t_name, lang)
@@ -138,11 +145,21 @@ _PROGRESSION_GUIDANCE = {
 }
 
 _TRANSIT_DEEP_NAME = {
+    "Sun": "Sun", "Moon": "Moon", "Mercury": "Mercury", "Venus": "Venus",
     "Mars": "Mars", "Jupiter": "Jupiter", "Saturn": "Saturn",
     "Uranus": "Uranus", "Neptune": "Neptune", "Pluto": "Pluto", "Chiron": "Chiron",
     "Mean_North_Lunar_Node": "North_Node", "True_North_Lunar_Node": "North_Node",
     "Mean_South_Lunar_Node": "South_Node", "True_South_Lunar_Node": "South_Node",
+    "Mean_Lilith": "Lilith", "True_Lilith": "Lilith",
 }
+
+_TRANSIT_TARGET_NAME = {
+    "Mean_North_Lunar_Node": "North_Node", "True_North_Lunar_Node": "North_Node",
+    "Mean_South_Lunar_Node": "South_Node", "True_South_Lunar_Node": "South_Node",
+    "Mean_Lilith": "Mean_Lilith", "True_Lilith": "Mean_Lilith",
+}
+
+_TRANSIT_ANGLES = {"Ascendant", "Medium_Coeli", "Descendant", "Imum_Coeli"}
 
 _TRANSIT_ASPECT_RU = {
     "conjunction": "Соединение сводит обе функции в один поток: тема становится заметной и требует прямого участия. Энергия действует концентрированно, поэтому особенно важно осознанно выбрать способ её выражения.",
@@ -150,9 +167,14 @@ _TRANSIT_ASPECT_RU = {
     "square": "Квадрат создаёт трение между привычным способом жить и новым требованием периода. Препятствия показывают слабое место, а накопленное напряжение просит действия, дисциплины и изменения навыка.",
     "trine": "Трин даёт естественную поддержку и позволяет включить обе функции без острой внутренней борьбы. Лёгкость становится результатом, когда человек не успокаивается на хорошем фоне, а развивает доступный ресурс.",
     "opposition": "Оппозиция проявляет тему через людей и внешние обстоятельства, сталкивая два полюса одной задачи. Вместо выбора одной крайности требуется договорённость, границы и возвращение себе качества, замеченного в другом.",
+    "quintile": "Квинтиль раскрывает творческую связь между двумя функциями и побуждает найти нестандартный способ их выражения. Это не пассивная удача, а способность, которая становится заметной через интерес, эксперимент и практику.",
 }
 
 _TRANSIT_TIMING_RU = {
+    "Sun": "Солнечный акцент действует недолго: обычно несколько дней вокруг точного аспекта.",
+    "Moon": "Лунный акцент быстротечен и чаще всего заметен несколько часов или один-два дня.",
+    "Mercury": "Меркурианская тема обычно проявляется в течение нескольких дней, а при ретроградности может повториться.",
+    "Venus": "Венерианский акцент обычно длится несколько дней или недель и может вернуться на ретроградной петле.",
     "Mars": "Влияние Марса обычно развивается быстро и ощущается от нескольких дней до нескольких недель.",
     "Jupiter": "Юпитерианская тема развивается месяцами и может возвращаться при ретроградном прохождении.",
     "Saturn": "Сатурнианский процесс длится месяцами и нередко проходит несколькими волнами, закрепляя новый уровень ответственности.",
@@ -162,7 +184,62 @@ _TRANSIT_TIMING_RU = {
     "Chiron": "Тема Хирона развивается постепенно и может возвращать к одной уязвимости несколько раз, каждый раз открывая новый способ обращения с ней.",
     "North_Node": "Узловой акцент действует как этап цикла: он связывает текущий выбор с направлением дальнейшего развития.",
     "South_Node": "Узловой акцент поднимает накопленный опыт и повторяющиеся сюжеты, чтобы отделить полезный навык от исчерпанной привычки.",
+    "Lilith": "Акцент Лилит требует отделять сильную эмоциональную реакцию от фактов и осознанно обращаться с теневой темой.",
 }
+
+_TRANSIT_CANONICAL_ROLE_RU = {
+    "North_Node": "вектор развития и задачи нового опыта",
+    "South_Node": "накопленный опыт, привычные сценарии и прошлое",
+    "Lilith": "вытесненные желания, теневая страсть и точка бунта",
+}
+
+
+def _canonical_transit_target(name: str) -> str:
+    return _TRANSIT_TARGET_NAME.get(name, name)
+
+
+def _role_ru(name: str) -> str:
+    role = PLANET_ROLE.get(name)
+    return g(role, "ru") if role else _TRANSIT_CANONICAL_ROLE_RU.get(name, "")
+
+
+def _generic_transit_pair(moving: str, target: str) -> Optional[dict]:
+    source = _role_ru(moving)
+    focus = _role_ru(target)
+    if not source or not focus:
+        return None
+    return {
+        "energy": f"Энергия, связанная с темой «{source}», активирует сферу «{focus}» и делает её события заметнее.",
+        "psychology": f"Внутренне становится важнее согласовать импульс периода с тем, как проявляются {focus}.",
+        "relationships": "Контакты показывают, где нужны честный обмен, ясные границы и уважение к различию реакций.",
+        "realization": "В делах полезно перевести возникший импульс в одно наблюдаемое действие и оценить его результат.",
+        "risks": "Сложность возникает, если принять временную интенсивность за окончательное решение или действовать без проверки обстоятельств.",
+        "advice": "Наблюдайте за повторяющимся сюжетом, соотносите его с орбисом и выбирайте действие, соответствующее реальной ситуации.",
+    }
+
+
+def _interpret_moving_angle(t_name: str, aspect: str, n_name: str, lang: str,
+                            orbit: Optional[float], movement: str) -> str:
+    """Chart axes are time-sensitive coordinates, never acting planets."""
+    if t_name not in _TRANSIT_ANGLES:
+        return ""
+    role = PLANET_ROLE.get(n_name)
+    if not role or aspect not in _TRANSIT_ASPECT_RU:
+        return ""
+    angle = C.point_name(t_name, lang)
+    target = C.point_name(n_name, lang)
+    aspect_name = C.aspect_name(aspect, lang).lower()
+    if lang == "en":
+        return (
+            f"The moving chart angle {angle} forms a {aspect_name} to natal {target}. "
+            "This is a time-sensitive contact of a chart axis, not a planetary transit; "
+            f"it highlights {g(role, lang)} and is best read for the exact time and location."
+        )
+    return (
+        f"Транзитный угол карты «{angle}» образует аспект «{aspect_name}» к натальной точке «{target}». "
+        "Это краткий, зависящий от точного времени и места контакт оси карты, а не действие транзитной планеты. "
+        f"Он выделяет сферу «{g(role, lang)}». {_transit_phase_ru(orbit, movement)}"
+    )
 
 
 def _load_authored_transits() -> dict:
@@ -194,9 +271,14 @@ def _transit_phase_ru(orbit: Optional[float], movement: str) -> str:
 def _interpret_transit_deep(t_name: str, aspect: str, n_name: str,
                             orbit: Optional[float], movement: str) -> str:
     moving = _TRANSIT_DEEP_NAME.get(t_name)
-    pair = AUTHORED_TRANSIT.get(f"transit|{moving}|{n_name}") if moving else None
+    target = _canonical_transit_target(n_name)
+    pair = AUTHORED_TRANSIT.get(f"transit|{moving}|{target}") if moving else None
     dynamic = _TRANSIT_ASPECT_RU.get(aspect)
-    if not isinstance(pair, dict) or not dynamic:
+    if not moving or not dynamic:
+        return ""
+    if not isinstance(pair, dict):
+        pair = _generic_transit_pair(moving, target)
+    if not isinstance(pair, dict):
         return ""
     required = ("energy", "psychology", "relationships", "realization", "risks", "advice")
     if any(not isinstance(pair.get(key), str) or not pair[key].strip() for key in required):
