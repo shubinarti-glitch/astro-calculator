@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -36,6 +37,7 @@ sealed interface AccountState {
 
 @HiltViewModel
 class AccountViewModel @Inject constructor(
+    @ApplicationContext private val context: android.content.Context,
     private val api: AstroApi,
     private val tokenStore: TokenStore,
     private val syncManager: SyncManager,
@@ -66,7 +68,8 @@ class AccountViewModel @Inject constructor(
 
     private suspend fun refreshMe() {
         state = try {
-            AccountState.LoggedIn(api.me())
+            api.me().also { ru.astrosmap.app.data.DailyNotify.setPremium(context, it.premium) }
+                .let { AccountState.LoggedIn(it) }
         } catch (e: HttpException) {
             if (e.code() == 401) tokenStore.clear() // токен отозван на сервере
             AccountState.LoggedOut
@@ -101,6 +104,7 @@ class AccountViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching { api.logout() } // сеть могла пропасть — локальный выход всё равно делаем
             tokenStore.clear()
+            ru.astrosmap.app.data.DailyNotify.setPremium(context, false)
             state = AccountState.LoggedOut
         }
     }

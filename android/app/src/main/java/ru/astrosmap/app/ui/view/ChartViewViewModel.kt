@@ -17,6 +17,7 @@ import ru.astrosmap.app.data.ChartTexts
 import ru.astrosmap.app.data.SyncManager
 import ru.astrosmap.app.data.api.AstroApi
 import ru.astrosmap.app.data.api.NatalRequest
+import ru.astrosmap.app.data.access.AccessState
 import ru.astrosmap.app.ui.AstroLabels
 import ru.astrosmap.app.ui.form.ChartDraftHolder
 import javax.inject.Inject
@@ -27,6 +28,7 @@ data class ChartViewState(
     val savedId: Long? = null,      // null — черновик ещё не сохранён
     val texts: ChartTexts? = null,
     val textsOffline: Boolean = false, // трактовки не загрузились (нет сети)
+    val access: AccessState = AccessState(),
 )
 
 @HiltViewModel
@@ -56,6 +58,9 @@ class ChartViewViewModel @Inject constructor(
                 entity = entity,
                 chart = chart,
                 savedId = entity.id.takeIf { it > 0 },
+            )
+            _state.value = _state.value.copy(
+                access = runCatching { api.me().accessState() }.getOrDefault(AccessState()),
             )
             loadTexts(entity)
             // Без трения: самую первую построенную карту сразу считаем «моей» — авто-сохраняем,

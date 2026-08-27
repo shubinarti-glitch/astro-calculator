@@ -203,6 +203,9 @@ interface AstroApi {
         @retrofit2.http.Query("svg") svg: Int = 0,
     ): kotlinx.serialization.json.JsonObject
 
+    @POST("api/synastry/preview")
+    suspend fun synastryPreview(@Body body: SynastryApiRequest): kotlinx.serialization.json.JsonObject
+
     @GET("api/profiles")
     suspend fun profiles(): List<ProfileDto>
 

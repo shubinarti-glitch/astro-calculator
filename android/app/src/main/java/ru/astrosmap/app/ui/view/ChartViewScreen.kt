@@ -41,8 +41,12 @@ import ru.astrosmap.app.astro.ChartPoint
 import ru.astrosmap.app.data.ChartTexts
 import ru.astrosmap.app.data.Titled
 import ru.astrosmap.app.ui.AstroLabels
+import ru.astrosmap.app.ui.InterpretationMode
+import ru.astrosmap.app.ui.InterpretationModeSelector
 import ru.astrosmap.app.ui.chart.ChartWheel
+import ru.astrosmap.app.ui.saved.SaveMaterialButton
 import ru.astrosmap.app.ui.theme.GoodColor
+import ru.astrosmap.app.data.access.SubscriptionPlan
 
 /** Экран карты: колесо, позиции и аспекты (раскрываются в трактовку), текстовые разделы. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,6 +58,7 @@ fun ChartViewScreen(
 ) {
     val state by viewModel.state.collectAsState()
     var confirmDelete by remember { mutableStateOf(false) }
+    var mode by remember { mutableStateOf(InterpretationMode.BRIEF) }
     val expanded = remember { mutableStateOf(setOf<String>()) }
 
     if (confirmDelete) {
@@ -116,6 +121,11 @@ fun ChartViewScreen(
             return@Scaffold
         }
         val texts = state.texts
+        val materialBody = texts?.let { value ->
+            (value.storySections + value.bigThree + value.temperament + value.spheres)
+                .take(if (state.access.plan == SubscriptionPlan.FREE) 3 else 20)
+                .joinToString("\n\n") { "${it.title}\n${it.text}" }
+        }.orEmpty()
         LazyColumn(Modifier.fillMaxSize().padding(padding)) {
             item {
                 ChartWheel(
@@ -124,6 +134,13 @@ fun ChartViewScreen(
                         .fillMaxWidth()
                         .aspectRatio(1f)
                         .padding(8.dp),
+                )
+            }
+            item {
+                InterpretationModeSelector(
+                    selected = mode,
+                    onSelect = { mode = it },
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
                 )
             }
             if (state.textsOffline && texts == null) {
@@ -136,35 +153,52 @@ fun ChartViewScreen(
                     )
                 }
             }
-            item { SectionTitle(stringResource(R.string.planets)) }
-            if (texts != null) {
-                item {
-                    Text(
-                        stringResource(R.string.tap_hint),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                    )
-                }
-            }
-            items(chart.points) { p ->
-                PlanetRow(p, texts?.planetTexts?.get(p.name), expanded)
-            }
-            items(chart.angles.filter { it.name in listOf("Ascendant", "Medium_Coeli") }) { p ->
-                PlanetRow(p, texts?.planetTexts?.get(p.name), expanded)
-            }
-            item { SectionTitle(stringResource(R.string.aspects)) }
-            items(chart.aspects) { a ->
-                AspectRow(a, texts?.aspectTexts?.get(ChartTexts.aspectKey(a.p1, a.aspect, a.p2)), expanded)
-            }
-            if (texts != null) {
-                textSection(texts.storySections.takeIf { it.isNotEmpty() }, null)
-                textSection(texts.bigThree.takeIf { it.isNotEmpty() }, R.string.big_three)
-                textSection(texts.temperament.takeIf { it.isNotEmpty() }, R.string.portrait)
-                textSection(
-                    texts.spheres.map { Titled(sphereLabel(it.title), it.text) }.takeIf { it.isNotEmpty() },
-                    R.string.spheres,
+            if (materialBody.isNotBlank()) item {
+                val entity = state.entity
+                SaveMaterialButton(
+                    sourceType = "natal", sourceId = entity?.id?.toString().orEmpty(),
+                    title = entity?.name ?: stringResource(R.string.section_chart),
+                    body = materialBody,
+                    premium = state.access.plan != SubscriptionPlan.FREE,
+                    modifier = Modifier.padding(horizontal = 8.dp),
                 )
+            }
+            when (mode) {
+                InterpretationMode.BRIEF -> if (texts != null) {
+                    textSection(texts.storySections.take(2).takeIf { it.isNotEmpty() }, null)
+                    textSection(texts.bigThree.takeIf { it.isNotEmpty() }, R.string.big_three)
+                }
+                InterpretationMode.DETAILED -> {
+                    val full = state.access.plan != SubscriptionPlan.FREE
+                    if (!full) item { AccessNote(R.string.interpretation_free_preview) }
+                    if (texts != null) {
+                        textSection(texts.storySections.let { if (full) it else it.take(3) }.takeIf { it.isNotEmpty() }, null)
+                        textSection(texts.bigThree.takeIf { it.isNotEmpty() }, R.string.big_three)
+                        textSection(texts.temperament.let { if (full) it else it.take(1) }.takeIf { it.isNotEmpty() }, R.string.portrait)
+                        textSection(
+                            texts.spheres.let { if (full) it else it.take(1) }
+                                .map { Titled(sphereLabel(it.title), it.text) }.takeIf { it.isNotEmpty() },
+                            R.string.spheres,
+                        )
+                    }
+                }
+                InterpretationMode.TECHNICAL -> {
+                    if (state.access.plan != SubscriptionPlan.PROFESSIONAL) {
+                        item { AccessNote(R.string.interpretation_professional_preview) }
+                    } else {
+                        item {
+                            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
+                                Text(stringResource(R.string.interpretation_method), style = MaterialTheme.typography.titleSmall)
+                                Text(stringResource(R.string.interpretation_method_value), style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
+                    }
+                    item { SectionTitle(stringResource(R.string.planets)) }
+                    items(chart.points) { p -> PlanetRow(p, null, expanded) }
+                    items(chart.angles.filter { it.name in listOf("Ascendant", "Medium_Coeli") }) { p -> PlanetRow(p, null, expanded) }
+                    item { SectionTitle(stringResource(R.string.aspects)) }
+                    items(chart.aspects) { a -> AspectRow(a, null, expanded) }
+                }
             }
             // Проверенный продажами продукт — PDF-отчёт. Покупок в приложении нет (правила
             // магазинов + ФЗ), поэтому просто переход на сайт. В googleplay-сборке скрыт целиком.
@@ -185,6 +219,16 @@ fun ChartViewScreen(
             }
         }
     }
+}
+
+@Composable
+private fun AccessNote(textRes: Int) {
+    Text(
+        stringResource(textRes),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+    )
 }
 
 private fun sphereLabel(key: String): String = when (key) {

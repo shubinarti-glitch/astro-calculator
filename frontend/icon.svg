@@ -1,4 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="112" fill="#0c0c1e"/>
-  <text x="256" y="368" font-size="320" text-anchor="middle" fill="#c9a86a">&#10039;</text>
+  <defs>
+    <radialGradient id="space" cx="50%" cy="42%" r="70%">
+      <stop offset="0" stop-color="#211c49"/>
+      <stop offset="1" stop-color="#090914"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff1b8"/>
+      <stop offset="0.48" stop-color="#d6a957"/>
+      <stop offset="1" stop-color="#8e5d20"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#space)"/>
+  <circle cx="256" cy="256" r="205" fill="none" stroke="#8b7bd8" stroke-opacity=".42" stroke-width="3"/>
+  <circle cx="256" cy="256" r="174" fill="none" stroke="#c9a86a" stroke-opacity=".34" stroke-width="2"/>
+  <text x="256" y="382" font-family="Georgia,serif" font-size="390" font-weight="700" text-anchor="middle" fill="url(#gold)">A</text>
+  <path d="M256 315l11 27 27 11-27 11-11 27-11-27-27-11 27-11z" fill="#fff3bd"/>
+  <circle cx="377" cy="132" r="7" fill="#fff3bd"/>
+  <circle cx="137" cy="173" r="5" fill="#8b7bd8"/>
 </svg>

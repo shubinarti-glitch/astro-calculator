@@ -17,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -37,11 +38,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import ru.astrosmap.app.R
 import ru.astrosmap.app.data.api.AstroApi
 import ru.astrosmap.app.ui.openSite
 import ru.astrosmap.app.ui.theme.AppHeader
 import ru.astrosmap.app.ui.theme.AstroPanel
+import ru.astrosmap.app.ui.saved.SaveMaterialButton
 import javax.inject.Inject
 
 /** Живой таролог — контакт для консультации (тот же, что у астролога на сайте). */
@@ -53,12 +58,12 @@ private const val TAROLOGIST_TG = "https://t.me/Astrosmap"
  * YES_NO — по карте на «да» и на «нет» из полной колоды: выигрывает позиция, где карта
  * старше по градации колоды. Исход определён самими картами, а не случайной меткой.
  */
-private enum class Spread(val titleRes: Int, val positions: List<Int>) {
-    SITUATION(R.string.tarot_spread_situation, listOf(
+private enum class Spread(val titleRes: Int, val introRes: Int, val positions: List<Int>) {
+    SITUATION(R.string.tarot_spread_situation, R.string.tarot_intro_situation, listOf(
         R.string.tarot_pos_essence, R.string.tarot_pos_obstacle, R.string.tarot_pos_advice)),
-    MFA(R.string.tarot_spread_mfa, listOf(
+    MFA(R.string.tarot_spread_mfa, R.string.tarot_intro_mfa, listOf(
         R.string.tarot_pos_thoughts, R.string.tarot_pos_feelings, R.string.tarot_pos_actions)),
-    YES_NO(R.string.tarot_spread_yesno, listOf(
+    YES_NO(R.string.tarot_spread_yesno, R.string.tarot_intro_yesno, listOf(
         R.string.tarot_pos_yes, R.string.tarot_pos_no)),
 }
 
@@ -77,8 +82,10 @@ class TarotViewModel @Inject constructor(private val api: AstroApi) : ViewModel(
 fun TarotScreen(viewModel: TarotViewModel = hiltViewModel()) {
     val context = LocalContext.current
     var spread by remember { mutableStateOf<Spread?>(null) }
+    var pendingSpread by remember { mutableStateOf<Spread?>(null) }
     var cards by remember { mutableStateOf<List<TarotCard>>(emptyList()) }
     var revealed by remember { mutableStateOf(setOf<Int>()) }
+    var showArchive by remember { mutableStateOf(false) }
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -99,32 +106,52 @@ fun TarotScreen(viewModel: TarotViewModel = hiltViewModel()) {
             ) { Text(stringResource(R.string.tarot_live_reader)) }
         }
 
-        if (spread == null) {
+        if (showArchive) {
+            TarotArchive(onBack = { showArchive = false })
+        } else if (spread == null) {
             AstroPanel {
+                if (pendingSpread == null) {
                 Text(
                     stringResource(R.string.tarot_choose_spread),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.primary,
                 )
+                OutlinedButton(
+                    onClick = { showArchive = true },
+                    enabled = viewModel.premium,
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text(stringResource(R.string.tarot_archive)) }
+                if (!viewModel.premium) {
+                    Text(
+                        stringResource(R.string.tarot_archive_premium),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 // У каждого расклада свой недельный лимит — считаем по отдельности.
                 Spread.entries.forEach { s ->
                     val cooldown = TarotStorage.spreadCooldownDays(context, s.name, viewModel.premium)
+                    val saved = TarotStorage.savedSpread(context, s.name)
+                    val savedCards = saved?.cardIds?.mapNotNull(TarotDeck::byId).orEmpty()
+                    val canOpenCurrent = cooldown > 0 && savedCards.size == s.positions.size
                     Button(
                         onClick = {
-                            spread = s
-                            cards = TarotDeck.draw(s.positions.size)
-                            revealed = emptySet()
-                            TarotStorage.markSpreadDone(context, s.name)
+                            if (canOpenCurrent) {
+                                spread = s
+                                cards = savedCards
+                                revealed = saved!!.revealed.filter { it in savedCards.indices }.toSet()
+                            } else {
+                                pendingSpread = s
+                            }
                         },
-                        enabled = cooldown == 0,
                         modifier = Modifier.fillMaxWidth(),
-                    ) { Text(stringResource(s.titleRes)) }
-                    if (cooldown > 0) {
+                    ) {
                         Text(
-                            if (viewModel.premium) stringResource(R.string.tarot_cooldown_daily)
-                            else stringResource(R.string.tarot_cooldown, cooldown),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            when {
+                                canOpenCurrent -> stringResource(R.string.tarot_open_current, stringResource(s.titleRes))
+                                saved != null -> stringResource(R.string.tarot_make_another, stringResource(s.titleRes))
+                                else -> stringResource(s.titleRes)
+                            },
                         )
                     }
                 }
@@ -136,6 +163,37 @@ fun TarotScreen(viewModel: TarotViewModel = hiltViewModel()) {
                         modifier = Modifier.fillMaxWidth()) {
                         Text(stringResource(R.string.premium_buy))
                     }
+                }
+                } else {
+                    val selected = pendingSpread!!
+                    Text(
+                        stringResource(R.string.tarot_prepare_title),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    Text(stringResource(selected.titleRes), style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(selected.introRes), style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        stringResource(R.string.tarot_prepare_common),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Button(
+                        onClick = {
+                            val drawn = TarotDeck.draw(selected.positions.size)
+                            cards = drawn
+                            revealed = emptySet()
+                            TarotStorage.saveSpread(context, selected.name, drawn, emptySet())
+                            TarotStorage.markSpreadDone(context, selected.name)
+                            spread = selected
+                            pendingSpread = null
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text(stringResource(R.string.tarot_start_spread)) }
+                    OutlinedButton(
+                        onClick = { pendingSpread = null },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text(stringResource(R.string.tarot_back_to_spreads)) }
                 }
             }
         } else {
@@ -162,12 +220,39 @@ fun TarotScreen(viewModel: TarotViewModel = hiltViewModel()) {
                         position = stringResource(spread!!.positions[i]),
                         card = card,
                         open = i in revealed,
-                        onOpen = { revealed = revealed + i },
+                        onOpen = {
+                            val updated = revealed + i
+                            revealed = updated
+                            TarotStorage.saveSpread(context, spread!!.name, cards, updated)
+                            if (updated.size == cards.size) {
+                                TarotStorage.saveCompletedSpread(context, spread!!.name, cards)
+                            }
+                        },
                     )
                 }
                 // Вердикт «да / нет» — только когда обе карты открыты.
                 if (spread == Spread.YES_NO && revealed.size == cards.size && cards.size == 2) {
                     YesNoVerdict(yes = cards[0], no = cards[1])
+                }
+                if (revealed.size == cards.size) {
+                    Text(
+                        stringResource(R.string.tarot_reflection),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                    )
+                    Text(
+                        stringResource(R.string.tarot_reflection_text),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    SaveMaterialButton(
+                        sourceType = "tarot", sourceId = spread!!.name,
+                        title = stringResource(spread!!.titleRes),
+                        body = cards.mapIndexed { index, card ->
+                            "${stringResource(spread!!.positions[index])}: ${card.name}\n${card.meaning}\n${card.advice}"
+                        }.joinToString("\n\n"),
+                        premium = viewModel.premium,
+                    )
                 }
                 OutlinedButton(
                     onClick = { spread = null },
@@ -183,6 +268,79 @@ fun TarotScreen(viewModel: TarotViewModel = hiltViewModel()) {
  * по градации всей колоды. Побеждает старшая — она и даёт ответ.
  * Ничьей не бывает: карты в раскладе всегда разные, а ранги уникальны.
  */
+@Composable
+private fun TarotArchive(onBack: () -> Unit) {
+    val context = LocalContext.current
+    var revision by remember { mutableStateOf(0) }
+    val history = remember(revision) { TarotStorage.history(context) }
+    val dayCards = remember(revision) { TarotStorage.dayArchive(context) }
+    val frequency = remember(revision) { TarotStorage.cardFrequency(context).take(10) }
+    val locale = context.resources.configuration.locales[0]
+    val dateFormatter = remember(locale) {
+        DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)
+    }
+
+    OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
+        Text(stringResource(R.string.tarot_back_to_spreads))
+    }
+    Text(stringResource(R.string.tarot_day_archive_title),
+        style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+    if (dayCards.isEmpty()) {
+        Text(stringResource(R.string.tarot_archive_empty))
+    } else {
+        AstroPanel {
+            dayCards.take(14).forEach { item ->
+                val card = TarotDeck.byId(item.cardId) ?: return@forEach
+                Text("${LocalDate.ofEpochDay(item.epochDay).format(dateFormatter)} — ${card.name}")
+            }
+        }
+    }
+
+    Text(stringResource(R.string.tarot_history_title),
+        style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+    if (history.isEmpty()) {
+        Text(stringResource(R.string.tarot_archive_empty))
+    } else {
+        history.take(30).forEach { record ->
+            val spread = Spread.entries.firstOrNull { it.name == record.spreadKey }
+            val cardNames = record.cardIds.mapNotNull(TarotDeck::byId).joinToString(" · ") { it.name }
+            var note by remember(record.id, revision) { mutableStateOf(record.note) }
+            AstroPanel {
+                Text(spread?.let { stringResource(it.titleRes) } ?: record.spreadKey,
+                    style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.secondary)
+                Text(LocalDate.ofEpochDay(record.epochDay).format(dateFormatter))
+                Text(cardNames, style = MaterialTheme.typography.bodySmall)
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { note = it.take(1000) },
+                    label = { Text(stringResource(R.string.tarot_note_hint)) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedButton(
+                    onClick = { TarotStorage.updateNote(context, record.id, note); revision++ },
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text(stringResource(R.string.tarot_note_save)) }
+            }
+        }
+    }
+
+    Text(stringResource(R.string.tarot_statistics_title),
+        style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+    if (frequency.isEmpty()) {
+        Text(stringResource(R.string.tarot_archive_empty))
+    } else {
+        AstroPanel {
+            frequency.forEach { (cardId, count) ->
+                val card = TarotDeck.byId(cardId) ?: return@forEach
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(card.name, modifier = Modifier.weight(1f))
+                    Text(stringResource(R.string.tarot_times, count))
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun YesNoVerdict(yes: TarotCard, no: TarotCard) {
     val isYes = TarotDeck.rank(yes.id) > TarotDeck.rank(no.id)

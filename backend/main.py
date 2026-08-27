@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import copy
 import time
 from collections import defaultdict
 from datetime import date as date_type, datetime, timedelta, timezone
@@ -419,6 +420,103 @@ def require_premium(uid: int = Depends(current_user_id)) -> int:
     if not db.is_premium(uid):
         raise HTTPException(status_code=402, detail="Доступно по подписке «Премиум»")
     return uid
+
+
+def optional_user_id(authorization: Optional[str] = Header(None)) -> Optional[int]:
+    """Возвращает пользователя для публичного расчёта; отсутствие/старый токен = Free."""
+    if not authorization or not authorization.lower().startswith("bearer "):
+        return None
+    uid = db.verify_token(authorization.split(" ", 1)[1].strip())
+    if uid is None or db.is_banned(uid):
+        return None
+    return uid
+
+
+InterpretationMode = Literal["brief", "detailed", "technical"]
+
+
+def _effective_interpretation_mode(requested: Optional[str], uid: Optional[int]) -> InterpretationMode:
+    access = db.get_access_state(uid) if uid is not None else {"premium": False, "entitlements": []}
+    rights = set(access.get("entitlements") or [])
+    default: InterpretationMode = "detailed" if access.get("premium") else "brief"
+    mode = requested if requested in {"brief", "detailed", "technical"} else default
+    if mode == "technical" and "professional_tools" not in rights:
+        mode = "detailed" if access.get("premium") else "brief"
+    if mode == "detailed" and not access.get("premium"):
+        mode = "brief"
+    return mode  # type: ignore[return-value]
+
+
+def _short_text(value, limit: int):
+    if not isinstance(value, str) or len(value) <= limit:
+        return value
+    cut = value[:limit].rsplit(" ", 1)[0].rstrip(" ,;:-")
+    return cut + "…"
+
+
+def _brief_report(report: dict, kind: str) -> dict:
+    """Сокращает авторские тексты, сохраняя расчётные положения и структуру ответа."""
+    result = copy.deepcopy(report)
+    result["access_mode"] = "brief"
+    if kind == "natal":
+        story = result.get("story")
+        if isinstance(story, dict) and isinstance(story.get("sections"), list):
+            story["sections"] = story["sections"][:2]
+            for section in story["sections"]:
+                if isinstance(section, dict):
+                    section["text"] = _short_text(section.get("text"), 420)
+        for planet in result.get("planets", []):
+            if not isinstance(planet, dict):
+                continue
+            blocks = planet.get("interp_full")
+            if isinstance(blocks, list):
+                planet["interp_full"] = blocks[:1]
+                for block in planet["interp_full"]:
+                    if isinstance(block, dict):
+                        block["text"] = _short_text(block.get("text"), 260)
+        for aspect in result.get("aspects", []):
+            if isinstance(aspect, dict) and "interp" in aspect:
+                aspect["interp"] = _short_text(aspect.get("interp"), 220)
+        profile = result.get("profile")
+        if isinstance(profile, dict) and "core_text" in profile:
+            profile["core_text"] = _short_text(profile.get("core_text"), 350)
+        spheres = result.get("spheres")
+        if isinstance(spheres, dict):
+            for key, value in list(spheres.items()):
+                spheres[key] = _short_text(value, 300)
+    elif kind == "transit":
+        aspects = result.get("aspects")
+        if isinstance(aspects, list):
+            result["aspects"] = aspects[:3]
+            for aspect in result["aspects"]:
+                if isinstance(aspect, dict) and "interp" in aspect:
+                    aspect["interp"] = _short_text(aspect.get("interp"), 220)
+    elif kind == "forecast":
+        result["summary"] = _short_text(result.get("summary"), 500)
+        spheres = result.get("sphere_forecast")
+        if isinstance(spheres, list):
+            result["sphere_forecast"] = spheres[:2]
+            for sphere in result["sphere_forecast"]:
+                if isinstance(sphere, dict):
+                    sphere["text"] = _short_text(sphere.get("text"), 280)
+        events = result.get("events")
+        if isinstance(events, list):
+            result["events"] = events[:3]
+            for event in result["events"]:
+                if isinstance(event, dict):
+                    event["text"] = _short_text(event.get("text"), 220)
+        result.pop("profection", None)
+        result.pop("progressed_moon", None)
+    return result
+
+
+def _protect_interpretations(report: dict, kind: str, requested: Optional[str], uid: Optional[int]) -> dict:
+    mode = _effective_interpretation_mode(requested, uid)
+    if mode == "brief":
+        return _brief_report(report, kind)
+    result = copy.deepcopy(report)
+    result["access_mode"] = mode
+    return result
 
 
 def require_entitlement(entitlement: str):
@@ -958,11 +1056,17 @@ def api_unsubscribe(token: str = Query("", max_length=100)):
 #  API
 # --------------------------------------------------------------------------- #
 @app.post("/api/natal")
-def api_natal(birth: BirthData, svg: bool = Query(True)):
+def api_natal(
+    birth: BirthData,
+    svg: bool = Query(True),
+    mode: Optional[InterpretationMode] = Query(None),
+    uid: Optional[int] = Depends(optional_user_id),
+):
     # svg=0 — для мобильного приложения: тексты без тяжёлого SVG (колесо рисует само).
     db.record_usage("natal")
     try:
-        return astrology.natal_report(birth.model_dump(), with_svg=svg)
+        report = astrology.natal_report(birth.model_dump(), with_svg=svg)
+        return _protect_interpretations(report, "natal", mode, uid)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except HTTPException:
@@ -973,15 +1077,21 @@ def api_natal(birth: BirthData, svg: bool = Query(True)):
 
 
 @app.post("/api/transit")
-def api_transit(req: TransitRequest, svg: bool = Query(True)):
+def api_transit(
+    req: TransitRequest,
+    svg: bool = Query(True),
+    mode: Optional[InterpretationMode] = Query(None),
+    uid: Optional[int] = Depends(optional_user_id),
+):
     db.record_usage("transit")
     try:
-        return astrology.transit_report(
+        report = astrology.transit_report(
             natal_params=req.natal.model_dump(),
             transit_dt=req.transit_date.model_dump(),
             transit_location=req.transit_location.model_dump() if req.transit_location else None,
             with_svg=svg,
         )
+        return _protect_interpretations(report, "transit", mode, uid)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except HTTPException:
@@ -1047,15 +1157,20 @@ def api_calendar(req: CalendarRequest, uid: int = Depends(require_premium)):
 
 
 @app.post("/api/forecast")
-def api_forecast(req: ForecastRequest):
+def api_forecast(
+    req: ForecastRequest,
+    mode: Optional[InterpretationMode] = Query(None),
+    uid: Optional[int] = Depends(optional_user_id),
+):
     db.record_usage("forecast")
     try:
-        return astrology.forecast_report(
+        report = astrology.forecast_report(
             natal_params=req.natal.model_dump(),
             start=req.start.model_dump(),
             end=req.end.model_dump(),
             location=req.location.model_dump() if req.location else None,
         )
+        return _protect_interpretations(report, "forecast", mode, uid)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except HTTPException:

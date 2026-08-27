@@ -178,7 +178,8 @@ def test_text_audit_log():
     before = len(db.list_text_audit())
     db.add_text_audit(1, "tester", "TEST.KEY", "edit")
     rows = db.list_text_audit()
-    assert len(rows) == before + 1
+    # list_text_audit() intentionally caps the response at 100 newest rows.
+    assert len(rows) == min(before + 1, 100)
     assert rows[0]["key"] == "TEST.KEY" and rows[0]["action"] == "edit"
 
 

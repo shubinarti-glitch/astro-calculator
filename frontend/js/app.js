@@ -1811,6 +1811,7 @@ const PRINT_OVERRIDE = `
   }
   .print-cover::after { width: 92mm; height: 92mm; border-color: #7765c9; opacity: .16; }
   .print-cover-mark { color: #c9a86a; font-size: 31pt; line-height: 1; position: relative; z-index: 1; }
+  .print-cover-logo { width: 30mm; height: 30mm; margin-bottom: 5mm; border-radius: 7mm; position: relative; z-index: 1; }
   .print-cover-brand { font: 700 31pt/1.05 "Cormorant Garamond", Georgia, serif; color: #2a2150; position: relative; z-index: 1; }
   .print-cover-domain { color: #7765c9; letter-spacing: 3px; font-size: 9pt; margin-top: 3mm; position: relative; z-index: 1; }
   .print-cover-rule { width: 42mm; border-top: 1.5px solid #c9a86a; margin: 12mm auto 9mm; position: relative; z-index: 1; }
@@ -1821,6 +1822,14 @@ const PRINT_OVERRIDE = `
   .print-cover-meta span { display: block; color: #8a8298; font-size: 7.5pt; text-transform: uppercase; letter-spacing: .7px; }
   .print-cover-meta b { display: block; color: #39324d; font-size: 10pt; margin-top: 1mm; }
   .print-cover-note { margin-top: auto; max-width: 135mm; color: #8a8298; font-size: 8pt; position: relative; z-index: 1; }
+  .print-toc { break-after: page; page-break-after: always; padding: 12mm 4mm 4mm; }
+  .print-toc h1 { font: 700 26pt/1.1 "Cormorant Garamond", Georgia, serif; border-bottom: 2px solid #c9a86a; padding-bottom: 4mm; }
+  .print-toc ol { margin: 8mm 0 0; padding: 0; list-style: none; counter-reset: toc; }
+  .print-toc li { counter-increment: toc; display: flex; gap: 3mm; padding: 2.5mm 0; border-bottom: 1px solid #ece7f1; color: #39324d; }
+  .print-toc li::before { content: counter(toc, decimal-leading-zero); color: #9a7a3a; font-weight: 700; }
+  .print-toc .toc-level-3 { padding-left: 8mm; color: #6b6378; font-size: 9pt; }
+  .print-legal { margin-top: 10mm; padding: 5mm; border: 1px solid #d8cda9; background: #fbf8ef !important; color: #5f586a; font-size: 8.5pt; break-inside: avoid; }
+  .print-legal strong { color: #2a2150; }
   .print-body { padding-top: 2mm; }
   /* Фирменная шапка проекта — как на сайте (золото + фиолет, засечки) */
   .print-brand { text-align: center; border-bottom: 2px solid #c9a86a; padding-bottom: 10px; margin-bottom: 18px; }
@@ -1848,7 +1857,7 @@ function printCover(title, brandTitle, dateStr) {
     ? { date: "Birth date", time: "Birth time", city: "Birth place", houses: "House system", note: "Astrological interpretations describe tendencies and opportunities and do not replace professional medical, financial or legal advice." }
     : { date: "Дата рождения", time: "Время рождения", city: "Место рождения", houses: "Система домов", note: "Астрологические трактовки описывают тенденции и возможности и не заменяют профессиональные медицинские, финансовые или юридические рекомендации." };
   return `<section class="print-cover">
-    <div class="print-cover-mark">✦</div>
+    <img class="print-cover-logo" src="${location.origin}/icon.svg" alt="AstroSMap">
     <div class="print-cover-brand">${escapeHtml(brandTitle)}</div>
     <div class="print-cover-domain">ASTROSMAP.RU</div>
     <div class="print-cover-rule"></div>
@@ -1862,6 +1871,29 @@ function printCover(title, brandTitle, dateStr) {
     </div>
     <p class="print-cover-note">${labels.note}<br>${dateStr}</p>
   </section>`;
+}
+
+function printToc(doc, lang) {
+  const headings = Array.from(doc.querySelectorAll(".print-body h1, .print-body h2, .print-body h3"))
+    .map((node) => ({ text: node.textContent.trim(), level: node.tagName === "H3" ? 3 : 2 }))
+    .filter((item) => item.text);
+  if (!headings.length) return "";
+  const title = lang === "en" ? "Contents" : "Содержание";
+  return `<section class="print-toc"><h1>${title}</h1><ol>${headings
+    .map((item) => `<li class="toc-level-${item.level}">${escapeHtml(item.text)}</li>`)
+    .join("")}</ol></section>`;
+}
+
+function ensurePrintToc(doc, lang) {
+  if (!doc || doc.querySelector(".print-toc")) return;
+  const toc = printToc(doc, lang);
+  if (toc) doc.querySelector(".print-cover")?.insertAdjacentHTML("afterend", toc);
+}
+
+function printLegal(lang) {
+  return lang === "en"
+    ? `<aside class="print-legal"><strong>Important notice.</strong> This report is intended for information and entertainment. Astrological interpretations describe tendencies and do not constitute medical, psychological, legal or financial advice. For decisions affecting health, safety, rights or finances, consult a qualified professional. © AstroSMap — Project Artemisa. astrosmap.ru</aside>`
+    : `<aside class="print-legal"><strong>Важное предупреждение.</strong> Отчёт носит информационно-развлекательный характер. Астрологические трактовки описывают тенденции и не являются медицинской, психологической, юридической или финансовой рекомендацией. По вопросам здоровья, безопасности, прав и финансов обращайтесь к профильному специалисту. © AstroSMap — Project Artemisa. astrosmap.ru</aside>`;
 }
 
 // Собрать печатный документ во временном iframe. Одна раскладка на два сценария:
@@ -1896,7 +1928,7 @@ function buildPrintFrame(srcId, title, extraHead) {
   frame.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;";
   document.body.appendChild(frame);
   // Название как на сайте: главный бренд — «Project Artemisa», под ним — тип документа.
-  const brandTitle = (typeof t === "function" ? t("brand") : "Project Artemisa");
+  const brandTitle = "AstroSMap — Project Artemisa";
   const brandSub = (typeof t === "function" ? t("hero_title") : "Натальная карта");
   const dateStr = new Date().toLocaleDateString(LANG === "en" ? "en-GB" : "ru-RU");
   // Фирменная шапка проекта вверху документа + повторяющийся колонтитул внизу.
@@ -1917,11 +1949,19 @@ function buildPrintFrame(srcId, title, extraHead) {
     `<title>${brandTitle} — ${title || brandSub}</title>` +
     `<link rel="stylesheet" href="${location.origin}/css/style.css">` +
     `<style>${PRINT_OVERRIDE}</style>${extraHead || ""}</head>` +
-    `<body data-theme="light"><main class="print-document">${cover}<div class="print-body">${brandHeader}${content}</div></main>${brandFooter}</body></html>`
+    `<body data-theme="light"><main class="print-document">${cover}<div class="print-body">${brandHeader}${content}${printLegal(LANG)}</div></main>${brandFooter}</body></html>`
   );
   doc.close();
   // Раскрыть все свёрнутые блоки, чтобы в вывод попало всё содержимое.
   try { doc.querySelectorAll("details").forEach((d) => (d.open = true)); } catch (e) {}
+  // В некоторых браузерах doc.close() завершает разбор разметки асинхронно.
+  // Повторный вызов безопасен и гарантирует, что заголовки уже появились в DOM.
+  ensurePrintToc(doc, LANG);
+  let tocTries = 0;
+  const tocPoll = setInterval(() => {
+    ensurePrintToc(doc, LANG);
+    if (doc.querySelector(".print-toc") || ++tocTries >= 20) clearInterval(tocPoll);
+  }, 50);
   fixPrintSvg(doc);
   return { frame, doc, brandTitle, dateStr };
 }
@@ -1980,6 +2020,7 @@ function downloadPdf(srcId, title, btn, onDone) {
     done = true;
     const win = frame.contentWindow;
     try { doc.querySelectorAll("details").forEach((d) => (d.open = true)); } catch (e) {}
+    ensurePrintToc(doc, LANG);
     fixPrintSvg(doc);
     // html2canvas рисует position:fixed футер посреди страницы — в PDF он не нужен
     try { doc.querySelectorAll(".print-footer").forEach((el) => el.remove()); } catch (e) {}
@@ -1994,7 +2035,15 @@ function downloadPdf(srcId, title, btn, onDone) {
       pagebreak: { mode: ["css", "legacy"] },
     };
     try {
-      win.html2pdf().set(opt).from(win.document.body).save().then(cleanup).catch(fail);
+      win.html2pdf().set(opt).from(win.document.body).toPdf().get("pdf").then((pdf) => {
+        const total = pdf.internal.getNumberOfPages();
+        for (let page = 2; page <= total; page += 1) {
+          pdf.setPage(page);
+          pdf.setFontSize(8);
+          pdf.setTextColor(145, 137, 156);
+          pdf.text(`${page} / ${total}`, 200, 291, { align: "right" });
+        }
+      }).save().then(cleanup).catch(fail);
     } catch (e) { fail(); }
   };
   // Дождаться загрузки html2pdf внутри iframe и прогрузки стилей, затем рендерить.

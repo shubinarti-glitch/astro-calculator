@@ -55,7 +55,7 @@ enum class Section(val route: String, val titleRes: Int, val iconRes: Int) {
 }
 
 @Composable
-fun AstroRoot() {
+fun AstroRoot(notificationRoute: String? = null, onNotificationRouteHandled: () -> Unit = {}) {
     val navController = rememberNavController()
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
@@ -64,6 +64,12 @@ fun AstroRoot() {
     val compactLabels = LocalDensity.current.fontScale >= 1.3f
 
     NotificationOptInPrompt()
+
+    LaunchedEffect(notificationRoute) {
+        val route = notificationRoute ?: return@LaunchedEffect
+        navController.navigate(route) { launchSingleTop = true }
+        onNotificationRouteHandled()
+    }
 
     // Один ненавязчивый проход после входа: показывает, что нижняя панель интерактивна.
     // Любой тап немедленно прекращает подсказку.
@@ -159,7 +165,10 @@ fun AstroRoot() {
             composable(Section.Saved.route) {
                 SavedScreen(onOpen = { id -> navController.navigate("view/$id") })
             }
-            composable(Section.Account.route) { ru.astrosmap.app.ui.account.AccountScreen() }
+            composable(Section.Account.route) {
+                ru.astrosmap.app.ui.account.AccountScreen(onMaterials = { navController.navigate("materials") })
+            }
+            composable("materials") { ru.astrosmap.app.ui.saved.SavedMaterialsScreen() }
             composable("tarot") { ru.astrosmap.app.ui.tarot.TarotScreen() }
             composable(Section.Tools.route) {
                 ru.astrosmap.app.ui.tools.ToolsScreen(

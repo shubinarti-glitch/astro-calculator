@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,8 +33,10 @@ import androidx.compose.ui.unit.sp
  */
 val Cormorant = FontFamily.Serif
 
-private val WordmarkGold = Color(0xFFE9DBBF)
-private val WordmarkPurple = Color(0xFF8B7BD8)
+private val WordmarkGoldDark = Color(0xFFE9DBBF)
+private val WordmarkPurpleDark = Color(0xFF8B7BD8)
+private val WordmarkGoldLight = Color(0xFF76520B)
+private val WordmarkPurpleLight = Color(0xFF5D42A8)
 
 /**
  * Логотип «AstroSMap»: начало золотистое, «Map» — фиолетовый, как в референсе.
@@ -42,9 +45,12 @@ private val WordmarkPurple = Color(0xFF8B7BD8)
  */
 @Composable
 fun AstroWordmark(fontSize: TextUnit = 34.sp, modifier: Modifier = Modifier) {
+    val darkTheme = isSystemInDarkTheme()
+    val wordmarkGold = if (darkTheme) WordmarkGoldDark else WordmarkGoldLight
+    val wordmarkPurple = if (darkTheme) WordmarkPurpleDark else WordmarkPurpleLight
     val text = buildAnnotatedString {
-        withStyle(SpanStyle(color = WordmarkGold)) { append("AstroS") }
-        withStyle(SpanStyle(color = WordmarkPurple)) { append("Map") }
+        withStyle(SpanStyle(color = wordmarkGold)) { append("AstroS") }
+        withStyle(SpanStyle(color = wordmarkPurple)) { append("Map") }
     }
     // Две искры вспыхивают по очереди (в противофазе) с паузами — спокойное мерцание.
     val tw = rememberInfiniteTransition(label = "wordmark-twinkle")

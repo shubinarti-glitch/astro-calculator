@@ -16,6 +16,9 @@ import ru.astrosmap.app.MainActivity
 import ru.astrosmap.app.R
 import ru.astrosmap.app.astro.AstroEngine
 import ru.astrosmap.app.astro.BirthInput
+import ru.astrosmap.app.data.ChartDao
+import ru.astrosmap.app.data.DailyNotify
+import ru.astrosmap.app.data.PrimaryChart
 import ru.astrosmap.app.ui.AstroLabels
 import ru.astrosmap.app.ui.LangPref
 import ru.astrosmap.app.ui.tools.LunarTexts
@@ -34,31 +37,38 @@ class WidgetUpdateWorker @AssistedInject constructor(
     @Assisted private val context: Context,
     @Assisted params: WorkerParameters,
     private val engine: AstroEngine,
+    private val dao: ChartDao,
 ) : CoroutineWorker(context, params) {
 
-    private data class DayData(val date: String, val moonLine: String, val mood: String, val advice: String)
+    private data class DayData(
+        val date: String,
+        val moonLine: String,
+        val mood: String,
+        val advice: String,
+        val personal: String? = null,
+    )
 
     override suspend fun doWork(): Result {
         // Язык виджета следует за выбором в приложении.
         val lang = LangPref.get(context)
-        if (lang != null) Locale.setDefault(Locale(lang))
+        Locale.setDefault(Locale.forLanguageTag(lang))
         val res = localizedContext(lang)
 
         val mgr = AppWidgetManager.getInstance(context)
-        val data = runCatching { compute() }.getOrNull()
+        val data = runCatching { enrich(compute()) }.getOrNull()
         if (data != null) {
             updateType(mgr, TodayWidgetProvider::class.java) { dayViews(data) }
             updateType(mgr, MoonWidgetProvider::class.java) { moonViews(data) }
             updateType(mgr, AdviceWidgetProvider::class.java) { adviceViews(res, data) }
+            updateType(mgr, CalendarWidgetProvider::class.java) { calendarViews(res, data) }
         }
         WidgetUpdater.scheduleMidnight(context) // следующий показ — в полночь
         return Result.success()
     }
 
-    private fun localizedContext(lang: String?): Context {
-        if (lang == null) return context
+    private fun localizedContext(lang: String): Context {
         val cfg = Configuration(context.resources.configuration)
-        cfg.setLocale(Locale(lang))
+        cfg.setLocale(Locale.forLanguageTag(lang))
         return context.createConfigurationContext(cfg)
     }
 
@@ -81,31 +91,52 @@ class WidgetUpdateWorker @AssistedInject constructor(
         return DayData(date, moonLine, LunarTexts.moonMood(moonSign), LunarTexts.phaseAdvice(phaseKey))
     }
 
-    private fun tapIntent(): PendingIntent {
+    private suspend fun enrich(data: DayData): DayData {
+        if (!DailyNotify.cachedPremium(context)) return data
+        val chart = PrimaryChart.resolve(context, dao.allOnce().filterNot { it.pendingDelete }) ?: return data
+        val today = LocalDate.now()
+        val natal = chart.toBirthInput()
+        val transit = BirthInput(today.year, today.monthValue, today.dayOfMonth, 12, 0, natal.lat, natal.lng, natal.tzId)
+        val aspect = engine.transit(natal, transit).aspects.minByOrNull { it.orbit } ?: return data
+        val prefix = if (WidgetPrefs.hidePersonal(context)) "" else "${chart.name}: "
+        return data.copy(
+            personal = prefix + "${AstroLabels.point(aspect.p2)} ${AstroLabels.aspect(aspect.aspect)} ${AstroLabels.point(aspect.p1)}",
+        )
+    }
+
+    private fun tapIntent(route: String = DailyNotify.ROUTE_TODAY, requestCode: Int = 0): PendingIntent {
         val intent = Intent(context, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            .putExtra(DailyNotify.ROUTE, route)
         return PendingIntent.getActivity(
-            context, 0, intent,
+            context, requestCode, intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
     }
 
     private fun dayViews(d: DayData) = RemoteViews(context.packageName, R.layout.widget_today).apply {
         setTextViewText(R.id.w_date, d.date)
-        setTextViewText(R.id.w_moon, d.moonLine)
+        setTextViewText(R.id.w_moon, d.moonLine.replace('\uFFFD', '-'))
         setTextViewText(R.id.w_mood, d.mood)
         setOnClickPendingIntent(R.id.w_root, tapIntent())
     }
 
     private fun moonViews(d: DayData) = RemoteViews(context.packageName, R.layout.widget_moon).apply {
-        setTextViewText(R.id.wm_moon, d.moonLine)
+        setTextViewText(R.id.wm_moon, d.moonLine.replace('\uFFFD', '-'))
         setTextViewText(R.id.wm_advice, d.advice.ifBlank { d.mood })
         setOnClickPendingIntent(R.id.wm_root, tapIntent())
     }
 
     private fun adviceViews(res: Context, d: DayData) = RemoteViews(context.packageName, R.layout.widget_advice).apply {
         setTextViewText(R.id.wa_title, "💡 " + res.getString(R.string.widget_advice_title))
-        setTextViewText(R.id.wa_text, d.advice.ifBlank { d.mood })
+        setTextViewText(R.id.wa_text, d.personal ?: d.advice.ifBlank { d.mood })
         setOnClickPendingIntent(R.id.wa_root, tapIntent())
+    }
+
+    private fun calendarViews(res: Context, d: DayData) = RemoteViews(context.packageName, R.layout.widget_calendar).apply {
+        setTextViewText(R.id.wc_title, res.getString(R.string.widget_calendar_title))
+        setTextViewText(R.id.wc_date, d.date)
+        setTextViewText(R.id.wc_event, d.personal ?: res.getString(R.string.widget_calendar_general, d.moonLine.replace('\uFFFD', '-')))
+        setOnClickPendingIntent(R.id.wc_root, tapIntent(DailyNotify.ROUTE_LUNAR, 4))
     }
 }

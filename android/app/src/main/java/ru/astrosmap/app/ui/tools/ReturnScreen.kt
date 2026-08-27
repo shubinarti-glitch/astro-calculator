@@ -61,6 +61,8 @@ class ReturnViewModel @Inject constructor(
 
     private val _state = MutableStateFlow<ReportState>(ReportState.Loading)
     val state: StateFlow<ReportState> = _state
+    private val _comparison = MutableStateFlow<SolarComparison?>(null)
+    val comparison: StateFlow<SolarComparison?> = _comparison
 
     init {
         load()
@@ -81,7 +83,7 @@ class ReturnViewModel @Inject constructor(
         _state.value = ReportState.Loading
         viewModelScope.launch {
             val entity = dao.byId(chartId) ?: return@launch
-            _state.value = loadReport {
+            val loaded = loadReport {
                 api.solarReturn(
                     ReturnApiRequest(
                         natal = entity.toNatalRequest(),
@@ -91,13 +93,43 @@ class ReturnViewModel @Inject constructor(
                     ),
                 )
             }
+            _state.value = loaded
+            _comparison.value = null
+            if (!isLunar && loaded is ReportState.Ready) {
+                val previous = loadReport {
+                    api.solarReturn(
+                        ReturnApiRequest(
+                            natal = entity.toNatalRequest(),
+                            year = year - 1,
+                            returnType = "Solar",
+                        ),
+                    )
+                }
+                if (previous is ReportState.Ready) {
+                    _comparison.value = compareSolars(previous.data, loaded.data)
+                }
+            }
         }
     }
+}
+
+data class SolarComparison(val changedThemes: Int, val aspectDelta: Int, val previousYear: Int)
+
+private fun compareSolars(previous: JsonObject, current: JsonObject): SolarComparison {
+    val keys = listOf("overlay", "tone", "focus", "mood", "lord")
+    val oldTheme = previous.o("theme")
+    val newTheme = current.o("theme")
+    return SolarComparison(
+        changedThemes = keys.count { oldTheme?.s(it) != newTheme?.s(it) },
+        aspectDelta = current.a("aspects").size - previous.a("aspects").size,
+        previousYear = previous.s("period_start")?.take(4)?.toIntOrNull() ?: 0,
+    )
 }
 
 @Composable
 fun ReturnScreen(viewModel: ReturnViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsState()
+    val comparison by viewModel.comparison.collectAsState()
     val title = stringResource(if (viewModel.isLunar) R.string.tools_lunar else R.string.tools_solar)
     val expanded = remember { mutableStateOf(setOf<String>()) }
 
@@ -145,6 +177,17 @@ fun ReturnScreen(viewModel: ReturnViewModel = hiltViewModel()) {
             // Период действия карты.
             data.s("period_start")?.let { periodRow(R.string.ret_period_start, it) }
             data.s("period_end")?.let { periodRow(R.string.ret_period_end, it) }
+
+            comparison?.let { value ->
+                item {
+                    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)) {
+                        Text(stringResource(R.string.solar_compare_title), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                        Text(stringResource(R.string.solar_compare_previous, value.previousYear))
+                        Text(stringResource(R.string.solar_compare_themes, value.changedThemes))
+                        Text(stringResource(R.string.solar_compare_aspects, value.aspectDelta))
+                    }
+                }
+            }
 
             // Большая тройка возвращения.
             val big = data.o("big_three")

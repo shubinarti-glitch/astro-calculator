@@ -24,6 +24,7 @@ object WidgetUpdater {
         TodayWidgetProvider::class.java,
         MoonWidgetProvider::class.java,
         AdviceWidgetProvider::class.java,
+        CalendarWidgetProvider::class.java,
     )
 
     fun refreshNow(context: Context) {
@@ -78,3 +79,17 @@ class MoonWidgetProvider : BaseAstroWidget()
 
 /** «Совет дня»: короткая рекомендация по фазе Луны. */
 class AdviceWidgetProvider : BaseAstroWidget()
+
+/** «Календарь»: ближайшее общее или персональное событие. */
+class CalendarWidgetProvider : BaseAstroWidget()
+
+object WidgetPrefs {
+    private const val PREFS = "settings"
+    private const val HIDE_PERSONAL = "widget_hide_personal"
+    fun hidePersonal(context: Context) = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        .getBoolean(HIDE_PERSONAL, false)
+    fun setHidePersonal(context: Context, hide: Boolean) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(HIDE_PERSONAL, hide).apply()
+        WidgetUpdater.refreshNow(context)
+    }
+}

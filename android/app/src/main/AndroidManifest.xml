@@ -5,6 +5,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Android 13+: разрешение спрашиваем только когда пользователь сам включает напоминание. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:name=".AstroApp"
@@ -45,6 +46,15 @@
         </activity>
 
         <receiver
+            android:name=".data.NotificationRescheduleReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
             android:name=".widget.TodayWidgetProvider"
             android:label="@string/widget_today_label"
             android:exported="false">
@@ -78,6 +88,18 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_advice_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.CalendarWidgetProvider"
+            android:label="@string/widget_calendar_label"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_calendar_info" />
         </receiver>
     </application>
 </manifest>

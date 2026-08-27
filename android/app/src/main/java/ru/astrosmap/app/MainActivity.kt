@@ -1,6 +1,7 @@
 package ru.astrosmap.app
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -21,6 +22,8 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    private val notificationRoute = mutableStateOf<String?>(null)
 
     @Inject
     lateinit var syncManager: SyncManager
@@ -43,6 +46,7 @@ class MainActivity : ComponentActivity() {
         }
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        notificationRoute.value = intent?.getStringExtra(ru.astrosmap.app.data.DailyNotify.ROUTE)
         // Заставка — только на холодном запуске. При пересоздании активности (смена темы,
         // поворот, системный шрифт) системная заставка не показывается, слушатель её ухода
         // не срабатывает — и заставка висела бы вечно.
@@ -57,7 +61,7 @@ class MainActivity : ComponentActivity() {
                             onFinished = { showSplash = false },
                         )
                     } else {
-                        AstroRoot()
+                        AstroRoot(notificationRoute = notificationRoute.value) { notificationRoute.value = null }
                     }
                 }
             }
@@ -73,6 +77,15 @@ class MainActivity : ComponentActivity() {
         // Обновить виджеты на домашнем экране — подхватить свежие данные и выбранный язык.
         if (ru.astrosmap.app.widget.WidgetUpdater.hasAnyWidget(this)) {
             ru.astrosmap.app.widget.WidgetUpdater.refreshNow(this)
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        notificationRoute.value = intent.getStringExtra(ru.astrosmap.app.data.DailyNotify.ROUTE)
+        if (intent.getBooleanExtra(ru.astrosmap.app.data.DailyNotify.FROM_NOTIFICATION, false)) {
+            analytics.track("notif_opened")
         }
     }
 }

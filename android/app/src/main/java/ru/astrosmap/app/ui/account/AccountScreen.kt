@@ -64,19 +64,19 @@ import ru.astrosmap.app.ui.theme.GoodColor
 
 /** Кабинет: вход/регистрация, а после входа — профиль и статус подписки. */
 @Composable
-fun AccountScreen(viewModel: AccountViewModel = hiltViewModel()) {
+fun AccountScreen(onMaterials: () -> Unit = {}, viewModel: AccountViewModel = hiltViewModel()) {
     when (val s = viewModel.state) {
         AccountState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
-        AccountState.LoggedOut -> AuthForm(viewModel)
+        AccountState.LoggedOut -> AuthForm(viewModel, onMaterials)
         AccountState.Offline -> OfflineNote(viewModel)
-        is AccountState.LoggedIn -> Profile(s.me, viewModel)
+        is AccountState.LoggedIn -> Profile(s.me, viewModel, onMaterials)
     }
 }
 
 @Composable
-private fun AuthForm(viewModel: AccountViewModel) {
+private fun AuthForm(viewModel: AccountViewModel, onMaterials: () -> Unit) {
     var registerMode by rememberSaveable { mutableStateOf(false) }
     var username by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf("") }
@@ -178,12 +178,15 @@ private fun AuthForm(viewModel: AccountViewModel) {
         }
         }
         PremiumInfoPanel()
+        OutlinedButton(onClick = onMaterials, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.materials_title))
+        }
         LegalPanel()
     }
 }
 
 @Composable
-private fun Profile(me: MeResponse, viewModel: AccountViewModel) {
+private fun Profile(me: MeResponse, viewModel: AccountViewModel, onMaterials: () -> Unit) {
     val chartsCount by viewModel.chartsCount.collectAsState()
     val context = LocalContext.current
     Column(
@@ -231,6 +234,9 @@ private fun Profile(me: MeResponse, viewModel: AccountViewModel) {
         }
         }
         PremiumInfoPanel()
+        OutlinedButton(onClick = onMaterials, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.materials_title))
+        }
         LegalPanel()
     }
 }
@@ -265,6 +271,8 @@ private fun LegalPanel() {
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         DailyNotifyRow(context)
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        WidgetPrivacyRow(context)
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         if (BuildConfig.SHOW_EXTERNAL_PURCHASE_LINKS) {
             TextButton(onClick = { openSite(context) }) { Text(stringResource(R.string.acc_site)) }
             TextButton(onClick = { openSite(context, "https://astrosmap.ru/#glossary") }) {
@@ -287,6 +295,21 @@ private fun LegalPanel() {
     }
 }
 
+@Composable
+private fun WidgetPrivacyRow(context: android.content.Context) {
+    var hidden by rememberSaveable { mutableStateOf(ru.astrosmap.app.widget.WidgetPrefs.hidePersonal(context)) }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(stringResource(R.string.widget_hide_personal), Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+        Switch(
+            checked = hidden,
+            onCheckedChange = {
+                hidden = it
+                ru.astrosmap.app.widget.WidgetPrefs.setHidePersonal(context, it)
+            },
+        )
+    }
+}
+
 /**
  * Ежедневное напоминание: выключатель + время. Разрешение на уведомления
  * спрашиваем только в момент включения — не при первом запуске.
@@ -294,6 +317,7 @@ private fun LegalPanel() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DailyNotifyRow(context: android.content.Context) {
+    val premium = DailyNotify.cachedPremium(context)
     var enabled by rememberSaveable { mutableStateOf(DailyNotify.isEnabled(context)) }
     var hour by rememberSaveable { mutableIntStateOf(DailyNotify.hour(context)) }
     var minute by rememberSaveable { mutableIntStateOf(DailyNotify.minute(context)) }
@@ -357,6 +381,36 @@ private fun DailyNotifyRow(context: android.content.Context) {
     if (enabled) {
         TextButton(onClick = { showPicker = true }) {
             Text(stringResource(R.string.notify_time) + ": %02d:%02d".format(hour, minute))
+        }
+        Text(
+            stringResource(R.string.notify_categories),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        listOf(
+            DailyNotify.CATEGORY_FORECAST to R.string.notify_cat_forecast,
+            DailyNotify.CATEGORY_MOON to R.string.notify_cat_moon,
+            DailyNotify.CATEGORY_TRANSIT to R.string.notify_cat_transit,
+            DailyNotify.CATEGORY_EVENTS to R.string.notify_cat_events,
+            DailyNotify.CATEGORY_TAROT to R.string.notify_cat_tarot,
+        ).forEach { (key, label) ->
+            var checked by rememberSaveable(key) { mutableStateOf(DailyNotify.category(context, key)) }
+            val available = key != DailyNotify.CATEGORY_TRANSIT || premium
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(
+                    checked = checked && available,
+                    enabled = available,
+                    onCheckedChange = {
+                        checked = it
+                        DailyNotify.setCategory(context, key, it)
+                    },
+                )
+                Text(
+                    stringResource(label) + if (!available) " · Premium" else "",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (available) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
     Text(
