@@ -40,6 +40,7 @@ import ru.astrosmap.app.astro.AstroEngine
 import ru.astrosmap.app.astro.BirthInput
 import ru.astrosmap.app.data.ChartDao
 import ru.astrosmap.app.data.PrimaryChart
+import ru.astrosmap.app.data.ForecastLocationStore
 import ru.astrosmap.app.data.access.Entitlement
 import ru.astrosmap.app.data.access.hasEntitlement
 import ru.astrosmap.app.data.api.AstroApi
@@ -104,13 +105,15 @@ class LunarCalendarViewModel @Inject constructor(
             fullCalendar = runCatching {
                 api.me().hasEntitlement(Entitlement.FULL_CALENDAR)
             }.getOrDefault(false)
-            val tz = primary?.tz ?: ZoneId.systemDefault().id
-            val lat = primary?.lat ?: 0.0
-            val lng = primary?.lng ?: 0.0
+            val forecastLocation = ForecastLocationStore.get(context)
+            val tz = forecastLocation?.tzStr ?: primary?.tz ?: ZoneId.systemDefault().id
+            val lat = forecastLocation?.lat ?: primary?.lat ?: 0.0
+            val lng = forecastLocation?.lng ?: primary?.lng ?: 0.0
             val today = LocalDate.now()
             val weekStart = today.with(java.time.DayOfWeek.MONDAY)
             val cacheKey = listOf(
                 "month", targetMonth.toString(), primary?.id ?: 0L,
+                forecastLocation?.city.orEmpty(),
                 if (fullCalendar) "premium" else "free", weekStart.toString(),
             ).joinToString("_")
             PersonalCalendarCache.read(context, cacheKey)?.let { cached ->
@@ -161,7 +164,7 @@ class LunarCalendarViewModel @Inject constructor(
                     ) {
                         val transitInput = BirthInput(
                             day.date.year, day.date.monthValue, day.date.dayOfMonth, 12, 0,
-                            natal.lat, natal.lng, natal.tzId,
+                            lat, lng, tz,
                         )
                         DayForecastCalculator.nearestImportant(
                             listOf(day.date to engine.transit(natal, transitInput).aspects),

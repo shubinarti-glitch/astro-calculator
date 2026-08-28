@@ -26,6 +26,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -40,6 +41,7 @@ import ru.astrosmap.app.astro.BirthInput
 import ru.astrosmap.app.astro.TransitChart
 import ru.astrosmap.app.data.ChartDao
 import ru.astrosmap.app.data.ChartTexts
+import ru.astrosmap.app.data.ForecastLocationStore
 import ru.astrosmap.app.data.api.AstroApi
 import ru.astrosmap.app.data.api.NatalRequest
 import ru.astrosmap.app.data.api.TransitApiRequest
@@ -64,6 +66,7 @@ data class TransitState(
 @HiltViewModel
 class TransitViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
+    @ApplicationContext private val context: android.content.Context,
     private val dao: ChartDao,
     private val engine: AstroEngine,
     private val api: AstroApi,
@@ -81,10 +84,14 @@ class TransitViewModel @Inject constructor(
         viewModelScope.launch {
             val entity = dao.byId(chartId) ?: return@launch
             val natal = entity.toBirthInput()
+            val location = ForecastLocationStore.get(context)
             // Транзит на полдень выбранной даты в месте рождения — как транзит дня на сайте.
             val transitInput = BirthInput(
                 year = date.year, month = date.monthValue, day = date.dayOfMonth,
-                hour = 12, minute = 0, lat = natal.lat, lng = natal.lng, tzId = natal.tzId,
+                hour = 12, minute = 0,
+                lat = location?.lat ?: natal.lat,
+                lng = location?.lng ?: natal.lng,
+                tzId = location?.tzStr ?: natal.tzId,
             )
             val chart = withContext(Dispatchers.Default) { engine.transit(natal, transitInput) }
             _state.value = TransitState(
@@ -107,6 +114,7 @@ class TransitViewModel @Inject constructor(
                         lang = if (AstroLabels.isRu()) "ru" else "en",
                     ),
                     transitDate = TransitDateDto(date.year, date.monthValue, date.dayOfMonth),
+                    transitLocation = ForecastLocationStore.get(context),
                 ),
             )
             val texts = resp["aspects"]?.jsonArray.orEmpty().mapNotNull { a ->

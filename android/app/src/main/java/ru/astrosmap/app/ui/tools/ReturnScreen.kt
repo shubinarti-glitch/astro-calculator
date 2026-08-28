@@ -28,12 +28,14 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.JsonObject
 import ru.astrosmap.app.R
 import ru.astrosmap.app.data.ChartDao
+import ru.astrosmap.app.data.ForecastLocationStore
 import ru.astrosmap.app.data.RemoteChart
 import ru.astrosmap.app.data.api.AstroApi
 import ru.astrosmap.app.data.api.ReturnApiRequest
@@ -47,6 +49,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ReturnViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
+    @ApplicationContext private val context: android.content.Context,
     private val dao: ChartDao,
     private val api: AstroApi,
 ) : ViewModel() {
@@ -90,6 +93,7 @@ class ReturnViewModel @Inject constructor(
                         year = year,
                         month = if (isLunar) month else null,
                         returnType = if (isLunar) "Lunar" else "Solar",
+                        location = ForecastLocationStore.get(context),
                     ),
                 )
             }
@@ -102,6 +106,7 @@ class ReturnViewModel @Inject constructor(
                             natal = entity.toNatalRequest(),
                             year = year - 1,
                             returnType = "Solar",
+                            location = ForecastLocationStore.get(context),
                         ),
                     )
                 }

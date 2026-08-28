@@ -344,4 +344,9 @@
     <string name="material_pdf_available">PDF is available: Premium is active or a one-time PDF credit is available.</string>
     <string name="material_pdf_locked">PDF selection requires Premium or a one-time PDF credit.</string>
     <string name="aspect_orb">Orb: %1$s°</string>
+    <string name="forecast_location_title">Current location for forecasts</string>
+    <string name="forecast_location_birth">Birthplace is currently used</string>
+    <string name="forecast_location_selected">Selected: %1$s</string>
+    <string name="forecast_location_choose">Choose current city</string>
+    <string name="forecast_location_use_birth">Use birthplace</string>
 </resources>

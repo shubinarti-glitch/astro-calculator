@@ -141,7 +141,10 @@ data class TransitsResponse(
 interface AstroApi {
     /** Общий небесный фон: где сейчас планеты, период и значение. Без авторизации. */
     @GET("api/transits/current")
-    suspend fun currentTransits(@retrofit2.http.Query("lang") lang: String): TransitsResponse
+    suspend fun currentTransits(
+        @retrofit2.http.Query("lang") lang: String,
+        @retrofit2.http.Query("tz") timezone: String? = null,
+    ): TransitsResponse
 
     @POST("api/auth/login")
     suspend fun login(@Body body: LoginRequest): AuthResponse
@@ -241,9 +244,18 @@ data class TransitDateDto(
 )
 
 @Serializable
+data class TransitLocationDto(
+    val lat: Double,
+    val lng: Double,
+    @SerialName("tz_str") val tzStr: String? = null,
+    val city: String = "",
+)
+
+@Serializable
 data class TransitApiRequest(
     val natal: NatalRequest,
     @SerialName("transit_date") val transitDate: TransitDateDto,
+    @SerialName("transit_location") val transitLocation: TransitLocationDto? = null,
 )
 
 @Serializable
@@ -252,6 +264,7 @@ data class ReturnApiRequest(
     val year: Int,
     val month: Int? = null, // для лунара
     @SerialName("return_type") val returnType: String = "Solar",
+    val location: TransitLocationDto? = null,
 )
 
 @Serializable
@@ -268,6 +281,7 @@ data class ForecastApiRequest(
     val natal: NatalRequest,
     val start: DateDto,
     val end: DateDto,
+    val location: TransitLocationDto? = null,
 )
 
 /** Данные рождения сохранённой карты в формате запросов бэкенда. */

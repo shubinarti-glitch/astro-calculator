@@ -14,7 +14,9 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -34,18 +36,25 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.withContext
 import ru.astrosmap.app.R
 import ru.astrosmap.app.data.ChartDao
 import ru.astrosmap.app.data.ChartEntity
+import ru.astrosmap.app.data.CityStore
+import ru.astrosmap.app.data.ForecastLocationStore
 import ru.astrosmap.app.ui.theme.AppHeader
 import ru.astrosmap.app.ui.theme.AstroPanel
 import javax.inject.Inject
 
 @HiltViewModel
 class ToolsViewModel @Inject constructor(
+    @ApplicationContext private val context: android.content.Context,
     dao: ChartDao,
+    private val cities: CityStore,
     private val api: ru.astrosmap.app.data.api.AstroApi,
 ) : ViewModel() {
     val charts = dao.search("").stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -53,13 +62,44 @@ class ToolsViewModel @Inject constructor(
     // Общие транзиты (общий небесный фон) — не требуют карты; при офлайне просто пусто.
     var transits by mutableStateOf<List<ru.astrosmap.app.data.api.PlanetTransit>>(emptyList())
         private set
+    var locationQuery by mutableStateOf("")
+        private set
+    var locationSuggestions by mutableStateOf<List<CityStore.City>>(emptyList())
+        private set
+    var forecastLocationName by mutableStateOf(ForecastLocationStore.get(context)?.city.orEmpty())
+        private set
 
     init {
         viewModelScope.launch {
             transits = runCatching {
-                api.currentTransits(if (ru.astrosmap.app.ui.AstroLabels.isRu()) "ru" else "en").transits
+                api.currentTransits(
+                    lang = if (ru.astrosmap.app.ui.AstroLabels.isRu()) "ru" else "en",
+                    timezone = java.time.ZoneId.systemDefault().id,
+                ).transits
             }.getOrDefault(emptyList())
         }
+    }
+
+    fun onLocationQuery(value: String) {
+        locationQuery = value
+        viewModelScope.launch {
+            locationSuggestions = withContext(Dispatchers.IO) { cities.search(value) }
+        }
+    }
+
+    fun selectLocation(city: CityStore.City) {
+        val label = city.label(ru.astrosmap.app.ui.AstroLabels.isRu())
+        ForecastLocationStore.save(context, city, label)
+        forecastLocationName = label
+        locationQuery = ""
+        locationSuggestions = emptyList()
+    }
+
+    fun useBirthLocation() {
+        ForecastLocationStore.clear(context)
+        forecastLocationName = ""
+        locationQuery = ""
+        locationSuggestions = emptyList()
     }
 }
 
@@ -114,6 +154,48 @@ fun ToolsScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         AppHeader(stringResource(R.string.section_tools))
+
+        AstroPanel {
+            Text(
+                stringResource(R.string.forecast_location_title),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                if (viewModel.forecastLocationName.isBlank()) {
+                    stringResource(R.string.forecast_location_birth)
+                } else {
+                    stringResource(R.string.forecast_location_selected, viewModel.forecastLocationName)
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            OutlinedTextField(
+                value = viewModel.locationQuery,
+                onValueChange = viewModel::onLocationQuery,
+                label = { Text(stringResource(R.string.forecast_location_choose)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            viewModel.locationSuggestions.forEach { city ->
+                Surface(
+                    onClick = { viewModel.selectLocation(city) },
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        city.label(ru.astrosmap.app.ui.AstroLabels.isRu()),
+                        Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                    )
+                }
+            }
+            if (viewModel.forecastLocationName.isNotBlank()) {
+                TextButton(onClick = viewModel::useBirthLocation) {
+                    Text(stringResource(R.string.forecast_location_use_birth))
+                }
+            }
+        }
 
         // Лунный календарь и Таро не требуют сохранённой карты — доступны всегда.
         AstroPanel {

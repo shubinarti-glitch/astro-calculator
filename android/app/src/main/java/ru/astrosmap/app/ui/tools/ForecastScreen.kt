@@ -34,6 +34,7 @@ import kotlinx.coroutines.launch
 import ru.astrosmap.app.R
 import ru.astrosmap.app.data.ChartDao
 import ru.astrosmap.app.data.JournalDao
+import ru.astrosmap.app.data.ForecastLocationStore
 import ru.astrosmap.app.data.api.AstroApi
 import ru.astrosmap.app.data.api.DateDto
 import ru.astrosmap.app.data.api.ForecastApiRequest
@@ -88,6 +89,7 @@ class ForecastViewModel @Inject constructor(
                         natal = entity.toNatalRequest(),
                         start = DateDto(range.first.year, range.first.monthValue, range.first.dayOfMonth),
                         end = DateDto(range.second.year, range.second.monthValue, range.second.dayOfMonth),
+                        location = ForecastLocationStore.get(context),
                     ),
                 )
             }

@@ -47,6 +47,7 @@ import ru.astrosmap.app.data.Analytics
 import ru.astrosmap.app.data.ChartDao
 import ru.astrosmap.app.data.ChartEntity
 import ru.astrosmap.app.data.ChartTexts
+import ru.astrosmap.app.data.ForecastLocationStore
 import ru.astrosmap.app.data.PrimaryChart
 import ru.astrosmap.app.data.api.AstroApi
 import ru.astrosmap.app.data.api.NatalRequest
@@ -152,9 +153,13 @@ class TodayViewModel @Inject constructor(
                 return
             }
             val natal = chart.toBirthInput()
+            val location = ForecastLocationStore.get(context)
             val transitInput = BirthInput(
                 year = today.year, month = today.monthValue, day = today.dayOfMonth,
-                hour = 12, minute = 0, lat = natal.lat, lng = natal.lng, tzId = natal.tzId,
+                hour = 12, minute = 0,
+                lat = location?.lat ?: natal.lat,
+                lng = location?.lng ?: natal.lng,
+                tzId = location?.tzStr ?: natal.tzId,
             )
             val tc = withContext(Dispatchers.Default) { engine.transit(natal, transitInput) }
             val moonSign = tc.transitPoints.firstOrNull { it.name == "Moon" }?.sign ?: ""
@@ -178,7 +183,9 @@ class TodayViewModel @Inject constructor(
                     val date = today.plusDays(offset.toLong())
                     val input = BirthInput(
                         date.year, date.monthValue, date.dayOfMonth, 12, 0,
-                        natal.lat, natal.lng, natal.tzId,
+                        location?.lat ?: natal.lat,
+                        location?.lng ?: natal.lng,
+                        location?.tzStr ?: natal.tzId,
                     )
                     date to engine.transit(natal, input).aspects
                 }
@@ -219,6 +226,7 @@ class TodayViewModel @Inject constructor(
                         lang = if (AstroLabels.isRu()) "ru" else "en",
                     ),
                     transitDate = TransitDateDto(date.year, date.monthValue, date.dayOfMonth),
+                    transitLocation = ForecastLocationStore.get(context),
                 ),
             )
             val texts = resp["aspects"]?.jsonArray.orEmpty().mapNotNull { a ->

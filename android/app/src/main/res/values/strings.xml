@@ -348,4 +348,9 @@
     <string name="material_pdf_available">PDF доступен: активен Premium или имеется разовый PDF-кредит.</string>
     <string name="material_pdf_locked">Выбор для PDF доступен с Premium или разовым PDF-кредитом.</string>
     <string name="aspect_orb">Орб: %1$s°</string>
+    <string name="forecast_location_title">Место пребывания для прогнозов</string>
+    <string name="forecast_location_birth">Сейчас используется место рождения</string>
+    <string name="forecast_location_selected">Выбрано: %1$s</string>
+    <string name="forecast_location_choose">Выбрать текущий город</string>
+    <string name="forecast_location_use_birth">Использовать место рождения</string>
 </resources>
