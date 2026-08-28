@@ -1,7 +1,19 @@
 import pytest
+from datetime import datetime, timezone
 from fastapi.testclient import TestClient
 
 from backend import main as main_module
+
+
+def test_profile_local_date_uses_profile_timezone():
+    now = datetime(2030, 1, 1, 22, 30, tzinfo=timezone.utc)
+
+    assert main_module._profile_local_date(
+        {"tz_str": "Asia/Krasnoyarsk", "lat": 56.0153, "lng": 92.8932}, now
+    ).isoformat() == "2030-01-02"
+    assert main_module._profile_local_date(
+        {"tz_str": "America/New_York", "lat": 40.7128, "lng": -74.006}, now
+    ).isoformat() == "2030-01-01"
 
 
 @pytest.fixture
@@ -30,8 +42,8 @@ def daily_client(monkeypatch):
     )
     monkeypatch.setattr(main_module.db, "is_premium", lambda uid: False)
 
-    def fake_transit_report(natal_params, transit_dt, with_svg):
-        captured.append((dict(natal_params), dict(transit_dt), with_svg))
+    def fake_transit_report(natal_params, transit_dt, with_svg, transit_location=None):
+        captured.append((dict(natal_params), dict(transit_dt), with_svg, transit_location))
         lang = natal_params["lang"]
         return {
             "aspects": [
@@ -111,6 +123,18 @@ def test_daily_uses_requested_date_in_calculation_and_response(daily_client):
     assert response.json()["date"] == "2030-02-03"
     assert captured[-1][1] == {"year": 2030, "month": 2, "day": 3, "hour": 12, "minute": 0}
     assert captured[-1][2] is False
+
+
+def test_daily_uses_current_location_and_its_calendar_date(daily_client):
+    client, captured = daily_client
+    response = client.get(
+        "/api/daily?date=2030-02-03&current_lat=40.7128&current_lng=-74.006"
+        "&current_tz=America%2FNew_York&current_city=New%20York"
+    )
+
+    assert response.status_code == 200
+    assert captured[-1][3]["tz_str"] == "America/New_York"
+    assert captured[-1][3]["city"] == "New York"
 
 
 def test_daily_sorts_by_today_strength_and_only_returns_real_movement(daily_client):

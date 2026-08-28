@@ -87,13 +87,24 @@ def test_synastry():
 
 
 def test_transit():
-    r = client.post("/api/transit", json={"natal": NATAL, "transit_date": {"year": 2026, "month": 6, "day": 1, "hour": 12, "minute": 0}})
+    r = client.post("/api/transit", json={
+        "natal": NATAL,
+        "transit_date": {"year": 2026, "month": 6, "day": 1, "hour": 12, "minute": 0},
+        "transit_location": {"lat": 56.0153, "lng": 92.8932, "tz_str": "Asia/Krasnoyarsk", "city": "Krasnoyarsk"},
+    })
     assert r.status_code == 200
+    assert r.json()["transit_meta"]["tz_str"] == "Asia/Krasnoyarsk"
 
 
 def test_return():
-    r = client.post("/api/return", json={"natal": NATAL, "year": 2026, "return_type": "Solar"})
+    r = client.post("/api/return", json={
+        "natal": NATAL, "year": 2026, "return_type": "Solar",
+        "location": {"lat": 40.7128, "lng": -74.006, "tz_str": "America/New_York", "city": "New York"},
+    })
     assert r.status_code == 200
+    assert r.json()["meta"]["city"] == "New York"
+    assert r.json()["meta"]["tz_str"] == "America/New_York"
+    assert r.json()["period_end"]
 
 
 def test_progression():
@@ -102,13 +113,26 @@ def test_progression():
 
 
 def test_forecast():
-    r = client.post("/api/forecast", json={"natal": NATAL, "start": {"year": 2026, "month": 6, "day": 1}, "end": {"year": 2027, "month": 6, "day": 1}})
+    r = client.post("/api/forecast", json={
+        "natal": NATAL,
+        "location": {"lat": 40.7128, "lng": -74.006, "tz_str": "America/New_York", "city": "New York"},
+        "start": {"year": 2026, "month": 6, "day": 1}, "end": {"year": 2027, "month": 6, "day": 1},
+    })
     assert r.status_code == 200
+    assert r.json()["location_meta"] == {
+        "lat": 40.7128, "lng": -74.006, "tz_str": "America/New_York", "city": "New York",
+    }
 
 
 def test_calendar():
-    r = client.post("/api/calendar", json={"natal": NATAL, "start": {"year": 2026, "month": 6, "day": 1}, "end": {"year": 2026, "month": 7, "day": 1}})
+    r = client.post("/api/calendar", json={
+        "natal": NATAL,
+        "location": {"lat": 51.5074, "lng": -0.1278, "tz_str": "Europe/London", "city": "London"},
+        "start": {"year": 2026, "month": 6, "day": 1}, "end": {"year": 2026, "month": 7, "day": 1},
+    })
     assert r.status_code == 200
+    assert r.json()["location_meta"]["tz_str"] == "Europe/London"
+    assert r.json()["location_meta"]["city"] == "London"
 
 
 def test_vedic():
@@ -351,6 +375,35 @@ def test_seo_sitemap():
     r = client.get("/sitemap.xml")
     assert r.status_code == 200
     assert r.text.count("<loc>") == 242  # главная + каталог + 240 страниц
+
+
+def test_natal_explains_dst_gap_and_ambiguity():
+    gap = client.post("/api/natal", json={
+        **NATAL, "year": 2024, "month": 3, "day": 10, "hour": 2, "minute": 30,
+        "lat": 40.7128, "lng": -74.006, "tz_str": "America/New_York", "city": "New York",
+    })
+    assert gap.status_code == 400
+    assert "не существовало" in gap.json()["detail"]
+
+    ambiguous = client.post("/api/natal", json={
+        **NATAL, "year": 2024, "month": 11, "day": 3, "hour": 1, "minute": 30,
+        "lat": 40.7128, "lng": -74.006, "tz_str": "America/New_York", "city": "New York",
+    })
+    assert ambiguous.status_code == 400
+    assert "неоднозначно" in ambiguous.json()["detail"]
+
+    first = client.post("/api/natal?svg=0", json={
+        **NATAL, "year": 2024, "month": 11, "day": 3, "hour": 1, "minute": 30,
+        "lat": 40.7128, "lng": -74.006, "tz_str": "America/New_York",
+        "city": "New York", "is_dst": True,
+    })
+    second = client.post("/api/natal?svg=0", json={
+        **NATAL, "year": 2024, "month": 11, "day": 3, "hour": 1, "minute": 30,
+        "lat": 40.7128, "lng": -74.006, "tz_str": "America/New_York",
+        "city": "New York", "is_dst": False,
+    })
+    assert first.status_code == second.status_code == 200
+    assert first.json()["meta"]["utc_datetime"] != second.json()["meta"]["utc_datetime"]
 
 
 def test_uranus_priority_page_has_unique_seo_layer():

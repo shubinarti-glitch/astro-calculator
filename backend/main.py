@@ -7,6 +7,7 @@ import copy
 import time
 from collections import defaultdict
 from datetime import date as date_type, datetime, timedelta, timezone
+import pytz
 from functools import lru_cache
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -125,6 +126,7 @@ class BirthData(BaseModel):
     lat: float = Field(..., ge=-90, le=90)
     lng: float = Field(..., ge=-180, le=180)
     tz_str: Optional[str] = None
+    is_dst: Optional[bool] = None
     city: str = ""
     nation: str = ""
     houses_system: str = "P"
@@ -151,6 +153,15 @@ class TransitDate(BaseModel):
 class TransitLocation(BaseModel):
     lat: float = Field(..., ge=-90, le=90)
     lng: float = Field(..., ge=-180, le=180)
+    tz_str: Optional[str] = None
+    city: str = ""
+
+    @field_validator("city", "tz_str")
+    @classmethod
+    def _clean_location_text(cls, v: Optional[str]) -> Optional[str]:
+        if not isinstance(v, str):
+            return v
+        return v.replace("<", "").replace(">", "").replace("&", "").strip()[:80]
 
 
 class TransitRequest(BaseModel):
@@ -884,13 +895,19 @@ def _daily_aspect_strength(aspect: dict) -> float:
     return planet * aspect_type * tightness * movement
 
 
-def daily_top_aspects(natal_params: dict, when: datetime, limit: int = 3) -> list[dict]:
+def daily_top_aspects(
+    natal_params: dict, when: datetime, limit: int = 3,
+    transit_location: Optional[dict] = None,
+) -> list[dict]:
     """Топ-N наиболее содержательно сильных транзитов для карточки «Ваш день»."""
-    rep = astrology.transit_report(
-        natal_params=natal_params,
-        transit_dt={"year": when.year, "month": when.month, "day": when.day, "hour": 12, "minute": 0},
-        with_svg=False,
-    )
+    kwargs = {
+        "natal_params": natal_params,
+        "transit_dt": {"year": when.year, "month": when.month, "day": when.day, "hour": 12, "minute": 0},
+        "with_svg": False,
+    }
+    if transit_location is not None:
+        kwargs["transit_location"] = transit_location
+    rep = astrology.transit_report(**kwargs)
     asp = [a for a in rep.get("aspects", []) if a.get("interp")]
     asp.sort(key=lambda a: (-_daily_aspect_strength(a), _daily_orbit(a)))
     keep = ("p1_ru", "p1_symbol", "p2_ru", "p2_symbol", "aspect_ru", "aspect_symbol",
@@ -904,10 +921,28 @@ def daily_top_aspects(natal_params: dict, when: datetime, limit: int = 3) -> lis
     return result
 
 
+def _profile_local_date(params: dict, now_utc: Optional[datetime] = None) -> date_type:
+    """Текущая календарная дата в часовом поясе основного профиля."""
+    tz_name = params.get("tz_str")
+    if not tz_name:
+        tz_name = astrology.resolve_timezone(params["lat"], params["lng"])
+    current = now_utc or datetime.now(timezone.utc)
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=timezone.utc)
+    try:
+        return current.astimezone(pytz.timezone(tz_name)).date()
+    except (pytz.UnknownTimeZoneError, KeyError, ValueError, TypeError):
+        return current.astimezone(timezone.utc).date()
+
+
 @app.get("/api/daily")
 def api_daily(
     lang: Literal["ru", "en"] = Query("ru"),
     date: Optional[date_type] = Query(None),
+    current_lat: Optional[float] = Query(None, ge=-90, le=90),
+    current_lng: Optional[float] = Query(None, ge=-180, le=180),
+    current_tz: Optional[str] = Query(None, max_length=80),
+    current_city: Optional[str] = Query(None, max_length=80),
     uid: int = Depends(current_user_id),
 ):
     """Транзит дня для основного человека. Free-функция; премиуму открыт прогноз вперёд."""
@@ -916,11 +951,20 @@ def api_daily(
         return {"has_primary": False, "premium": db.is_premium(uid)}
     params = dict(primary["data"])
     params["lang"] = lang
-    requested_date = date or datetime.now(timezone.utc).date()
+    current_location = None
+    if current_lat is not None and current_lng is not None:
+        current_location = {
+            "lat": current_lat, "lng": current_lng,
+            "tz_str": current_tz or astrology.resolve_timezone(current_lat, current_lng),
+            "city": (current_city or "").replace("<", "").replace(">", "").replace("&", "")[:80],
+        }
+    date_params = current_location or params
+    requested_date = date or _profile_local_date(date_params)
     try:
         aspects = daily_top_aspects(
             params,
             datetime.combine(requested_date, datetime.min.time(), tzinfo=timezone.utc),
+            transit_location=current_location,
         )
     except Exception:
         logger.exception("Ошибка расчёта транзита дня")
@@ -1378,19 +1422,27 @@ def api_planets(lang: str = "ru"):
     return interp.planets_info(lang)
 
 
-@lru_cache(maxsize=8)
-def _transits_current_cached(day_iso: str, lang: str) -> tuple:
-    # day_iso в ключе → раз в сутки пересчёт; кортеж, т.к. lru_cache требует хешируемое.
-    return tuple(astrology.current_transits(lang))
+@lru_cache(maxsize=72)
+def _transits_current_cached(hour_iso: str, lang: str) -> tuple:
+    # Час в ключе: «сейчас» не застывает на полдне UTC на целые сутки.
+    return tuple(astrology.current_transits(lang, datetime.fromisoformat(hour_iso)))
 
 
 @app.get("/api/transits/current")
-def api_transits_current(lang: str = "ru"):
+def api_transits_current(lang: str = "ru", tz: Optional[str] = Query(None, max_length=80)):
     """Общий небесный фон: все 10 планет — знак, ретро, период, значение.
     Без авторизации; считается на полдень UTC, кэш на сутки. Для сайта и приложения."""
     lang = "en" if str(lang).lower().startswith("en") else "ru"
-    day_iso = datetime.now(timezone.utc).date().isoformat()
-    return {"date": day_iso, "transits": list(_transits_current_cached(day_iso, lang))}
+    now_utc = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
+    try:
+        local_date = now_utc.astimezone(pytz.timezone(tz or "UTC")).date().isoformat()
+    except pytz.UnknownTimeZoneError:
+        raise HTTPException(status_code=422, detail="Неизвестный часовой пояс")
+    hour_iso = now_utc.replace(tzinfo=None).isoformat(timespec="hours")
+    return {
+        "date": local_date, "timezone": tz or "UTC",
+        "transits": list(_transits_current_cached(hour_iso, lang)),
+    }
 
 
 @app.get("/api/meta")

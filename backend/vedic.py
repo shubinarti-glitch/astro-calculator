@@ -9,11 +9,7 @@ from __future__ import annotations
 import calendar as _cal
 from datetime import datetime
 from typing import Optional
-
-try:
-    from zoneinfo import ZoneInfo
-except Exception:  # pragma: no cover
-    ZoneInfo = None
+import pytz
 
 from .ephe import ensure_ephemeris
 
@@ -157,14 +153,13 @@ def _li(pair, lang):
 
 def _jd_for_local_noon(year: int, month: int, day: int, tz_str: str) -> float:
     """Julian Day (UT) для местного полудня указанной даты."""
-    if ZoneInfo is not None and tz_str:
-        try:
-            local = datetime(year, month, day, 12, 0, tzinfo=ZoneInfo(tz_str))
-            ut = local.astimezone(ZoneInfo("UTC"))
-            return swe.julday(ut.year, ut.month, ut.day, ut.hour + ut.minute / 60)
-        except Exception:
-            pass
-    return swe.julday(year, month, day, 12.0)
+    try:
+        zone = pytz.timezone(tz_str)
+    except pytz.UnknownTimeZoneError as exc:
+        raise ValueError(f"Неизвестный часовой пояс: {tz_str}") from exc
+    local = zone.localize(datetime(year, month, day, 12, 0), is_dst=None)
+    ut = local.astimezone(pytz.UTC)
+    return swe.julday(ut.year, ut.month, ut.day, ut.hour + ut.minute / 60 + ut.second / 3600)
 
 
 def _sidereal(jd: float, body: int) -> float:

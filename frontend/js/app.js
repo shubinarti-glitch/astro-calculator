@@ -328,6 +328,9 @@ document.querySelectorAll(".tab").forEach((tab) => {
     document.querySelectorAll(".tab").forEach((el) => el.classList.remove("active"));
     tab.classList.add("active");
     mode = tab.dataset.mode;
+    const usesCurrentLocation = ["transit", "calendar", "forecast", "return", "vedic"].includes(mode);
+    $("current-location-block").classList.toggle("hidden", !usesCurrentLocation);
+    if (usesCurrentLocation) syncCurrentLocationFromBirth(false);
     $("transit-block").classList.toggle("hidden", mode !== "transit");
     $("synastry-block").classList.toggle("hidden", mode !== "synastry");
     $("return-block").classList.toggle("hidden", mode !== "return");
@@ -391,6 +394,7 @@ function fillPersonB(d) {
   $("b-lat").value = d.lat ?? "";
   $("b-lng").value = d.lng ?? "";
   $("b-tz").value = d.tz_str || "";
+  $("b-is-dst").value = d.is_dst == null ? "" : String(Boolean(d.is_dst));
   $("b-city").value = d.city || "";
   if (d.lat != null && d.lng != null && !Number.isNaN(parseFloat(d.lat))) {
     showGeoConfirm("b-geo-confirm", d.city, d.lat, d.lng, d.tz_str);
@@ -424,11 +428,20 @@ function skyDate(iso) {
   const p = iso.split("-");
   return p.length === 3 ? `${p[2]}.${p[1]}.${p[0]}` : iso;
 }
+function skyMoment(iso, fallback) {
+  if (!iso) return skyDate(fallback);
+  const dt = new Date(iso);
+  if (Number.isNaN(dt.getTime())) return skyDate(fallback);
+  return dt.toLocaleString(LANG === "en" ? "en-GB" : "ru-RU", {
+    day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
+  });
+}
 async function renderSkyNow() {
   const grid = document.getElementById("sky-now-grid");
   if (!grid) return;
   try {
-    const r = await fetch("/api/transits/current?lang=" + LANG);
+    const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    const r = await fetch(`/api/transits/current?lang=${LANG}&tz=${encodeURIComponent(browserTz)}`);
     if (!r.ok) throw new Error("http " + r.status);
     const data = await r.json();
     grid.innerHTML = (data.transits || []).map((tr) => {
@@ -437,7 +450,7 @@ async function renderSkyNow() {
       return `<article class="sky-card">
         <div class="sky-card-head"><span class="sky-planet">${skyEsc(tr.planet_ru)}</span>${retro}</div>
         <div class="sky-sign">${skyEsc(tr.sign_symbol || "")} ${skyEsc(tr.sign_ru)}</div>
-        <div class="sky-period">${skyDate(tr.since)} — ${skyDate(tr.until)}</div>
+        <div class="sky-period">${skyMoment(tr.since_datetime, tr.since)} — ${skyMoment(tr.until_datetime, tr.until)}</div>
         <p class="sky-meaning">${skyEsc(tr.meaning)}</p>
       </article>`;
     }).join("");
@@ -490,13 +503,17 @@ function showGeoConfirm(confirmId, name, lat, lng, tz) {
   el.classList.remove("hidden");
 }
 
-function setupAutocomplete(inputId, resultsId, latId, lngId, tzId, confirmId) {
+function setupAutocomplete(inputId, resultsId, latId, lngId, tzId, confirmId, onSelect = null) {
   const input = $(inputId);
   const results = $(resultsId);
   let timer = null;
 
   input.addEventListener("input", () => {
     const q = input.value.trim();
+    $(latId).value = "";
+    $(lngId).value = "";
+    $(tzId).value = "";
+    if (confirmId && $(confirmId)) $(confirmId).classList.add("hidden");
     clearTimeout(timer);
     if (q.length < 2) {
       results.classList.add("hidden");
@@ -530,12 +547,57 @@ function setupAutocomplete(inputId, resultsId, latId, lngId, tzId, confirmId) {
     $(tzId).value = it.tz_str;
     results.classList.add("hidden");
     showGeoConfirm(confirmId, it.display_name, it.lat, it.lng, it.tz_str);
+    if (onSelect) onSelect(it);
   });
 }
 
 const cityInput = $("city");
-setupAutocomplete("city", "city-results", "lat", "lng", "tz", "geo-confirm");
+let currentLocationTouched = false;
+
+function syncCurrentLocationFromBirth(force = false) {
+  if (currentLocationTouched && !force) return;
+  const lat = $("lat").value;
+  const lng = $("lng").value;
+  const tz = $("tz").value;
+  $("current-city").value = $("city").value;
+  $("current-lat").value = lat;
+  $("current-lng").value = lng;
+  $("current-tz").value = tz;
+  if (lat && lng) showGeoConfirm("current-geo-confirm", $("city").value, lat, lng, tz);
+}
+
+function getCurrentLocation(birth) {
+  const lat = parseFloat($("current-lat").value);
+  const lng = parseFloat($("current-lng").value);
+  if (Number.isNaN(lat) || Number.isNaN(lng)) {
+    const fallback = { lat: birth.lat, lng: birth.lng, tz_str: birth.tz_str, city: birth.city };
+    localStorage.setItem("astro_current_location", JSON.stringify(fallback));
+    return fallback;
+  }
+  const result = {
+    lat,
+    lng,
+    tz_str: $("current-tz").value || birth.tz_str,
+    city: $("current-city").value.trim() || birth.city,
+  };
+  localStorage.setItem("astro_current_location", JSON.stringify(result));
+  return result;
+}
+
+setupAutocomplete("city", "city-results", "lat", "lng", "tz", "geo-confirm", () => syncCurrentLocationFromBirth(false));
 setupAutocomplete("b-city", "b-city-results", "b-lat", "b-lng", "b-tz", "b-geo-confirm");
+setupAutocomplete("current-city", "current-city-results", "current-lat", "current-lng", "current-tz", "current-geo-confirm", () => { currentLocationTouched = true; });
+$("current-city").addEventListener("input", () => { currentLocationTouched = true; });
+["lat", "lng"].forEach((id) => $(id).addEventListener("input", () => {
+  $("tz").value = "";
+  cityInput.value = "";
+  $("geo-confirm").classList.add("hidden");
+  syncCurrentLocationFromBirth(false);
+}));
+$("current-use-birth").addEventListener("click", () => {
+  currentLocationTouched = false;
+  syncCurrentLocationFromBirth(true);
+});
 
 // ---------- Ректификация: список событий ----------
 const RECT_EVENT_TYPES = ["", "relationship", "career", "child", "move", "loss", "health"];
@@ -717,12 +779,14 @@ document.addEventListener("click", (e) => {
 function getBirthData() {
   const [year, month, day] = $("birth-date").value.split("-").map(Number);
   const [hour, minute] = $("birth-time").value.split(":").map(Number);
+  const dstValue = $("birth-is-dst").value;
   return {
     name: $("name").value || (LANG === "en" ? "Chart" : "Без имени"),
     year, month, day, hour, minute,
     lat: parseFloat($("lat").value),
     lng: parseFloat($("lng").value),
     tz_str: $("tz").value || null,
+    is_dst: dstValue === "" ? null : dstValue === "true",
     city: cityInput.value || "",
     houses_system: $("houses-system").value,
     zodiac_type: "Tropic",
@@ -733,12 +797,14 @@ function getBirthData() {
 function getPersonB() {
   const [year, month, day] = ($("b-date").value || "").split("-").map(Number);
   const [hour, minute] = ($("b-time").value || "12:00").split(":").map(Number);
+  const dstValue = $("b-is-dst").value;
   return {
     name: $("b-name").value || t("person2"),
     year, month, day, hour, minute,
     lat: parseFloat($("b-lat").value),
     lng: parseFloat($("b-lng").value),
     tz_str: $("b-tz").value || null,
+    is_dst: dstValue === "" ? null : dstValue === "true",
     city: $("b-city").value || "",
     houses_system: $("houses-system").value,
     zodiac_type: "Tropic",
@@ -763,6 +829,8 @@ $("sample-btn").addEventListener("click", () => {
   $("lng").value = "9.9876";
   $("tz").value = "Europe/Berlin";
   cityInput.value = LANG === "en" ? "Ulm, Germany" : "Ульм, Германия";
+  currentLocationTouched = false;
+  syncCurrentLocationFromBirth(true);
   const cityOk = $("city-confirm");
   if (cityOk) { cityOk.textContent = "✓ " + cityInput.value; cityOk.classList.remove("hidden"); }
   const natalTab = document.querySelector('.tab[data-mode="natal"]');
@@ -785,6 +853,7 @@ $("rev-geo-btn").addEventListener("click", async () => {
     if (d.short) cityInput.value = d.short;
     if (d.tz_str) $("tz").value = d.tz_str;
     showGeoConfirm("geo-confirm", d.short, lat, lng, d.tz_str);
+    syncCurrentLocationFromBirth(false);
   } catch (e) {
     alert(t("rev_geo_fail"));
   } finally {
@@ -819,7 +888,7 @@ $("birth-form").addEventListener("submit", async (e) => {
       const year = parseInt($("return-year").value, 10);
       if (!year) throw new Error(t("e_return_year"));
       const rtype = $("return-type").value;
-      const body = { natal: birth, year, return_type: rtype };
+      const body = { natal: birth, year, return_type: rtype, location: getCurrentLocation(birth) };
       if (rtype === "Lunar") body.month = parseInt($("return-month").value, 10) || (new Date().getMonth() + 1);
       data = await postJSON("/api/return", body);
       renderReturn(data);
@@ -840,6 +909,7 @@ $("birth-form").addEventListener("submit", async (e) => {
       const [ey, em, ed] = en.split("-").map(Number);
       const body = {
         natal: birth,
+        location: getCurrentLocation(birth),
         start: { year: sy, month: sm, day: sd },
         end: { year: ey, month: em, day: ed },
       };
@@ -853,6 +923,7 @@ $("birth-form").addEventListener("submit", async (e) => {
       const [ey, em, ed] = en.split("-").map(Number);
       const body = {
         natal: birth,
+        location: getCurrentLocation(birth),
         start: { year: sy, month: sm, day: sd },
         end: { year: ey, month: em, day: ed },
       };
@@ -894,7 +965,8 @@ $("birth-form").addEventListener("submit", async (e) => {
       const personalize = $("vedic-personalize").checked;
       if (Number.isNaN(birth.lat) || Number.isNaN(birth.lng))
         throw new Error(t("e_city_loc"));
-      const body = { year: vy, month: vm, lat: birth.lat, lng: birth.lng, tz_str: birth.tz_str, lang: LANG };
+      const current = getCurrentLocation(birth);
+      const body = { year: vy, month: vm, lat: current.lat, lng: current.lng, tz_str: current.tz_str, lang: LANG };
       if (personalize && birth.year && birth.month && birth.day) body.natal = birth;
       data = await postJSON("/api/vedic-calendar", body);
       renderVedic(data);
@@ -906,6 +978,7 @@ $("birth-form").addEventListener("submit", async (e) => {
       const [th, tmin] = tt.split(":").map(Number);
       const body = {
         natal: birth,
+        transit_location: getCurrentLocation(birth),
         transit_date: { year: ty, month: tm, day: tday, hour: th, minute: tmin },
       };
       data = await postJSON("/api/transit", body);
@@ -2470,6 +2543,8 @@ function renderForecast(data) {
     `<h3>${t("t_fc_for")}: ${data.natal_meta.name}</h3>` +
     summaryBlock(data.natal_meta, null, [
       [t("t_fc_period"), `${formatDate(data.start)} — ${formatDate(data.end)}`],
+      [t("forecast_location"), data.location_meta?.city || "—"],
+      [t("sum_tz"), data.location_meta?.tz_str || "—"],
       [t("t_fc_age"), `${pf.age} ${t("t_fc_age_unit")}`],
       [t("t_fc_house_year"), `${houseShort(pf.house_num)} (${pf.sphere})`],
       [t("t_fc_lord_year"), pf.lord ? `${pf.lord.name_ru} ${pf.lord.sign_loc || pf.lord.sign_ru}` : "—"],
@@ -2502,7 +2577,7 @@ function fcSphereCard(s) {
               <span class="glyph">${h.p1_symbol}</span>${h.p1_ru}
               <span>${h.aspect_symbol} ${h.aspect_ru}</span>
               <span class="glyph">${h.p2_symbol}</span>${h.p2_ru}
-              <span class="fc-event-date">${formatDate(h.date)}</span>
+              <span class="fc-event-date">${formatDateTime(h.exact_datetime || h.date)}</span>
             </div>
             <p>${h.text}</p>
           </div>`;
@@ -2619,6 +2694,8 @@ function renderCalendar(data) {
       null,
       [
         [t("t_fc_period"), `${formatDate(data.start)} — ${formatDate(data.end)}`],
+        [t("forecast_location"), data.location_meta?.city || "—"],
+        [t("sum_tz"), data.location_meta?.tz_str || "—"],
         [t("cal_exact"), `${data.count}`],
       ]
     ) +
@@ -2704,7 +2781,7 @@ function showCalendarDay(date) {
           <span class="glyph">${e.p1_symbol}</span>${e.p1_ru}
           <span>${e.aspect_symbol} ${e.aspect_ru}</span>
           <span class="glyph">${e.p2_symbol}</span>${e.p2_ru}
-          <span class="fc-event-date">${t("orb")} ${e.orb}°</span>
+          <span class="fc-event-date">${formatDateTime(e.exact_datetime || e.date)} · ${t("orb")} ${e.orb}°</span>
         </div>
         ${e.interp ? `<p>${e.interp}</p>` : ""}
       </div>`;
@@ -2975,7 +3052,18 @@ async function loadDaily() {
   // Показываем только в «покойном» состоянии, когда результата на экране нет.
   if ($("results").classList.contains("hidden") === false) { block.classList.add("hidden"); return; }
   try {
-    const r = await fetch("/api/daily", { headers: authHeaders() });
+    let url = "/api/daily";
+    try {
+      const loc = JSON.parse(localStorage.getItem("astro_current_location") || "null");
+      if (loc && Number.isFinite(+loc.lat) && Number.isFinite(+loc.lng)) {
+        const qs = new URLSearchParams({
+          current_lat: loc.lat, current_lng: loc.lng,
+          current_tz: loc.tz_str || "", current_city: loc.city || "",
+        });
+        url += `?${qs}`;
+      }
+    } catch (_) {}
+    const r = await fetch(url, { headers: authHeaders() });
     if (!r.ok) { block.classList.add("hidden"); return; }
     const d = await r.json();
     renderDaily(d);
@@ -3362,7 +3450,8 @@ $("cab-people").addEventListener("click", async (e) => {
     fillBirthData(p.data);
   }
   if (kind === "transit" && !$("transit-date").value) {
-    $("transit-date").value = new Date().toISOString().slice(0, 10);
+    const now = new Date();
+    $("transit-date").value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   }
   const tab = document.querySelector(`.tab[data-mode="${kind}"]`);
   if (tab) tab.click();
@@ -3717,11 +3806,14 @@ function fillBirthData(d) {
   $("lat").value = d.lat ?? "";
   $("lng").value = d.lng ?? "";
   $("tz").value = d.tz_str || "";
+  $("birth-is-dst").value = d.is_dst == null ? "" : String(Boolean(d.is_dst));
   cityInput.value = d.city || "";
   if (d.houses_system) $("houses-system").value = d.houses_system;
   if (d.lat != null && d.lng != null && !Number.isNaN(parseFloat(d.lat))) {
     showGeoConfirm("geo-confirm", d.city, d.lat, d.lng, d.tz_str);
   }
+  currentLocationTouched = false;
+  syncCurrentLocationFromBirth(true);
 }
 
 function escapeHtml(s) {

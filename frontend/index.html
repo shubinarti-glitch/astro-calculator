@@ -347,6 +347,17 @@
           </label>
         </div>
 
+        <details class="manual-coords">
+          <summary data-i18n="dst_disambiguation">Уточнение времени при переводе часов</summary>
+          <label data-i18n="dst_choice">Какой повторяющийся час использовать
+            <select id="birth-is-dst">
+              <option value="" data-i18n="dst_auto">Определить автоматически</option>
+              <option value="true" data-i18n="dst_first">Первый час — летнее время</option>
+              <option value="false" data-i18n="dst_second">Второй час — стандартное время</option>
+            </select>
+          </label>
+        </details>
+
         <label data-i18n="birth_city">Город рождения
           <div class="autocomplete">
             <input type="text" id="city" data-i18n-ph="city_ph" placeholder="Начните вводить город…" autocomplete="off" />
@@ -383,6 +394,22 @@
           </select>
         </label>
 
+        <div class="transit-block hidden" id="current-location-block">
+          <h3 data-i18n="current_location_title">Текущее местоположение</h3>
+          <p class="hint" data-i18n="current_location_hint">Для прогноза укажите город, где вы находитесь сейчас. Если ничего не менять, будет использован город рождения.</p>
+          <label data-i18n="current_city">Город сейчас
+            <div class="autocomplete">
+              <input type="text" id="current-city" data-i18n-ph="city_ph" placeholder="Начните вводить город…" autocomplete="off" />
+              <ul id="current-city-results" class="suggestions hidden"></ul>
+            </div>
+          </label>
+          <div class="geo-confirm hidden" id="current-geo-confirm"></div>
+          <input type="hidden" id="current-lat" />
+          <input type="hidden" id="current-lng" />
+          <input type="hidden" id="current-tz" />
+          <button type="button" class="btn-rev-geo" id="current-use-birth" data-i18n="current_use_birth">Использовать город рождения</button>
+        </div>
+
         <div class="transit-block hidden" id="transit-block">
           <h3 data-i18n="transit_date_title">Дата транзита</h3>
           <div class="row">
@@ -411,6 +438,16 @@
               <input type="time" id="b-time" value="12:00" />
             </label>
           </div>
+          <details class="manual-coords">
+            <summary data-i18n="dst_disambiguation">Уточнение времени при переводе часов</summary>
+            <label data-i18n="dst_choice">Какой повторяющийся час использовать
+              <select id="b-is-dst">
+                <option value="" data-i18n="dst_auto">Определить автоматически</option>
+                <option value="true" data-i18n="dst_first">Первый час — летнее время</option>
+                <option value="false" data-i18n="dst_second">Второй час — стандартное время</option>
+              </select>
+            </label>
+          </details>
           <label data-i18n="birth_city">Город рождения
             <div class="autocomplete">
               <input type="text" id="b-city" data-i18n-ph="city_ph" placeholder="Начните вводить город…" autocomplete="off" />
@@ -835,7 +872,7 @@
     <p id="support-status" class="support-status hidden"></p>
   </div>
 
-  <script src="/js/i18n.js?v=32"></script>
-  <script src="/js/app.js?v=32"></script>
+  <script src="/js/i18n.js?v=34"></script>
+  <script src="/js/app.js?v=34"></script>
 </body>
 </html>
