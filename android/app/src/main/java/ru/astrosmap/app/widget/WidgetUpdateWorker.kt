@@ -21,6 +21,8 @@ import ru.astrosmap.app.data.DailyNotify
 import ru.astrosmap.app.data.PrimaryChart
 import ru.astrosmap.app.ui.AstroLabels
 import ru.astrosmap.app.ui.LangPref
+import ru.astrosmap.app.ui.assistant.AssistantPrefs
+import ru.astrosmap.app.ui.tarot.TarotStorage
 import ru.astrosmap.app.ui.tools.LunarTexts
 import java.time.LocalDate
 import java.time.ZoneId
@@ -61,6 +63,9 @@ class WidgetUpdateWorker @AssistedInject constructor(
             updateType(mgr, MoonWidgetProvider::class.java) { moonViews(data) }
             updateType(mgr, AdviceWidgetProvider::class.java) { adviceViews(res, data) }
             updateType(mgr, CalendarWidgetProvider::class.java) { calendarViews(res, data) }
+            updateType(mgr, AssistantCompactWidgetProvider::class.java) { assistantCompactViews() }
+            updateType(mgr, AssistantMessageWidgetProvider::class.java) { assistantMessageViews(res) }
+            updateType(mgr, MonthCalendarWidgetProvider::class.java) { monthCalendarViews(res) }
         }
         WidgetUpdater.scheduleMidnight(context) // следующий показ — в полночь
         return Result.success()
@@ -138,5 +143,52 @@ class WidgetUpdateWorker @AssistedInject constructor(
         setTextViewText(R.id.wc_date, d.date)
         setTextViewText(R.id.wc_event, d.personal ?: res.getString(R.string.widget_calendar_general, d.moonLine.replace('\uFFFD', '-')))
         setOnClickPendingIntent(R.id.wc_root, tapIntent(DailyNotify.ROUTE_LUNAR, 4))
+    }
+
+    private fun assistantCompactViews() = RemoteViews(context.packageName, R.layout.widget_assistant_compact).apply {
+        setImageViewResource(R.id.wac_character, AssistantPrefs.character(context).imageRes)
+        setOnClickPendingIntent(R.id.wac_root, tapIntent(requestCode = 21))
+    }
+
+    private fun assistantMessageViews(res: Context) = RemoteViews(context.packageName, R.layout.widget_assistant_message).apply {
+        setImageViewResource(R.id.wam_character, AssistantPrefs.character(context).imageRes)
+        val message = when {
+            TarotStorage.todayCard(context) == null -> res.getString(R.string.assistant_widget_day_card)
+            !DailyNotify.isEnabled(context) -> res.getString(R.string.assistant_widget_notifications)
+            java.time.LocalTime.now().hour < 12 -> res.getString(R.string.assistant_widget_morning)
+            java.time.LocalTime.now().hour >= 20 -> res.getString(R.string.assistant_widget_evening)
+            else -> res.getString(R.string.assistant_widget_day)
+        }
+        setTextViewText(R.id.wam_text, message)
+        setOnClickPendingIntent(R.id.wam_root, tapIntent(requestCode = 22))
+    }
+
+    private fun monthCalendarViews(res: Context): RemoteViews {
+        val views = RemoteViews(context.packageName, R.layout.widget_month_calendar)
+        val today = LocalDate.now()
+        val month = today.withDayOfMonth(1)
+        val start = month.minusDays((month.dayOfWeek.value - 1).toLong())
+        val locale = res.resources.configuration.locales[0]
+        val title = month.format(DateTimeFormatter.ofPattern("LLLL yyyy", locale))
+            .replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() }
+        views.setTextViewText(R.id.wmc_title, title)
+        views.removeAllViews(R.id.wmc_weeks)
+        val ids = intArrayOf(R.id.wmc_d1, R.id.wmc_d2, R.id.wmc_d3, R.id.wmc_d4, R.id.wmc_d5, R.id.wmc_d6, R.id.wmc_d7)
+        repeat(6) { week ->
+            val row = RemoteViews(context.packageName, R.layout.widget_month_calendar_week)
+            repeat(7) { day ->
+                val date = start.plusDays((week * 7L) + day)
+                row.setTextViewText(ids[day], date.dayOfMonth.toString())
+                row.setTextColor(ids[day], when {
+                    date == today -> 0xFFC9A86A.toInt()
+                    date.month != month.month -> 0xFF5F5D78.toInt()
+                    day >= 5 -> 0xFF9C8FE0.toInt()
+                    else -> 0xFFF2F0FA.toInt()
+                })
+            }
+            views.addView(R.id.wmc_weeks, row)
+        }
+        views.setOnClickPendingIntent(R.id.wmc_root, tapIntent(DailyNotify.ROUTE_LUNAR, 23))
+        return views
     }
 }

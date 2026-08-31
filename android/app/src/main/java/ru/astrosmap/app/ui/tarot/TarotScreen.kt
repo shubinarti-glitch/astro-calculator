@@ -245,12 +245,30 @@ fun TarotScreen(viewModel: TarotViewModel = hiltViewModel()) {
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    val cardsBody = cards.mapIndexed { index, card ->
+                        "${stringResource(spread!!.positions[index])}: ${card.name}\n${card.meaning}\n${card.advice}"
+                    }.joinToString("\n\n")
+                    val savedBody = if (spread == Spread.YES_NO && cards.size == 2) {
+                        val isYes = TarotDeck.rank(cards[0].id) > TarotDeck.rank(cards[1].id)
+                        val winner = if (isYes) cards[0] else cards[1]
+                        val answer = stringResource(
+                            if (isYes) R.string.tarot_answer_yes else R.string.tarot_answer_no,
+                        )
+                        val why = stringResource(
+                            R.string.tarot_yesno_why,
+                            winner.name,
+                            stringResource(if (isYes) R.string.tarot_pos_yes else R.string.tarot_pos_no),
+                        )
+                        "$answer\n$why\n${winner.advice}\n\n" +
+                            "${stringResource(R.string.tarot_reflection)}\n" +
+                            "${stringResource(R.string.tarot_reflection_text)}\n\n$cardsBody"
+                    } else {
+                        cardsBody
+                    }
                     SaveMaterialButton(
                         sourceType = "tarot", sourceId = spread!!.name,
                         title = stringResource(spread!!.titleRes),
-                        body = cards.mapIndexed { index, card ->
-                            "${stringResource(spread!!.positions[index])}: ${card.name}\n${card.meaning}\n${card.advice}"
-                        }.joinToString("\n\n"),
+                        body = savedBody,
                         premium = viewModel.premium,
                     )
                 }

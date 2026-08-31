@@ -14,6 +14,7 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -60,7 +62,6 @@ fun AstroRoot(notificationRoute: String? = null, onNotificationRouteHandled: () 
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
     var hintedIndex by remember { mutableIntStateOf(-1) }
-    var hintStopped by remember { mutableStateOf(false) }
     val compactLabels = LocalDensity.current.fontScale >= 1.3f
 
     NotificationOptInPrompt()
@@ -73,20 +74,27 @@ fun AstroRoot(notificationRoute: String? = null, onNotificationRouteHandled: () 
 
     // Один ненавязчивый проход после входа: показывает, что нижняя панель интерактивна.
     // Любой тап немедленно прекращает подсказку.
-    LaunchedEffect(hintStopped) {
-        if (hintStopped) return@LaunchedEffect
-        delay(900)
-        Section.entries.indices.forEach { index ->
+    LaunchedEffect(Unit) {
+        delay(3_000)
+        var index = 0
+        while (true) {
             hintedIndex = index
-            delay(360)
+            delay(850)
+            hintedIndex = -1
+            index = (index + 1) % Section.entries.size
+            delay(9_150)
         }
-        hintedIndex = -1
     }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                modifier = Modifier
+                    .background(MaterialTheme.colorScheme.surface),
+                containerColor = Color.Transparent,
+                tonalElevation = 0.dp,
+            ) {
                 Section.entries.forEach { section ->
                     val index = Section.entries.indexOf(section)
                     val pulse by animateFloatAsState(
@@ -95,11 +103,17 @@ fun AstroRoot(notificationRoute: String? = null, onNotificationRouteHandled: () 
                         label = "bottom_nav_hint_${section.route}",
                     )
                     NavigationBarItem(
+                        modifier = Modifier.padding(horizontal = 4.dp),
                         selected = currentRoute == section.route,
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = MaterialTheme.colorScheme.primary,
+                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            indicatorColor = Color.Transparent,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
                         alwaysShowLabel = !compactLabels,
                         onClick = {
-                            hintStopped = true
-                            hintedIndex = -1
                             navController.navigate(section.route) {
                                 popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                                 launchSingleTop = true
@@ -110,13 +124,17 @@ fun AstroRoot(notificationRoute: String? = null, onNotificationRouteHandled: () 
                             val defaultTint = LocalContentColor.current
                             Box(
                                 Modifier
-                                    .size(42.dp)
+                                    .size(width = 48.dp, height = 36.dp)
                                     .graphicsLayer {
                                         scaleX = 1f + pulse * 0.16f
                                         scaleY = scaleX
                                     }
                                     .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = pulse * 0.16f)),
+                                    .background(
+                                        MaterialTheme.colorScheme.primary.copy(
+                                            alpha = if (currentRoute == section.route) 0.13f else pulse * 0.12f,
+                                        ),
+                                    ),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Icon(
@@ -141,14 +159,13 @@ fun AstroRoot(notificationRoute: String? = null, onNotificationRouteHandled: () 
             }
         },
     ) { padding ->
-        Box(Modifier.fillMaxSize()) {
+        Box(Modifier.fillMaxSize().padding(padding)) {
             ru.astrosmap.app.ui.theme.StarryBackground()
-        }
-        NavHost(
-            navController = navController,
-            startDestination = Section.Today.route,
-            modifier = Modifier.padding(padding),
-        ) {
+            NavHost(
+                navController = navController,
+                startDestination = Section.Today.route,
+                modifier = Modifier.fillMaxSize(),
+            ) {
             composable(Section.Today.route) {
                 ru.astrosmap.app.ui.today.TodayScreen(
                     onCreateChart = {
@@ -201,6 +218,8 @@ fun AstroRoot(notificationRoute: String? = null, onNotificationRouteHandled: () 
                     onClosed = { navController.popBackStack() },
                 )
             }
+            }
+            ru.astrosmap.app.ui.assistant.FloatingAssistant(currentRoute)
         }
     }
 }

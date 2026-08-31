@@ -25,6 +25,9 @@ object WidgetUpdater {
         MoonWidgetProvider::class.java,
         AdviceWidgetProvider::class.java,
         CalendarWidgetProvider::class.java,
+        AssistantCompactWidgetProvider::class.java,
+        AssistantMessageWidgetProvider::class.java,
+        MonthCalendarWidgetProvider::class.java,
     )
 
     fun refreshNow(context: Context) {
@@ -82,6 +85,15 @@ class AdviceWidgetProvider : BaseAstroWidget()
 
 /** «Календарь»: ближайшее общее или персональное событие. */
 class CalendarWidgetProvider : BaseAstroWidget()
+
+/** Выбранный помощник без текста. */
+class AssistantCompactWidgetProvider : BaseAstroWidget()
+
+/** Выбранный помощник с короткой подсказкой. */
+class AssistantMessageWidgetProvider : BaseAstroWidget()
+
+/** Полная сетка текущего месяца. */
+class MonthCalendarWidgetProvider : BaseAstroWidget()
 
 object WidgetPrefs {
     private const val PREFS = "settings"

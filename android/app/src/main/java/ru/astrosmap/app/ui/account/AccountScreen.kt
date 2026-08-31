@@ -267,6 +267,8 @@ private fun PremiumInfoPanel() {
 private fun LegalPanel() {
     val context = LocalContext.current
     ru.astrosmap.app.ui.theme.AstroPanel {
+        ru.astrosmap.app.ui.assistant.AssistantSettings(context)
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         LanguageRow(context)
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         DailyNotifyRow(context)

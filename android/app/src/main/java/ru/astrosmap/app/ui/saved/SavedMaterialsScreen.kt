@@ -79,6 +79,7 @@ fun SavedMaterialsScreen(viewModel: SavedMaterialsViewModel = hiltViewModel()) {
     val access by viewModel.access.collectAsState()
     var query by remember { mutableStateOf("") }
     var folder by remember { mutableStateOf("") }
+    var expandedIds by remember { mutableStateOf(emptySet<String>()) }
     var editing by remember { mutableStateOf<SavedMaterial?>(null) }
     var deleting by remember { mutableStateOf<SavedMaterial?>(null) }
     val folders = remember(all) { all.map { it.folder.trim() }.filter { it.isNotEmpty() }.distinct().sorted() }
@@ -111,9 +112,21 @@ fun SavedMaterialsScreen(viewModel: SavedMaterialsViewModel = hiltViewModel()) {
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (visible.isEmpty()) item { Text(stringResource(R.string.material_empty)) }
             items(visible, key = { it.id }) { value ->
+                val expanded = value.id in expandedIds
                 ru.astrosmap.app.ui.theme.AstroPanel {
                     Text(value.title, style = MaterialTheme.typography.titleMedium)
-                    Text(value.body, maxLines = 5, style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        value.body,
+                        maxLines = if (expanded) Int.MAX_VALUE else 5,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    if (value.body.count { it == '\n' } >= 5 || value.body.length > 300) {
+                        TextButton(onClick = {
+                            expandedIds = if (expanded) expandedIds - value.id else expandedIds + value.id
+                        }) {
+                            Text(stringResource(if (expanded) R.string.material_collapse else R.string.material_expand))
+                        }
+                    }
                     if (value.note.isNotBlank()) Text(value.note, color = MaterialTheme.colorScheme.secondary)
                     if (value.tags.isNotBlank()) Text("# " + value.tags, style = MaterialTheme.typography.bodySmall)
                     Row {
