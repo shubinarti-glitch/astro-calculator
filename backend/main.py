@@ -30,6 +30,7 @@ FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 # Бесплатный тариф: одна сохранённая карта. Остальные не удаляются, а помечаются
 # locked и снова открываются после оформления подписки.
 FREE_PROFILE_LIMIT = 1
+LEGAL_VERSION = "2026-09-01"
 
 # Content-Security-Policy (defense-in-depth поверх экранирования ввода).
 # 'sha256-...' разрешает единственный инлайн-скрипт темы (frontend/index.html).
@@ -244,6 +245,11 @@ class AuthRequest(BaseModel):
 class RegisterRequest(AuthRequest):
     email: str = Field("", max_length=120)
     lang: str = "ru"
+    privacy_accepted: bool
+    terms_accepted: bool
+    privacy_version: str = Field(..., max_length=20)
+    terms_version: str = Field(..., max_length=20)
+    consent_source: Literal["web", "android"]
 
     @field_validator("email")
     @classmethod
@@ -296,8 +302,20 @@ def api_register(req: RegisterRequest, request: Request):
         raise HTTPException(status_code=429, detail="Слишком много регистраций. Попробуйте позже.")
     if not req.email:
         raise HTTPException(status_code=422, detail="Укажите почту — она нужна для чека об оплате и восстановления пароля")
+    if not req.privacy_accepted or not req.terms_accepted:
+        raise HTTPException(status_code=422, detail="Необходимо принять политику и пользовательское соглашение")
+    if req.privacy_version != LEGAL_VERSION or req.terms_version != LEGAL_VERSION:
+        raise HTTPException(status_code=409, detail="Юридические документы обновились. Ознакомьтесь с ними повторно.")
     try:
-        user = db.create_user(req.username, req.password, req.email)
+        user = db.create_user(
+            req.username,
+            req.password,
+            req.email,
+            consents=[
+                ("privacy", req.privacy_version, req.consent_source),
+                ("terms", req.terms_version, req.consent_source),
+            ],
+        )
     except db.UserExistsError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
     _rate_record(f"reg:{ip}")
@@ -637,6 +655,18 @@ def api_admin_users(uid: int = Depends(require_admin)):
 def api_admin_delete_user(user_id: int, uid: int = Depends(require_admin)):
     if not db.admin_delete_user(user_id):
         raise HTTPException(status_code=400, detail="Нельзя удалить этого пользователя")
+    return {"ok": True}
+
+
+class AccountDeleteRequest(BaseModel):
+    password: str = Field(..., min_length=1, max_length=200)
+
+
+@app.delete("/api/auth/account")
+def api_delete_account(body: AccountDeleteRequest, uid: int = Depends(current_user_id)):
+    """Удалить собственный аккаунт и связанные пользовательские данные."""
+    if not db.delete_user_account(uid, password=body.password):
+        raise HTTPException(status_code=400, detail="Неверный пароль или аккаунт нельзя удалить")
     return {"ok": True}
 
 
@@ -1006,6 +1036,8 @@ class SupportIn(BaseModel):
     message: str = Field(..., min_length=1, max_length=4000)
     email: str = Field("", max_length=200)
     name: str = Field("", max_length=120)
+    privacy_accepted: bool
+    privacy_version: str = Field(..., max_length=20)
 
     @field_validator("message", "email", "name")
     @classmethod
@@ -1022,6 +1054,8 @@ def api_support(body: SupportIn, request: Request, authorization: Optional[str] 
     ip = _client_ip(request)
     if _rate_limited(f"support:{ip}", max_n=5, window=3600):
         raise HTTPException(status_code=429, detail="Слишком много сообщений. Попробуйте позже.")
+    if not body.privacy_accepted or body.privacy_version != LEGAL_VERSION:
+        raise HTTPException(status_code=422, detail="Необходимо принять актуальную политику обработки данных")
     # Опциональный вход: если есть валидный токен — подставим аккаунт и почту.
     uid = None
     email = body.email
@@ -1035,6 +1069,7 @@ def api_support(body: SupportIn, request: Request, authorization: Optional[str] 
     if not message:
         raise HTTPException(status_code=400, detail="Пустое сообщение")
     name = body.name
+    db.record_consent(uid, "support_privacy", body.privacy_version, "web", f"{name}|{email}")
     db.add_support_message(uid, name, email, message)  # сохраняем всегда — не потерять
     if emailer.is_configured():
         subject, text = emailer.support_letter(name, email, message, uid)
@@ -1058,11 +1093,11 @@ class EventBatch(BaseModel):
 
 @app.post("/api/events")
 def api_events(body: EventBatch, request: Request, authorization: str | None = Header(None)):
-    """Приём обезличенных продуктовых событий (приложение и сайт).
+    """Приём псевдонимизированных продуктовых событий (приложение и сайт).
 
     Эндпоинт открытый — события шлют и невошедшие пользователи, поэтому здесь
-    строгая валидация формата и лимит частоты. Персональные данные не принимаем:
-    device_id — случайный UUID устройства, props ограничены по объёму.
+    строгая валидация формата и лимит частоты. device_id — случайный UUID,
+    props ограничены по объёму; при авторизации событие связывается с user_id.
     """
     ip = _client_ip(request)
     if _rate_limited(f"ev:{ip}", max_n=60, window=60):

@@ -32,7 +32,15 @@ data class RegisterRequest(
     val password: String,
     val email: String,
     val lang: String = "ru",
+    @SerialName("privacy_accepted") val privacyAccepted: Boolean = true,
+    @SerialName("terms_accepted") val termsAccepted: Boolean = true,
+    @SerialName("privacy_version") val privacyVersion: String = "2026-09-01",
+    @SerialName("terms_version") val termsVersion: String = "2026-09-01",
+    @SerialName("consent_source") val consentSource: String = "android",
 )
+
+@Serializable
+data class DeleteAccountRequest(val password: String)
 
 @Serializable
 data class AuthResponse(
@@ -157,6 +165,9 @@ interface AstroApi {
 
     @POST("api/auth/logout")
     suspend fun logout()
+
+    @retrofit2.http.HTTP(method = "DELETE", path = "api/auth/account", hasBody = true)
+    suspend fun deleteAccount(@Body body: DeleteAccountRequest)
 
     /** Полный отчёт с текстами, без SVG (колесо приложение рисует само). */
     @POST("api/natal")

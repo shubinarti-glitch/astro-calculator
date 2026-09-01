@@ -82,7 +82,8 @@ private fun AuthForm(viewModel: AccountViewModel, onMaterials: () -> Unit) {
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
     var showPassword by rememberSaveable { mutableStateOf(false) }
-    var consent by rememberSaveable { mutableStateOf(false) }
+    var privacyAccepted by rememberSaveable { mutableStateOf(false) }
+    var termsAccepted by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
 
     Column(
@@ -137,22 +138,26 @@ private fun AuthForm(viewModel: AccountViewModel, onMaterials: () -> Unit) {
         )
         if (registerMode) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(checked = consent, onCheckedChange = { consent = it })
+                Checkbox(checked = privacyAccepted, onCheckedChange = { privacyAccepted = it })
                 Text(
-                    stringResource(R.string.consent_pd),
+                    stringResource(R.string.consent_privacy),
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.weight(1f),
                 )
             }
-            Row {
-                TextButton(onClick = { openSite(context, PRIVACY_URL) }) {
-                    Text(stringResource(R.string.acc_privacy), style = MaterialTheme.typography.labelMedium)
-                }
+            TextButton(onClick = { openSite(context, PRIVACY_URL) }) {
+                Text(stringResource(R.string.acc_privacy), style = MaterialTheme.typography.labelMedium)
             }
-            Row {
-                TextButton(onClick = { openSite(context, TERMS_URL) }) {
-                    Text(stringResource(R.string.acc_terms), style = MaterialTheme.typography.labelMedium)
-                }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(checked = termsAccepted, onCheckedChange = { termsAccepted = it })
+                Text(
+                    stringResource(R.string.consent_terms),
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            TextButton(onClick = { openSite(context, TERMS_URL) }) {
+                Text(stringResource(R.string.acc_terms), style = MaterialTheme.typography.labelMedium)
             }
         }
 
@@ -167,7 +172,7 @@ private fun AuthForm(viewModel: AccountViewModel, onMaterials: () -> Unit) {
             // Пределы те же, что у сервера, иначе форма отправит заведомо невалидное и вернётся 422.
             // На входе не ограничиваем: у старых аккаунтов пароль мог быть короче 8.
             enabled = !viewModel.busy && username.isNotBlank() && password.isNotBlank() &&
-                (!registerMode || (email.isNotBlank() && consent &&
+                (!registerMode || (email.isNotBlank() && privacyAccepted && termsAccepted &&
                     username.trim().length >= 2 && password.length >= 8)),
             modifier = Modifier.fillMaxWidth(),
         ) {
@@ -189,6 +194,7 @@ private fun AuthForm(viewModel: AccountViewModel, onMaterials: () -> Unit) {
 private fun Profile(me: MeResponse, viewModel: AccountViewModel, onMaterials: () -> Unit) {
     val chartsCount by viewModel.chartsCount.collectAsState()
     val context = LocalContext.current
+    var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
     Column(
         Modifier
             .fillMaxSize()
@@ -232,6 +238,9 @@ private fun Profile(me: MeResponse, viewModel: AccountViewModel, onMaterials: ()
         OutlinedButton(onClick = viewModel::logout, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.auth_logout))
         }
+        TextButton(onClick = { showDeleteDialog = true }, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.delete_account), color = MaterialTheme.colorScheme.error)
+        }
         }
         PremiumInfoPanel()
         OutlinedButton(onClick = onMaterials, modifier = Modifier.fillMaxWidth()) {
@@ -239,6 +248,51 @@ private fun Profile(me: MeResponse, viewModel: AccountViewModel, onMaterials: ()
         }
         LegalPanel()
     }
+    if (showDeleteDialog) {
+        DeleteAccountDialog(
+            busy = viewModel.busy,
+            onDismiss = { showDeleteDialog = false },
+            onConfirm = {
+                showDeleteDialog = false
+                viewModel.deleteAccount(it)
+            },
+        )
+    }
+}
+
+@Composable
+private fun DeleteAccountDialog(
+    busy: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit,
+) {
+    var password by rememberSaveable { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.delete_account_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(stringResource(R.string.delete_account_warning))
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it.take(200) },
+                    label = { Text(stringResource(R.string.auth_password)) },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(password) },
+                enabled = password.isNotBlank() && !busy,
+            ) { Text(stringResource(R.string.delete_account_confirm)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, enabled = !busy) { Text(stringResource(R.string.cancel)) }
+        },
+    )
 }
 
 /** Памятка: что даёт подписка «Премиум». В googleplay-сборке скрыта (без увода на оплату). */

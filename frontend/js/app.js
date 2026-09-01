@@ -146,11 +146,17 @@ $("aspects-table").addEventListener("click", (e) => {
     const name = $("support-name").value.trim();
     const status = $("support-status");
     if (!message) { showSupportStatus(status, t("support_empty"), false); return; }
+    if (!$("support-consent").checked) { showSupportStatus(status, t("support_consent_need"), false); return; }
     $("support-send").disabled = true;
     showSupportStatus(status, t("support_sending"), true);
     try {
-      await postJSON("/api/support", { message, email, name });
+      await postJSON("/api/support", {
+        message, email, name,
+        privacy_accepted: true,
+        privacy_version: "2026-09-01",
+      });
       $("support-message").value = "";
+      $("support-consent").checked = false;
       showSupportStatus(status, t("support_ok"), true);
     } catch (ex) {
       showSupportStatus(status, ex.message || t("support_err"), false);
@@ -3217,7 +3223,14 @@ $("auth-form").addEventListener("submit", async (e) => {
   try {
     const url = authMode === "register" ? "/api/auth/register" : "/api/auth/login";
     const data = await postJSON(url, authMode === "register"
-      ? { username, password, email, lang: LANG }
+      ? {
+          username, password, email, lang: LANG,
+          privacy_accepted: true,
+          terms_accepted: true,
+          privacy_version: "2026-09-01",
+          terms_version: "2026-09-01",
+          consent_source: "web",
+        }
       : { username, password });
     setToken(data.token);
     updateAuthUI(data.username, data.is_admin);
@@ -3314,10 +3327,44 @@ async function loadCabinet() {
          <button class="adm-mini" id="cab-email-save">${t("cab_email_attach")}</button>
          <span id="cab-email-msg" class="cab-dim"></span>
        </div>
-       <button class="adm-mini" id="cab-passwd">${t("passwd_title")}</button>`;
+       <button class="adm-mini" id="cab-passwd">${t("passwd_title")}</button>
+       <div class="cab-danger-zone">
+         <h5>${t("account_delete_title")}</h5>
+         <p class="cab-dim">${t("account_delete_hint")}</p>
+         <button class="adm-del" id="cab-delete-account">${t("account_delete_button")}</button>
+       </div>`;
     $("cab-passwd").addEventListener("click", () => {
       $("cabinet-modal").classList.add("hidden");
       openPasswdModal();
+    });
+    $("cab-delete-account").addEventListener("click", async () => {
+      const password = window.prompt(t("account_delete_password"));
+      if (password === null) return;
+      if (!password) { alert(t("account_delete_password_need")); return; }
+      if (!window.confirm(t("account_delete_confirm"))) return;
+      const button = $("cab-delete-account");
+      button.disabled = true;
+      try {
+        const response = await fetch("/api/auth/account", {
+          method: "DELETE",
+          headers: { ...authHeaders(), "Content-Type": "application/json" },
+          body: JSON.stringify({ password }),
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.detail || t("account_delete_fail"));
+        clearToken();
+        IS_PREMIUM = false;
+        PREMIUM_UNTIL = null;
+        HAS_CONSULT = false;
+        REPORT_CREDITS = 0;
+        refreshPremiumBtn();
+        updateAuthUI(null);
+        $("cabinet-modal").classList.add("hidden");
+        alert(t("account_delete_done"));
+      } catch (error) {
+        alert(error.message || t("account_delete_fail"));
+        button.disabled = false;
+      }
     });
     $("cab-email-save").addEventListener("click", async () => {
       const email = $("cab-email-input").value.trim();

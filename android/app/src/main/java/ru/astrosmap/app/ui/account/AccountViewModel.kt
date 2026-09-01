@@ -21,6 +21,7 @@ import ru.astrosmap.app.R
 import ru.astrosmap.app.data.SyncManager
 import ru.astrosmap.app.data.TokenStore
 import ru.astrosmap.app.data.api.AstroApi
+import ru.astrosmap.app.data.api.DeleteAccountRequest
 import ru.astrosmap.app.data.api.LoginRequest
 import ru.astrosmap.app.data.api.MeResponse
 import ru.astrosmap.app.data.api.RegisterRequest
@@ -107,6 +108,13 @@ class AccountViewModel @Inject constructor(
             ru.astrosmap.app.data.DailyNotify.setPremium(context, false)
             state = AccountState.LoggedOut
         }
+    }
+
+    fun deleteAccount(password: String) = submit {
+        api.deleteAccount(DeleteAccountRequest(password))
+        tokenStore.clear()
+        ru.astrosmap.app.data.DailyNotify.setPremium(context, false)
+        state = AccountState.LoggedOut
     }
 
     private fun submit(block: suspend () -> Unit) {

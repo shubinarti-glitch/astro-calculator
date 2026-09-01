@@ -152,6 +152,12 @@
     <string name="acc_terms">Terms of service</string>
     <string name="acc_age">The service is for information and entertainment and does not replace professional advice. 18+</string>
     <string name="consent_pd">I consent to personal data processing and accept the Terms of service</string>
+    <string name="consent_privacy">I consent to personal data processing</string>
+    <string name="consent_terms">I accept the Terms of service</string>
+    <string name="delete_account">Delete account</string>
+    <string name="delete_account_title">Delete account</string>
+    <string name="delete_account_warning">Enter your password to confirm. Your account and associated data will be permanently deleted.</string>
+    <string name="delete_account_confirm">Delete permanently</string>
 
     <string name="site_banner">Even more features — on astrosmap.ru</string>
 

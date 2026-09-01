@@ -25,6 +25,14 @@ NATAL = {
     "lat": 55.7558, "lng": 37.6173, "city": "Moscow",
 }
 
+LEGAL_ACCEPTANCE = {
+    "privacy_accepted": True,
+    "terms_accepted": True,
+    "privacy_version": "2026-09-01",
+    "terms_version": "2026-09-01",
+    "consent_source": "web",
+}
+
 
 def _rnd(prefix):
     return prefix + "".join(random.choices(string.ascii_lowercase, k=8))
@@ -575,7 +583,7 @@ def _make_user(prefix="feat_"):
     name = _rnd(prefix)
     main_module._RATE.clear()  # сброс in-memory лимитера: тесты регистрируют многих с одного IP
     r = client.post("/api/auth/register",
-                    json={"username": name, "password": "password123", "email": f"{name}@test.local"})
+                    json={"username": name, "password": "password123", "email": f"{name}@test.local", **LEGAL_ACCEPTANCE})
     assert r.status_code == 200
     return name, r.json()["token"]
 
@@ -669,6 +677,14 @@ def test_register_requires_email():
     name = _rnd("noemail_")
     r = client.post("/api/auth/register", json={"username": name, "password": "password123"})
     assert r.status_code == 422
+
+
+def test_register_requires_current_legal_acceptance():
+    name = _rnd("consent_")
+    base = {"username": name, "password": "password123", "email": f"{name}@test.local"}
+    assert client.post("/api/auth/register", json=base).status_code == 422
+    stale = {**base, **LEGAL_ACCEPTANCE, "privacy_version": "2026-08-01"}
+    assert client.post("/api/auth/register", json=stale).status_code == 409
     r = client.post("/api/auth/register",
                     json={"username": name, "password": "password123", "email": "not-an-email"})
     assert r.status_code == 422
@@ -680,7 +696,7 @@ def test_email_unique_and_login_by_email():
         # почта занята — второй аккаунт с той же почтой не создаётся
         other = _rnd("em2_")
         r = client.post("/api/auth/register",
-                        json={"username": other, "password": "password123", "email": f"{name}@test.local"})
+                        json={"username": other, "password": "password123", "email": f"{name}@test.local", **LEGAL_ACCEPTANCE})
         assert r.status_code == 409
         # вход по почте
         r = client.post("/api/auth/login",
@@ -691,6 +707,19 @@ def test_email_unique_and_login_by_email():
         assert me["email"] == f"{name}@test.local" and me["email_verified"] is False
     finally:
         _cleanup(name)
+
+
+def test_user_can_delete_own_account_with_password():
+    name, token = _make_user("delself_")
+    user = db.get_user_by_username(name)
+    with db.get_conn() as c:
+        assert c.execute("SELECT COUNT(*) FROM consent_records WHERE user_id = ?", (user["id"],)).fetchone()[0] == 2
+    h = {"Authorization": f"Bearer {token}"}
+    assert client.request("DELETE", "/api/auth/account", headers=h, json={"password": "wrong"}).status_code == 400
+    assert client.request("DELETE", "/api/auth/account", headers=h, json={"password": "password123"}).status_code == 200
+    assert db.get_user_by_username(name) is None
+    with db.get_conn() as c:
+        assert c.execute("SELECT COUNT(*) FROM consent_records WHERE user_id IS NULL").fetchone()[0] >= 2
 
 
 def test_verify_and_reset_tokens():

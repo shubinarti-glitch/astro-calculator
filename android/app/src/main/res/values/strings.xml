@@ -154,6 +154,12 @@
     <string name="acc_terms">Пользовательское соглашение</string>
     <string name="acc_age">Сервис носит информационно-развлекательный характер и не заменяет консультацию специалиста. 18+</string>
     <string name="consent_pd">Я даю согласие на обработку персональных данных (152-ФЗ) и принимаю Пользовательское соглашение</string>
+    <string name="consent_privacy">Я даю согласие на обработку персональных данных</string>
+    <string name="consent_terms">Я принимаю Пользовательское соглашение</string>
+    <string name="delete_account">Удалить аккаунт</string>
+    <string name="delete_account_title">Удаление аккаунта</string>
+    <string name="delete_account_warning">Введите пароль для подтверждения. Аккаунт и связанные с ним данные будут удалены без возможности восстановления.</string>
+    <string name="delete_account_confirm">Удалить навсегда</string>
 
     <string name="site_banner">Ещё больше функций — на сайте astrosmap.ru</string>
 

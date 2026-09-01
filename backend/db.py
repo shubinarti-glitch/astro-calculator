@@ -228,7 +228,8 @@ def init_db() -> None:
                 created_at TEXT NOT NULL
             )"""
         )
-        # Продуктовые события приложения/сайта: обезличенные, device_id — случайный UUID.
+        # Псевдонимизированные продуктовые события: device_id — случайный UUID,
+        # а для вошедшего пользователя может сохраняться связь с user_id.
         # Нужны для воронки и возвратов (D1/D7) — без них эффект фич не измерить.
         c.execute(
             """CREATE TABLE IF NOT EXISTS app_events (
@@ -242,6 +243,21 @@ def init_db() -> None:
         )
         c.execute("CREATE INDEX IF NOT EXISTS idx_events_name_date ON app_events (name, created_at)")
         c.execute("CREATE INDEX IF NOT EXISTS idx_events_device ON app_events (device_id, created_at)")
+        # Доказуемая история согласий. subject_hash позволяет сохранить факт
+        # принятия документа после удаления аккаунта, не сохраняя email/логин.
+        c.execute(
+            """CREATE TABLE IF NOT EXISTS consent_records (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                subject_hash TEXT NOT NULL,
+                document TEXT NOT NULL,
+                version TEXT NOT NULL,
+                source TEXT NOT NULL,
+                accepted_at TEXT NOT NULL,
+                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL
+            )"""
+        )
+        c.execute("CREATE INDEX IF NOT EXISTS idx_consents_user ON consent_records(user_id, accepted_at)")
 
 
 # --------------------------------------------------------------------------- #
@@ -336,7 +352,16 @@ class UserExistsError(Exception):
     pass
 
 
-def create_user(username: str, password: str, email: Optional[str] = None) -> dict:
+def _subject_hash(value: str) -> str:
+    return hmac.new(_SECRET, value.strip().lower().encode("utf-8"), hashlib.sha256).hexdigest()
+
+
+def create_user(
+    username: str,
+    password: str,
+    email: Optional[str] = None,
+    consents: Optional[list[tuple[str, str, str]]] = None,
+) -> dict:
     username = username.strip()
     email = email.strip().lower() if email else None
     with get_conn() as c:
@@ -351,7 +376,42 @@ def create_user(username: str, password: str, email: Optional[str] = None) -> di
             "INSERT INTO users (username, password_hash, created_at, is_admin, email) VALUES (?, ?, ?, ?, ?)",
             (username, hash_password(password), _now_iso(), 1 if is_first else 0, email),
         )
-        return {"id": cur.lastrowid, "username": username, "is_admin": bool(is_first)}
+        user_id = cur.lastrowid
+        if consents:
+            accepted_at = _now_iso()
+            subject_hash = _subject_hash(f"{username}|{email or ''}")
+            c.executemany(
+                """INSERT INTO consent_records
+                   (user_id, subject_hash, document, version, source, accepted_at)
+                   VALUES (?, ?, ?, ?, ?, ?)""",
+                [(user_id, subject_hash, document, version, source, accepted_at)
+                 for document, version, source in consents],
+            )
+        return {"id": user_id, "username": username, "is_admin": bool(is_first)}
+
+
+def record_consent(
+    user_id: Optional[int],
+    document: str,
+    version: str,
+    source: str,
+    subject_hint: str = "",
+) -> int:
+    """Сохранить доказательство принятия документа без открытых идентификаторов."""
+    normalized = subject_hint.strip().lower()
+    if not normalized and user_id:
+        user = get_user_by_id(user_id)
+        if user:
+            normalized = f"{user['username']}|{user['email'] or ''}".lower()
+    subject_hash = _subject_hash(normalized)
+    with get_conn() as c:
+        cur = c.execute(
+            """INSERT INTO consent_records
+               (user_id, subject_hash, document, version, source, accepted_at)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (user_id, subject_hash, document, version, source, _now_iso()),
+        )
+        return cur.lastrowid
 
 
 def get_user_by_email(email: str) -> Optional[sqlite3.Row]:
@@ -847,7 +907,7 @@ def record_usage(endpoint: str) -> None:
 #  Продуктовые события (воронка и возвраты)
 # --------------------------------------------------------------------------- #
 def record_events(device_id: str, user_id: int | None, events: list[dict]) -> int:
-    """Пишет пачку обезличенных событий. Возвращает число записанных."""
+    """Пишет пачку псевдонимизированных событий. Возвращает число записанных."""
     now = _now_iso()
     rows = [
         (
@@ -991,11 +1051,20 @@ def list_payments(limit: int = 200) -> dict:
     return {"items": [dict(r) for r in rows]}
 
 
-def admin_delete_user(user_id: int) -> bool:
+def delete_user_account(user_id: int, password: Optional[str] = None, allow_admin: bool = False) -> bool:
     with get_conn() as c:
-        # нельзя удалить администратора
-        u = c.execute("SELECT is_admin FROM users WHERE id = ?", (user_id,)).fetchone()
-        if not u or u["is_admin"]:
+        u = c.execute("SELECT is_admin, password_hash FROM users WHERE id = ?", (user_id,)).fetchone()
+        if not u or (u["is_admin"] and not allow_admin):
             return False
+        if password is not None and not verify_password(password, u["password_hash"]):
+            return False
+        # Эти таблицы исторически не имели внешнего ключа. Удаляем связанные
+        # пользовательские данные явно; consent_records обезличиваются через SET NULL.
+        c.execute("DELETE FROM support_messages WHERE user_id = ?", (user_id,))
+        c.execute("DELETE FROM app_events WHERE user_id = ?", (user_id,))
         cur = c.execute("DELETE FROM users WHERE id = ?", (user_id,))
         return cur.rowcount > 0
+
+
+def admin_delete_user(user_id: int) -> bool:
+    return delete_user_account(user_id)
