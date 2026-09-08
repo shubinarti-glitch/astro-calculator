@@ -3,9 +3,10 @@
 
 240 страниц (10 планет × 12 знаков + 10 планет × 12 домов) + каталог,
 sitemap.xml и robots.txt. Тексты берутся через аксессоры interpretations
-(учитывают правки из админки). Только RU — под русскоязычный поисковый трафик.
+(учитывают правки из админки). RU URL сохранены; EN доступен через ?lang=en.
 """
 from __future__ import annotations
+from html import escape
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, PlainTextResponse, Response
@@ -52,6 +53,85 @@ def _pages() -> dict[str, dict]:
 
 
 PAGES = _pages()
+
+
+def _english_pages():
+    pages = {}
+    for planet, pslug in _PLANET_SLUG.items():
+        for sign, sslug in _SIGN_SLUG.items():
+            pages[f"{pslug}-v-{sslug}"] = {
+                "h1": f"{planet} in {constants.SIGNS[sign]['en']}",
+                "get_text": lambda p=planet, s=sign: interpretations.authored_sign(p, s, "en"),
+            }
+        for house in range(1, 13):
+            ordinal = {1: "1st", 2: "2nd", 3: "3rd"}.get(house, f"{house}th")
+            pages[f"{pslug}-v-{house}-dome"] = {
+                "h1": f"{planet} in the {ordinal} house",
+                "get_text": lambda p=planet, h=house: interpretations.authored_house(p, h, "en"),
+            }
+    return pages
+
+
+EN_PAGES = _english_pages()
+
+
+def _language_links(request):
+    path = escape(request.url.path, quote=True)
+    base = escape(str(request.base_url).rstrip("/"), quote=True)
+    return (f'<link rel="alternate" hreflang="ru" href="{base}{path}">'
+            f'<link rel="alternate" hreflang="en" href="{base}{path}?lang=en">'
+            f'<link rel="alternate" hreflang="x-default" href="{base}{path}">')
+
+
+def _english_html(request, slug=None):
+    page = EN_PAGES.get(slug) if slug else None
+    heading = page["h1"] if page else "Planets in signs and houses"
+    title = f"{heading} — natal chart meaning" if page else f"{heading} | AstroSMap"
+    text = page["get_text"]() if page else "Original interpretations of planetary placements in zodiac signs and natal chart houses."
+    description = text.split(".")[0][:160] + "."
+    override = _SEO_OVERRIDES_EN.get(slug, {})
+    title = override.get("title", title)
+    description = override.get("description", description)
+    quick_answer = ""
+    if override.get("answer"):
+        quick_answer = ('<section class="quick-answer" aria-label="Quick answer">'
+                        f'<h2>In brief</h2><p>{escape(override["answer"])}</p></section>')
+    path = request.url.path
+    canonical = escape(str(request.base_url).rstrip("/") + path + "?lang=en", quote=True)
+    content = "".join(f"<p>{escape(p)}</p>" for p in text.split("\n") if p.strip())
+    prefix = slug.split("-v-")[0] + "-v-" if slug else ""
+    links = " ".join(f'<a href="/opisanie/{s}?lang=en">{escape(p["h1"])}</a>'
+                     for s, p in EN_PAGES.items() if s != slug and s.startswith(prefix))
+    related_heading = f"{_slug_planet(slug.split('-v-')[0])} in other placements:" if page else "All interpretations"
+    cluster = ""
+    featured = ""
+    for slugs, _ in _SEO_CLUSTERS:
+        planet = _slug_planet(slugs[0].split("-v-")[0])
+        label = f"the {planet}" if planet in ("Sun", "Moon") else planet
+        cluster_links = "".join(
+            f'<a href="/opisanie/{s}?lang=en">{escape(EN_PAGES[s]["h1"])}</a> '
+            for s in slugs if s != slug
+        )
+        if slug in slugs:
+            cluster = f'<section class="cluster"><h2>Read more about {label}</h2>{cluster_links}</section>'
+        if not page:
+            featured += f'<section class="featured"><h2>Popular articles about {label}</h2>{cluster_links}</section>'
+    return f'''<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{escape(title)}</title><meta name="description" content="{escape(description, quote=True)}">
+<meta property="og:title" content="{escape(title, quote=True)}">
+<meta property="og:description" content="{escape(description, quote=True)}">
+<meta property="og:locale" content="en_US"><meta property="og:url" content="{canonical}">
+<link rel="canonical" href="{canonical}">{_language_links(request)}
+<link rel="icon" href="/icon.svg" type="image/svg+xml"><style>{_STYLE}</style></head>
+<body><main><nav aria-label="Language"><a href="{escape(path)}" lang="ru">RU</a> · <a href="?lang=en" lang="en" aria-current="page">EN</a></nav>
+<h1>{escape(heading)}</h1>{quick_answer}{content}{featured}
+<a class="cta" href="/?lang=en">Calculate your natal chart for free</a>
+{cluster}
+<section class="rel"><h2>{related_heading}</h2>{links}</section>
+<footer><a href="/opisaniya?lang=en">All interpretations</a> · Calculations by Swiss Ephemeris. This service is for information and entertainment. 18+</footer>
+</main></body></html>'''
 
 # Точечный SEO-слой для страниц, которые уже получают показы и находятся рядом
 # с первой страницей выдачи. Авторские трактовки остаются нетронутыми: этот
@@ -299,6 +379,111 @@ _SEO_OVERRIDES = {
     },
 }
 
+# Faithful translations of the Russian editorial layer, separate from authored text.
+# Keep keys/fields in sync with _SEO_OVERRIDES (enforced by regression tests).
+_SEO_OVERRIDES_EN = {
+    "uran-v-1-dome": {
+        "title": "Uranus in the 1st house — character and self-expression | Natal chart",
+        "description": "What Uranus in the 1st house of a natal chart means: an independent character, an unusual image, strengths, relationships with others and areas for growth.",
+        "answer": "Uranus in the 1st house makes independence part of one's character and outward image. The person seeks to act in their own way, readily changes how they express themselves and finds imposed roles difficult to tolerate.",
+    },
+    "uran-v-3-dome": {
+        "title": "Uranus in the 3rd house — thinking and communication | Natal chart",
+        "description": "What Uranus in the 3rd house means: unconventional thinking, communication, learning, relationships with one's immediate circle, strengths and difficulties.",
+        "answer": "Uranus in the 3rd house brings unconventional thinking, sudden insights and a need to speak in one's own words. Learning works better through freedom to explore, new technologies and tasks with no single ready-made answer.",
+    },
+    "uran-v-5-dome": {
+        "title": "Uranus in the 5th house — creativity and love | Natal chart",
+        "description": "Uranus in the 5th house of a natal chart: original creativity, unexpected romances, relationships with children, a need for freedom and areas for growth.",
+        "answer": "Uranus in the 5th house expresses freedom through creativity, love and vivid self-expression. Inspiration comes suddenly, while novelty, equality and personal space are especially important in romantic relationships.",
+    },
+    "uran-v-11-dome": {
+        "title": "Uranus in the 11th house — friends and plans | Natal chart",
+        "description": "Uranus in the 11th house of a natal chart: unusual friends, communities, future plans, freedom in relationships with a group and possible difficulties.",
+        "answer": "Uranus in the 11th house strengthens interest in unusual people, communities and ideas for the future. Friendship is built on equality and freedom, and the best projects arise where rules can be renewed together with like-minded people.",
+    },
+    "uran-v-lve": {
+        "title": "Uranus in Leo — creativity and freedom | Natal chart",
+        "description": "Uranus in Leo in a natal chart: a generational drive toward free creativity, vivid self-expression and renewal of familiar forms.",
+        "answer": "Uranus in Leo is a generational placement: a drive to renew creativity, leadership and ways of being noticed. In an individual chart, Uranus's house and aspects clarify how this is expressed.",
+    },
+    "luna-v-2-dome": {
+        "title": "Moon in the 2nd house — money and a sense of security | Natal chart",
+        "description": "What the Moon in the 2nd house means: the connection between emotions, money, self-esteem and stability, spending habits, strengths and areas for growth.",
+        "answer": "The Moon in the 2nd house links emotional security to material stability and a sense of self-worth. Mood can influence spending, so it is important not to reduce one's inner sense of security to savings alone.",
+    },
+    "luna-v-4-dome": {
+        "title": "Moon in the 4th house — family and the inner world | Natal chart",
+        "description": "The Moon in the 4th house of a natal chart: family, home, roots, relationships with the mother, a need for security, strengths and emotional difficulties.",
+        "answer": "The Moon in the 4th house strengthens the connection to family, home and one's personal past. A safe space where one can be oneself, care for loved ones and not hide one's feelings is especially important for recovery.",
+    },
+    "luna-v-5-dome": {
+        "title": "Moon in the 5th house — love and creativity | Natal chart",
+        "description": "What the Moon in the 5th house means: emotional creativity, romantic relationships, children, a need for attention, talents and areas for growth.",
+        "answer": "The Moon in the 5th house reveals feelings through creativity, romance, play and relationships with children. Emotional fulfilment comes when one can express oneself sincerely and share warmth without constant judgment from others.",
+    },
+    "luna-v-10-dome": {
+        "title": "Moon in the 10th house — career and recognition | Natal chart",
+        "description": "The Moon in the 10th house of a natal chart: career, reputation, public recognition, relationships with management, vocation and emotional challenges.",
+        "answer": "The Moon in the 10th house makes career and public recognition emotionally significant. The professional path may change along with inner needs, and success is often linked to caring for and understanding people.",
+    },
+    "luna-v-11-dome": {
+        "title": "Moon in the 11th house — friends and dreams | Natal chart",
+        "description": "What the Moon in the 11th house means: friendship, communities, plans and dreams, emotional connections with like-minded people, strengths and difficulties.",
+        "answer": "The Moon in the 11th house brings a need to feel part of a circle of friends or a community. Mood is linked to relationships with like-minded people, and dreams are easier to realise in an atmosphere of support and shared purpose.",
+    },
+    "mars-v-5-dome": {
+        "title": "Mars in the 5th house — creativity, love and excitement | Natal chart",
+        "description": "Mars in the 5th house of a natal chart: active creativity, passion in love, sport, excitement, relationships with children, strengths and areas for growth.",
+        "answer": "Mars in the 5th house directs energy into creativity, romance, sport and vivid self-expression. It is important for the person to act with enthusiasm and see a response, but it is helpful to distinguish healthy courage from fighting for attention at any cost.",
+    },
+    "mars-v-6-dome": {
+        "title": "Mars in the 6th house — work and everyday tasks | Natal chart",
+        "description": "What Mars in the 6th house means: energy in work and everyday tasks, habits, workload, health, relationships with colleagues and areas for growth.",
+        "answer": "Mars in the 6th house encourages action through concrete tasks, work and improvement of everyday processes. High productivity develops best with a clear routine, movement and the ability not to battle over every little thing.",
+    },
+    "mars-v-10-dome": {
+        "title": "Mars in the 10th house — career and ambition | Natal chart",
+        "description": "Mars in the 10th house of a natal chart: career ambitions, leadership, relationships with management, a drive for results, conflicts and areas for growth.",
+        "answer": "Mars in the 10th house strengthens ambition, initiative and the desire to shape one's professional path independently. Results come faster when drive is combined with strategy, responsibility and respect for boundaries.",
+    },
+    "mars-v-11-dome": {
+        "title": "Mars in the 11th house — friends and shared goals | Natal chart",
+        "description": "What Mars in the 11th house means: activity in friendships and communities, fighting for shared ideas, future plans, leadership, conflicts and areas for growth.",
+        "answer": "Mars in the 11th house provides energy for team projects, social ideas and bold plans for the future. Among friends, the person can become an initiator if competition does not overshadow the shared goal.",
+    },
+    "mars-v-lve": {
+        "title": "Mars in Leo — willpower and bold action | Natal chart",
+        "description": "Mars in Leo in a natal chart: expressive willpower, leadership, passion, courage, creative energy, behaviour in conflict and possible difficulties.",
+        "answer": "Mars in Leo encourages visible, bold and creative action, seeking recognition through personal initiative. The strength of this placement emerges in generous leadership rather than a dramatic struggle for superiority.",
+    },
+    "solntse-v-3-dome": {
+        "title": "Sun in the 3rd house — thinking and communication | Natal chart",
+        "description": "The Sun in the 3rd house of a natal chart: self-expression through communication, learning, contacts, relationships with one's immediate circle, talents and areas for growth.",
+        "answer": "The Sun in the 3rd house reveals personality through knowledge, speech, learning and the exchange of ideas. Confidence grows when the person formulates their own point of view while remaining curious and attentive to those they speak with.",
+    },
+    "solntse-v-7-dome": {
+        "title": "Sun in the 7th house — relationships and partnership | Natal chart",
+        "description": "What the Sun in the 7th house means: self-realisation in relationships, choosing a partner, cooperation, open conflicts, strengths and difficulties.",
+        "answer": "The Sun in the 7th house helps one understand oneself better through close relationships and cooperation. It is important to see a partner as an equal while maintaining one's own goals and not handing someone else the right to define one's worth.",
+    },
+    "solntse-v-8-dome": {
+        "title": "Sun in the 8th house — transformation and shared resources | Natal chart",
+        "description": "What the Sun in the 8th house means: profound changes, crises and rebirth, shared money, intimacy, inner strength, abilities and areas for growth.",
+        "answer": "The Sun in the 8th house reveals personal strength through profound changes, intimacy and matters of shared resources. The person becomes more confident when, rather than avoiding difficult experiences, they consciously turn them into experience and inner support.",
+    },
+    "solntse-v-10-dome": {
+        "title": "Sun in the 10th house — career and vocation | Natal chart",
+        "description": "The Sun in the 10th house of a natal chart: career, vocation, ambitions, reputation, relationships with authority figures, leadership qualities and areas for growth.",
+        "answer": "The Sun in the 10th house directs self-realisation toward a profession, a public role and the achievement of meaningful goals. Recognition is more enduring when the chosen path rests on one's own values, not only on society's expectations.",
+    },
+    "solntse-v-11-dome": {
+        "title": "Sun in the 11th house — friends and future goals | Natal chart",
+        "description": "What the Sun in the 11th house means: self-realisation among friends and in a group, like-minded people, dreams, social projects, talents and difficulties.",
+        "answer": "The Sun in the 11th house reveals individuality through friendship, communities and projects aimed at the future. The person expresses themselves more vividly alongside like-minded people if they retain their own voice within the shared idea.",
+    },
+}
+
 _URANUS_CLUSTER = (
     "uran-v-1-dome", "uran-v-3-dome", "uran-v-5-dome",
     "uran-v-11-dome", "uran-v-lve",
@@ -404,14 +589,22 @@ def _slug_planet(pslug: str) -> str:
 
 @router.get("/opisanie/{slug}", response_class=HTMLResponse)
 def seo_page(slug: str, request: Request):
+    if request.query_params.get("lang") == "en":
+        page = EN_PAGES.get(slug)
+        if not page or not page["get_text"]():
+            raise HTTPException(status_code=404, detail="Page not found")
+        return _english_html(request, slug)
     page = PAGES.get(slug)
     if not page or not page["get_text"]():
         raise HTTPException(status_code=404, detail="Страница не найдена")
-    return _page_html(slug, page, request)
+    return _page_html(slug, page, request).replace("</head>", _language_links(request) + "</head>").replace(
+        "<body><main>", '<body><main><nav aria-label="Язык"><a href="?lang=ru" lang="ru">RU</a> · <a href="?lang=en" lang="en">EN</a></nav>')
 
 
 @router.get("/opisaniya", response_class=HTMLResponse)
 def seo_index(request: Request):
+    if request.query_params.get("lang") == "en":
+        return _english_html(request)
     links = "".join(f'<a href="/opisanie/{s}">{p["h1"]}</a> ' for s, p in PAGES.items())
     featured = "".join(
         f'<a href="/opisanie/{s}">{PAGES[s]["h1"]}</a> ' for s in _URANUS_CLUSTER
@@ -431,8 +624,9 @@ def seo_index(request: Request):
 <title>Планеты в знаках и домах — все описания | Астрокалькулятор</title>
 <meta name="description" content="Авторские описания всех положений планет в знаках зодиака и домах натальной карты.">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
-<style>{_STYLE}</style></head>
-<body><main><h1>Планеты в знаках и домах</h1>
+<link rel="canonical" href="{escape(str(request.base_url).rstrip('/'))}/opisaniya">
+{_language_links(request)}<style>{_STYLE}</style></head>
+<body><main><nav aria-label="Язык"><a href="?lang=ru" lang="ru">RU</a> · <a href="?lang=en" lang="en">EN</a></nav><h1>Планеты в знаках и домах</h1>
 <section class="featured"><h2>Популярные материалы об Уране</h2>{featured}</section>
 <section class="featured"><h2>Популярные материалы о Луне</h2>{moon_featured}</section>
 <section class="featured"><h2>Популярные материалы о Марсе</h2>{mars_featured}</section>
@@ -446,6 +640,7 @@ def seo_index(request: Request):
 def sitemap(request: Request):
     base = str(request.base_url).rstrip("/")
     urls = [base + "/", base + "/opisaniya"] + [f"{base}/opisanie/{s}" for s in PAGES]
+    urls += [base + "/opisaniya?lang=en"] + [f"{base}/opisanie/{s}?lang=en" for s in EN_PAGES]
     body = "".join(f"<url><loc>{u}</loc></url>" for u in urls)
     xml = f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{body}</urlset>'
     return Response(content=xml, media_type="application/xml")

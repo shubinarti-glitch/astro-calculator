@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Optional
 
 from . import constants as C
+from . import transit_english as TE
 
 
 def g(pair, lang="ru"):
@@ -105,10 +106,9 @@ def interpret_transit(t_name: str, aspect: str, n_name: str, lang: str = "ru",
     angle_text = _interpret_moving_angle(t_name, aspect, n_name, lang, orbit, movement)
     if angle_text:
         return angle_text
-    if lang != "en":
-        deep = _interpret_transit_deep(t_name, aspect, n_name, orbit, movement)
-        if deep:
-            return deep
+    deep = _interpret_transit_deep(t_name, aspect, n_name, orbit, movement, lang)
+    if deep:
+        return deep
     theme = TRANSIT_THEME.get(t_name)
     role = PLANET_ROLE.get(n_name)
     category = _ASPECT_CATEGORY.get(aspect) or ("creative" if aspect == "quintile" else None)
@@ -233,7 +233,7 @@ def _interpret_moving_angle(t_name: str, aspect: str, n_name: str, lang: str,
         return (
             f"The moving chart angle {angle} forms a {aspect_name} to natal {target}. "
             "This is a time-sensitive contact of a chart axis, not a planetary transit; "
-            f"it highlights {g(role, lang)} and is best read for the exact time and location."
+            f"it highlights {g(role, lang)} and is best read for the exact time and location. {TE.phase(orbit, movement)}"
         )
     return (
         f"Транзитный угол карты «{angle}» образует аспект «{aspect_name}» к натальной точке «{target}». "
@@ -252,6 +252,7 @@ def _load_authored_transits() -> dict:
 
 
 AUTHORED_TRANSIT = _load_authored_transits()
+AUTHORED_TRANSIT_EN = TE.load_authored()
 
 
 def _transit_phase_ru(orbit: Optional[float], movement: str) -> str:
@@ -269,9 +270,20 @@ def _transit_phase_ru(orbit: Optional[float], movement: str) -> str:
 
 
 def _interpret_transit_deep(t_name: str, aspect: str, n_name: str,
-                            orbit: Optional[float], movement: str) -> str:
+                            orbit: Optional[float], movement: str, lang: str = "ru") -> str:
     moving = _TRANSIT_DEEP_NAME.get(t_name)
     target = _canonical_transit_target(n_name)
+    if lang == "en":
+        if not moving or aspect not in TE.ASPECTS:
+            return ""
+        pair = AUTHORED_TRANSIT_EN.get(f"transit|{moving}|{target}")
+        if not pair:
+            source = g(PLANET_ROLE.get(moving), "en") or TE.ROLES.get(moving)
+            focus = g(PLANET_ROLE.get(target), "en") or TE.ROLES.get(target)
+            if not source or not focus:
+                return ""
+            pair = TE.generic_pair(source, focus)
+        return TE.render(pair, moving, aspect, orbit, movement)
     pair = AUTHORED_TRANSIT.get(f"transit|{moving}|{target}") if moving else None
     dynamic = _TRANSIT_ASPECT_RU.get(aspect)
     if not moving or not dynamic:

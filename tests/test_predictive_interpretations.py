@@ -64,14 +64,15 @@ def test_deep_transit_uses_distinct_aspect_dynamics_and_phase(monkeypatch):
     assert square != opposition
 
 
-def test_fast_and_english_transits_keep_compact_fallback(monkeypatch):
+def test_fast_and_english_transits_keep_full_fallback(monkeypatch):
     monkeypatch.setattr(I, "AUTHORED_TRANSIT", {})
     fast = I.interpret_transit("Mercury", "trine", "Sun", "ru")
     english = I.interpret_transit("Saturn", "square", "Sun", "en")
 
     assert "Суть транзита." in fast
     assert "Меркурианская тема" in fast
-    assert "by transit brings" in english
+    assert "Transit overview." in english
+    assert "Recommendations." in english
 
 
 def test_deep_transits_cover_fast_movers_and_quintile_without_authored_json(monkeypatch):
