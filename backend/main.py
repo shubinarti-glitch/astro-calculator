@@ -15,6 +15,7 @@ from typing import Literal, Optional
 
 import requests
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
@@ -22,6 +23,7 @@ from pydantic import BaseModel, Field, field_validator
 import re
 
 from . import astrology, constants, content_store, db, emailer, payments, seo, vedic
+from . import api_language
 
 logger = logging.getLogger("astro")
 
@@ -58,6 +60,30 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Астрология — натальная карта и транзиты", version="0.1.0", lifespan=lifespan)
 
+
+@app.exception_handler(HTTPException)
+async def localized_http_error(request: Request, exc: HTTPException):
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": api_language.translate(exc.detail, api_language.language(request))},
+        headers=exc.headers,
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def localized_validation_error(request: Request, exc: RequestValidationError):
+    from fastapi.exception_handlers import request_validation_exception_handler
+    from fastapi.responses import JSONResponse
+    import json
+    response = await request_validation_exception_handler(request, exc)
+    if api_language.language(request) != "en":
+        return response
+    payload = json.loads(response.body)
+    for error in payload.get("detail", []):
+        error["msg"] = api_language.translate(error.get("msg", ""), "en")
+    return JSONResponse(status_code=response.status_code, content=payload)
+
 # CORS-middleware нет намеренно: API и фронтенд на одном источнике,
 # кросс-доменные запросы не нужны — браузерный same-origin по умолчанию строже.
 
@@ -92,7 +118,7 @@ async def _sync_content(request, call_next):
     cl = request.headers.get("content-length")
     if cl and cl.isdigit() and int(cl) > MAX_BODY_BYTES:
         from fastapi.responses import JSONResponse
-        return JSONResponse(status_code=413, content={"detail": "Слишком большой запрос"})
+        return JSONResponse(status_code=413, content={"detail": api_language.translate("Слишком большой запрос", api_language.language(request))})
     # Синхронизировать правки текстов из файла (дёшево, по mtime) — чтобы изменения
     # были видны во всех воркерах uvicorn, а не только там, где был сделан POST.
     content_store.refresh_if_changed()
@@ -1116,7 +1142,7 @@ def api_admin_events(uid: int = Depends(require_admin), days: int = Query(30, ge
 
 
 @app.get("/api/unsubscribe")
-def api_unsubscribe(token: str = Query("", max_length=100)):
+def api_unsubscribe(token: str = Query("", max_length=100), lang: Literal["ru", "en"] = Query("ru")):
     """Отписка по ссылке из письма — без входа. Всегда отвечаем страницей-подтверждением."""
     db.unsubscribe_by_token(token)
     html = ("<!DOCTYPE html><html lang='ru'><head><meta charset='utf-8'>"
@@ -1128,6 +1154,14 @@ def api_unsubscribe(token: str = Query("", max_length=100)):
             "Включить рассылку снова можно в кабинете на "
             "<a href='https://astrosmap.ru'>astrosmap.ru</a>.</p></body></html>")
     from fastapi.responses import HTMLResponse
+    if lang == "en":
+        html = ("<!DOCTYPE html><html lang='en'><head><meta charset='utf-8'>"
+                "<meta name='viewport' content='width=device-width,initial-scale=1'>"
+                "<title>Unsubscribe</title></head>"
+                "<body style='font-family:system-ui,sans-serif;max-width:520px;margin:60px auto;padding:0 20px;text-align:center'>"
+                "<h2>You have unsubscribed from the weekly digest</h2>"
+                "<p>We will no longer send you forecast emails. You can enable them again in your account at "
+                "<a href='https://astrosmap.ru/?lang=en'>astrosmap.ru</a>.</p></body></html>")
     return HTMLResponse(content=html)
 
 
@@ -1373,7 +1407,7 @@ def api_synastry_preview(req: SynastryRequest, request: Request):
 
 
 @app.get("/api/geocode")
-def api_geocode(q: str = Query(..., min_length=2), request: Request = None):
+def api_geocode(q: str = Query(..., min_length=2), request: Request = None, lang: Literal["ru", "en"] = Query("ru")):
     """Поиск города через OpenStreetMap Nominatim (бесплатно, без ключа)."""
     # Лимит per-IP: не дать превратить сервер в открытый прокси Nominatim (бан от OSM).
     ip = _client_ip(request)
@@ -1383,7 +1417,7 @@ def api_geocode(q: str = Query(..., min_length=2), request: Request = None):
     try:
         resp = requests.get(
             "https://nominatim.openstreetmap.org/search",
-            params={"q": q, "format": "json", "limit": 6, "accept-language": "ru"},
+            params={"q": q, "format": "json", "limit": 6, "accept-language": lang},
             headers={"User-Agent": "astro-natal-site/0.1 (educational project)"},
             timeout=10,
         )
@@ -1410,7 +1444,7 @@ def api_geocode(q: str = Query(..., min_length=2), request: Request = None):
 
 @app.get("/api/reverse-geocode")
 def api_reverse_geocode(lat: float = Query(..., ge=-90, le=90), lng: float = Query(..., ge=-180, le=180),
-                        request: Request = None):
+                        request: Request = None, lang: Literal["ru", "en"] = Query("ru")):
     """Обратный геокодинг: по координатам определить населённый пункт (OpenStreetMap Nominatim)."""
     ip = _client_ip(request)
     if _rate_limited(f"geo:{ip}", max_n=30, window=60):
@@ -1419,7 +1453,7 @@ def api_reverse_geocode(lat: float = Query(..., ge=-90, le=90), lng: float = Que
     try:
         resp = requests.get(
             "https://nominatim.openstreetmap.org/reverse",
-            params={"lat": lat, "lon": lng, "format": "json", "accept-language": "ru", "zoom": 10},
+            params={"lat": lat, "lon": lng, "format": "json", "accept-language": lang, "zoom": 10},
             headers={"User-Agent": "astro-natal-site/0.1 (educational project)"},
             timeout=10,
         )

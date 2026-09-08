@@ -889,7 +889,7 @@ const I18N = {
     login: "Sign in / Register",
     logout: "Sign out",
     theme_title: "Light / dark theme",
-    lang_title: "Язык / Language",
+    lang_title: "Language",
 
     tab_natal: "Natal chart",
     tab_transit: "Transits",
@@ -1657,9 +1657,28 @@ const I18N = {
   },
 };
 
+Object.assign(I18N.ru, {
+  ui_zoom_out: "Уменьшить", ui_zoom_in: "Увеличить", ui_zoom_fit: "По размеру экрана",
+  ui_theme_light: "Светлая тема", ui_theme_dark: "Тёмная тема",
+  ui_password_show: "Показать пароль", ui_password_hide: "Скрыть пароль",
+  ui_subscription_status: "Статус подписки", ui_server_error: "Ошибка сервера",
+  ui_saved_empty: "Пока нет сохранённых карт.",
+  ui_page_title: "Натальная карта онлайн бесплатно с транзитами | Project Artemisa",
+});
+Object.assign(I18N.en, {
+  ui_zoom_out: "Zoom out", ui_zoom_in: "Zoom in", ui_zoom_fit: "Fit to screen",
+  ui_theme_light: "Light theme", ui_theme_dark: "Dark theme",
+  ui_password_show: "Show password", ui_password_hide: "Hide password",
+  ui_subscription_status: "Subscription status", ui_server_error: "Server error",
+  ui_saved_empty: "No saved charts yet.",
+  ui_page_title: "Free online natal chart with transits | Project Artemisa",
+});
+
 let LANG = (function () {
+  const requested = new URLSearchParams(location.search).get("lang");
+  if (requested === "en" || requested === "ru") return requested;
   try {
-    return localStorage.getItem("astro_lang") || "ru";
+    return localStorage.getItem("astro_lang") === "en" ? "en" : "ru";
   } catch (e) {
     return "ru";
   }
@@ -1692,6 +1711,43 @@ function applyI18n() {
   document.querySelectorAll("[data-i18n-title]").forEach((el) => {
     el.setAttribute("title", t(el.getAttribute("data-i18n-title")));
   });
+  document.querySelectorAll("[data-i18n-aria]").forEach((el) => {
+    el.setAttribute("aria-label", t(el.getAttribute("data-i18n-aria")));
+  });
+  // Accessibility text also needs updating when a modal is already open.
+  const labels = {
+    ".modal-close, #support-close": "arc_close",
+    "#cabinet-btn": "cabinet_title",
+    "#scroll-top": "scroll_top_title",
+    "#support-btn": "support_title",
+    "#chart-zoom-out": "ui_zoom_out",
+    "#chart-zoom-in": "ui_zoom_in",
+    "#chart-zoom-reset": "ui_zoom_fit",
+    '[data-theme-set="light"]': "ui_theme_light",
+    '[data-theme-set="dark"]': "ui_theme_dark",
+  };
+  Object.entries(labels).forEach(([selector, key]) => {
+    document.querySelectorAll(selector).forEach((el) => {
+      el.setAttribute("aria-label", t(key));
+      if (el.hasAttribute("title")) el.setAttribute("title", t(key));
+    });
+  });
+  document.querySelectorAll(".pw-eye").forEach((el) => {
+    const shown = el.parentElement.querySelector("input")?.type === "text";
+    el.setAttribute("aria-label", t(shown ? "ui_password_hide" : "ui_password_show"));
+  });
+  const userName = document.getElementById("user-name");
+  if (userName) userName.title = t("ui_subscription_status");
+  if (document.getElementById("birth-form")) document.title = t("ui_page_title");
+  // Preserve query parameters and fragments; never rewrite downloads or external links.
+  document.querySelectorAll("a[href]").forEach((el) => {
+    const href = el.getAttribute("href");
+    if (!href || href.startsWith("#") || el.hasAttribute("download")) return;
+    const url = new URL(href, location.href);
+    if (url.origin !== location.origin || !/^(\/|\/about\/?|\/[^/]+\.html)$/.test(url.pathname)) return;
+    url.searchParams.set("lang", LANG);
+    el.setAttribute("href", url.pathname + url.search + url.hash);
+  });
 }
 
 function setLang(lang) {
@@ -1700,5 +1756,10 @@ function setLang(lang) {
     localStorage.setItem("astro_lang", LANG);
   } catch (e) {}
   applyI18n();
+  const url = new URL(location.href);
+  if (url.searchParams.has("lang")) {
+    url.searchParams.set("lang", LANG);
+    history.replaceState(history.state, "", url);
+  }
   document.dispatchEvent(new CustomEvent("langchange", { detail: { lang: LANG } }));
 }

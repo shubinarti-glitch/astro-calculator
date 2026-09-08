@@ -382,7 +382,15 @@ def test_seo_page_house_and_404():
 def test_seo_sitemap():
     r = client.get("/sitemap.xml")
     assert r.status_code == 200
-    assert r.text.count("<loc>") == 242  # главная + каталог + 240 страниц
+    from backend import seo
+    from xml.etree import ElementTree
+    root = ElementTree.fromstring(r.content)
+    urls = [node.text for node in root.iter() if node.tag.endswith("}loc")]
+    expected = {"http://testserver/", "http://testserver/opisaniya", "http://testserver/opisaniya?lang=en"}
+    expected.update(f"http://testserver/opisanie/{slug}" for slug in seo.PAGES)
+    expected.update(f"http://testserver/opisanie/{slug}?lang=en" for slug in seo.EN_PAGES)
+    assert set(urls) == expected
+    assert len(urls) == len(expected)
 
 
 def test_natal_explains_dst_gap_and_ambiguity():

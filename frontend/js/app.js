@@ -103,6 +103,7 @@ document.addEventListener("click", (e) => {
   const show = input.type === "password";
   input.type = show ? "text" : "password";
   eye.classList.toggle("on", show);
+  eye.setAttribute("aria-label", t(show ? "ui_password_hide" : "ui_password_show"));
 });
 
 // ---------- Трактовка аспекта по тапу (на телефоне hover нет) ----------
@@ -484,6 +485,11 @@ document.addEventListener("langchange", renderSkyNow);
 document.addEventListener("langchange", () => {
   syncLangButtons();
   updateCalcBtn();
+  refreshLock();
+  if (!$("cabinet-modal").classList.contains("hidden")) loadCabinet();
+  if (getToken()) loadProfiles();
+  if (getToken()) loadDaily();
+  if (!$("premium-modal").classList.contains("hidden")) openPremiumModal();
   // Сбросить кэш архетипов и перезагрузить, если раздел открыт.
   const ad = $("archetypes-details");
   if (ad) {
@@ -527,7 +533,7 @@ function setupAutocomplete(inputId, resultsId, latId, lngId, tzId, confirmId, on
     }
     timer = setTimeout(async () => {
       try {
-        const r = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`);
+        const r = await fetch(`/api/geocode?q=${encodeURIComponent(q)}&lang=${LANG}`);
         if (!r.ok) throw new Error();
         const items = await r.json();
         if (!items.length) {
@@ -853,7 +859,7 @@ $("rev-geo-btn").addEventListener("click", async () => {
   const orig = btn.textContent;
   btn.disabled = true; btn.textContent = "…";
   try {
-    const r = await fetch(`/api/reverse-geocode?lat=${lat}&lng=${lng}`);
+    const r = await fetch(`/api/reverse-geocode?lat=${lat}&lng=${lng}&lang=${LANG}`);
     if (!r.ok) throw new Error("rev");
     const d = await r.json();
     if (d.short) cityInput.value = d.short;
@@ -1073,7 +1079,7 @@ async function postJSON(url, body) {
       throw e;
     }
     const detail = await r.json().catch(() => ({}));
-    throw new Error(detail.detail || `Ошибка сервера (${r.status})`);
+    throw new Error(detail.detail || `${t("ui_server_error")} (${r.status})`);
   }
   return r.json();
 }
@@ -1852,7 +1858,8 @@ const PRINT_OVERRIDE = `
   body { font-family: Manrope, Arial, sans-serif; font-size: 10.5pt; line-height: 1.55; }
   /* Скрыть интерактив и служебное */
   button, .result-toolbar, .lang-switch, .tabs, .modal-close, .report-actions,
-  .vedic-actions, #deep-report-btn, .bt-tip, .save-btn, .simple-toggle { display: none !important; }
+  .vedic-actions, #deep-report-btn, .bt-tip, .save-btn, .simple-toggle,
+  #guest-teaser, .simple-toggle-row, .chart-zoom-hint { display: none !important; }
   .hidden { display: none !important; }
   /* Раскрыть свёрнутые секции для печати */
   details > summary { list-style: none; }
@@ -1865,12 +1872,14 @@ const PRINT_OVERRIDE = `
   .modal { width: 100% !important; max-width: none !important; max-height: none !important; overflow: visible !important; border: none !important; padding: 0 !important; background: #fff !important; }
   /* Карта по центру и не на весь лист */
   .chart-area { display: block !important; }
-  .chart-svg { max-width: 470px; margin: 0 auto 14px; }
+  .chart-svg { max-width: 660px; margin: 0 auto 14px; }
   .chart-svg svg { width: 100%; height: auto; }
   /* Аккуратные разрывы страниц */
   .syn-item, .interp-card, .fc-event, .vedic-cell, .cal-cell, .big-card, .rc-asp,
   .portrait-card, .summary, tr { break-inside: avoid; page-break-inside: avoid; }
-  .interp-card { break-inside: auto; page-break-inside: auto; }
+  .data-grids, #portrait, #psych, #spheres { display: block !important; }
+  .portrait-card { margin-bottom: 5mm; }
+  .interp-card { break-inside: avoid; page-break-inside: avoid; margin-bottom: 4mm; }
   .interp-card > h4, .interp-card > summary { break-after: avoid; page-break-after: avoid; }
   h1, h2, h3, h4 { break-after: avoid; page-break-after: avoid; color: #2a2150 !important; }
   p, li { orphans: 3; widows: 3; }
@@ -1921,22 +1930,20 @@ const PRINT_OVERRIDE = `
   .print-footer { position: fixed; bottom: 0; left: 0; right: 0; text-align: center; font-size: 8pt; color: #aaa; padding-bottom: 2mm; }
 `;
 
-function printCover(title, brandTitle, dateStr) {
-  const value = (id, fallback = "—") => {
-    const el = document.getElementById(id);
-    return escapeHtml(el && el.value ? el.value : fallback);
-  };
-  const name = value("name", LANG === "en" ? "Personal report" : "Персональный отчёт");
-  const city = value("city");
-  const birthDate = value("birth-date");
-  const birthTime = value("birth-time");
-  const houses = document.getElementById("houses-system");
-  const housesName = escapeHtml(houses && houses.selectedOptions.length ? houses.selectedOptions[0].textContent.trim() : "—");
+function printCover(title, brandTitle, dateStr, meta = {}) {
+  const name = escapeHtml(meta.name || (LANG === "en" ? "Personal report" : "Персональный отчёт"));
+  const city = escapeHtml(meta.city || "—");
+  // The server's local timestamp is already resolved for the birth location.
+  // Split its literal components; Date() would convert it to the viewer's timezone.
+  const local = String(meta.local_datetime || "").match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})/);
+  const birthDate = escapeHtml(local ? local[1] : "—");
+  const birthTime = escapeHtml(local ? local[2] : "—");
+  const housesName = escapeHtml(meta.houses_system_name || meta.houses_system || "—");
   const labels = LANG === "en"
     ? { date: "Birth date", time: "Birth time", city: "Birth place", houses: "House system", note: "Astrological interpretations describe tendencies and opportunities and do not replace professional medical, financial or legal advice." }
     : { date: "Дата рождения", time: "Время рождения", city: "Место рождения", houses: "Система домов", note: "Астрологические трактовки описывают тенденции и возможности и не заменяют профессиональные медицинские, финансовые или юридические рекомендации." };
   return `<section class="print-cover">
-    <img class="print-cover-logo" src="${location.origin}/icon.svg" alt="AstroSMap">
+    <div class="print-cover-mark" aria-hidden="true">✦</div>
     <div class="print-cover-brand">${escapeHtml(brandTitle)}</div>
     <div class="print-cover-domain">ASTROSMAP.RU</div>
     <div class="print-cover-rule"></div>
@@ -1953,7 +1960,7 @@ function printCover(title, brandTitle, dateStr) {
 }
 
 function printToc(doc, lang) {
-  const headings = Array.from(doc.querySelectorAll(".print-body h1, .print-body h2, .print-body h3"))
+  const headings = Array.from(doc.querySelectorAll(".editorial-report h2"))
     .map((node) => ({ text: node.textContent.trim(), level: node.tagName === "H3" ? 3 : 2 }))
     .filter((item) => item.text);
   if (!headings.length) return "";
@@ -1983,9 +1990,9 @@ function printLegal(lang) {
 // блокирует парсер, и на момент сборки тело документа может быть ещё пустым.
 function fixPrintSvg(doc) {
   try {
-    doc.querySelectorAll(".chart-svg svg").forEach((svg) => {
+    doc.querySelectorAll(".chart-svg svg, .report-chart svg").forEach((svg) => {
       const vb = (svg.getAttribute("viewBox") || "").split(/\s+/).map(Number);
-      const w = 480;
+      const w = 660;
       const h = vb.length === 4 && vb[2] > 0 ? Math.round((w * vb[3]) / vb[2]) : w;
       svg.setAttribute("width", w);
       svg.setAttribute("height", h);
@@ -1995,10 +2002,257 @@ function fixPrintSvg(doc) {
   } catch (e) {}
 }
 
+// Editorial reports are built from the last server response, never from UI cards.
+// This does not fetch additional data or broaden the response's access level.
+function reportLabel(key) {
+  const labels = {
+    overview: ["Обзор периода", "Period overview"], theme: ["Темы периода", "Themes of the period"],
+    highlights: ["Ключевые влияния", "Key influences"], couple: ["Отношения", "Relationship analysis"],
+    sphere_forecast: ["Прогноз по сферам жизни", "Life-area forecast"],
+    profection: ["Профекция", "Annual profection"], progressed_moon: ["Прогрессивная Луна", "Progressed Moon"],
+    days: ["Календарь по дням", "Daily calendar"], events: ["События периода", "Events in the period"],
+    candidates: ["Варианты времени рождения", "Birth-time candidates"],
+    aspects: ["Аспекты и трактовки", "Aspects and interpretations"], directed_aspects: ["Дирекционные аспекты", "Directed aspects"],
+    planets: ["Положения планет", "Planet positions"], houses: ["Дома", "Houses"],
+    transit_planets: ["Транзитные планеты", "Transiting planets"], prog_planets: ["Прогрессивные планеты", "Progressed planets"],
+    a_planets: ["Планеты первого участника", "First person's planets"], b_planets: ["Планеты второго участника", "Second person's planets"],
+    meta: ["Исходные данные", "Calculation data"], natal_meta: ["Данные рождения", "Birth data"],
+    transit_meta: ["Дата и место транзита", "Transit date and location"], prog_meta: ["Данные прогрессии", "Progression data"],
+    a_meta: ["Первый участник", "First person"], b_meta: ["Второй участник", "Second person"],
+    location_meta: ["Место расчёта", "Calculation location"], summary: ["Резюме", "Summary"],
+    text: ["Трактовка", "Interpretation"], interp: ["Трактовка", "Interpretation"],
+    interp_full: ["Подробная трактовка", "Full interpretation"], interp_sign: ["В знаке", "In the sign"], interp_house: ["В доме", "In the house"],
+    name: ["Название", "Name"], name_ru: ["Название", "Name"], sign_ru: ["Знак", "Sign"],
+    date: ["Дата", "Date"], start: ["Начало периода", "Period starts"], end: ["Конец периода", "Period ends"],
+    period_start: ["Начало периода", "Period starts"], period_end: ["Конец периода", "Period ends"],
+    city: ["Место", "Location"], local_datetime: ["Местное время", "Local time"],
+    lat: ["Широта", "Latitude"], lng: ["Долгота", "Longitude"], tz_str: ["Часовой пояс", "Time zone"],
+    strengths: ["Сильные стороны", "Strengths"], challenges: ["Задачи", "Challenges"], advice: ["Рекомендации", "Advice"],
+    verdict: ["Итог", "Conclusion"], score: ["Расчётный индекс", "Calculated index"],
+    house_num: ["Дом", "House"], orbit: ["Орб", "Orb"], retrograde: ["Ретроградность", "Retrograde"],
+    headline: ["Общий фон", "Overview"], groups: ["Сферы жизни", "Life areas"], items: ["Влияния", "Influences"],
+    label: ["Тема", "Theme"], t_name: ["Транзитная планета", "Transiting planet"], n_name: ["Натальная планета", "Natal planet"],
+    p1_ru: ["Первый объект", "First object"], p2_ru: ["Второй объект", "Second object"], aspect_ru: ["Аспект", "Aspect"],
+    nature_label: ["Характер влияния", "Nature of influence"], movement: ["Движение", "Motion"], orb: ["Орб", "Orb"],
+    deg: ["Градусы", "Degrees"], min: ["Минуты дуги", "Arcminutes"], dignity: ["Достоинство", "Dignity"],
+    target_date: ["Дата расчёта", "Calculation date"], elapsed_years: ["Возраст", "Age"], solar_arc: ["Солнечная дуга", "Solar arc"],
+    prog_moon: ["Прогрессивная Луна", "Progressed Moon"], prog_sun: ["Прогрессивное Солнце", "Progressed Sun"],
+    overlay: ["Связь с натальной картой", "Natal overlay"], focus: ["Главная сфера", "Main focus"], mood: ["Эмоциональный фон", "Emotional tone"],
+    lord: ["Управитель периода", "Period ruler"], tone: ["Общий настрой", "Overall tone"],
+    spheres: ["Сферы жизни", "Life areas"], composite: ["Композитная карта", "Composite chart"], overlays: ["Наложения домов", "House overlays"],
+    description_ru: ["Описание", "Description"], rule_ru: ["Критерий", "Criterion"], points: ["Баллы", "Points"], value: ["Значение", "Value"],
+    breakdown: ["Обоснование", "Supporting detail"], profile: ["Общие особенности", "General characteristics"], psych: ["Психологические темы", "Psychological themes"],
+    balance: ["Баланс стихий", "Element balance"], ruler: ["Управитель карты", "Chart ruler"], coruler: ["Соуправитель", "Co-ruler"],
+    temperament: ["Темперамент", "Temperament"], dominant: ["Ведущая планета", "Dominant planet"], axes: ["Психологические темы", "Psychological themes"],
+    missing: ["Зоны развития", "Growth areas"], self_esteem: ["Внутренняя опора", "Inner support"],
+    love: ["Отношения", "Relationships"], career: ["Карьера", "Career"], health: ["Благополучие", "Wellbeing"],
+    best: ["Наиболее вероятное время", "Most likely time"], top: ["Варианты времени", "Time candidates"],
+    time: ["Время", "Time"], confidence: ["Относительная оценка, %", "Relative score, %"],
+    asc_sign: ["Знак Асцендента", "Ascendant sign"], asc_deg: ["Градус Асцендента", "Ascendant degree"], mc_sign: ["Знак MC", "MC sign"],
+    factor: ["Соответствие событию", "Event correspondence"], window: ["Интервал времени", "Time window"],
+    from: ["Начало", "From"], to: ["Конец", "To"], alternatives: ["Альтернативы", "Alternatives"],
+    luminary_changes: ["Смена знаков", "Sign changes"], point: ["Объект", "Object"], from_sign: ["Исходный знак", "Original sign"], to_sign: ["Новый знак", "New sign"],
+    lunar: ["Лунный календарь", "Lunar calendar"], phase_ru: ["Фаза Луны", "Moon phase"],
+    weekday: ["День недели", "Weekday"], tithi_name: ["Титхи", "Tithi"], nakshatra_name: ["Накшатра", "Nakshatra"],
+    paksha: ["Пакша", "Paksha"], tara: ["Тарабала", "Tarabala"], quality_ru: ["Характер дня", "Day quality"],
+    note: ["Примечание", "Note"], nak_meaning: ["Значение накшатры", "Nakshatra meaning"], paksha_advice: ["Фаза и рекомендации", "Phase guidance"], day_advice: ["Рекомендации на день", "Daily guidance"],
+    year: ["Год", "Year"], month: ["Месяц", "Month"], exact_datetime: ["Точное время", "Exact time"],
+  };
+  if (labels[key]) return labels[key][LANG === "en" ? 1 : 0];
+  return ""; // Unknown schema fields are not editorial copy.
+}
+
+function reportValue(value, depth = 0, seen = new Set()) {
+  if (value == null || value === "") return "";
+  if (typeof value !== "object") {
+    const text = typeof value === "boolean" ? (value ? (LANG === "en" ? "Yes" : "Да") : (LANG === "en" ? "No" : "Нет")) : String(value);
+    if (text.length > 100 && seen.has(text)) return "";
+    if (text.length > 100) seen.add(text);
+    return splitReportParagraph(text).map((part) => `<p>${escapeHtml(part).replace(/\n/g, "<br>")}</p>`).join("");
+  }
+  if (Array.isArray(value)) return value.map((item) => `<section>${reportValue(item, depth + 1, seen)}</section>`).join("");
+  const entries = Object.entries(value).filter(([key, val]) => !["svg", "svg_light"].includes(key) && val != null && val !== "");
+  const rows = [], prose = [];
+  for (const [key, val] of entries) {
+    if (!reportLabel(key)) continue;
+    // Tone strings are narrative in return reports, but enum flags elsewhere.
+    if (key === "tone" && !String(val).includes(" ")) continue;
+    // Short scalar facts form appendices; long text is never clipped into cells.
+    if (typeof val !== "object" && String(val).length < 100 && !/text|interp|advice|summary|verdict/.test(key)) {
+      rows.push(`<tr><th scope="row">${escapeHtml(reportLabel(key))}</th><td>${reportValue(val, depth + 1, seen)}</td></tr>`);
+    } else {
+      const tag = depth < 2 ? "h3" : "h4";
+      const content = reportValue(val, depth + 1, seen);
+      if (content) prose.push((/^(text|interp|summary|headline)$/.test(key) ? "" : `<${tag}>${escapeHtml(reportLabel(key))}</${tag}>`) + content);
+    }
+  }
+  return (rows.length ? `<table><tbody>${rows.join("")}</tbody></table>` : "") + prose.join("");
+}
+
+function splitReportParagraph(text, target = 750, maximum = 900) {
+  const parts = [];
+  let rest = String(text);
+  while (rest.length > maximum) {
+    const window = rest.slice(0, maximum + 1);
+    const boundaries = [...window.matchAll(/[.!?…][»”"')\]]*\s+/gu)]
+      .map((match) => match.index + match[0].length)
+      .filter((end) => end >= 600 && end <= maximum);
+    let cut = boundaries.sort((a, b) => Math.abs(a - target) - Math.abs(b - target))[0];
+    // A very long sentence still needs a bounded paragraph: split at a word,
+    // retaining every whitespace character and punctuation mark verbatim.
+    if (!cut) {
+      const spaces = [...window.matchAll(/\s+/g)].map((match) => match.index + match[0].length).filter((end) => end <= maximum);
+      cut = spaces.at(-1) || maximum;
+    }
+    parts.push(rest.slice(0, cut));
+    rest = rest.slice(cut);
+  }
+  if (rest) parts.push(rest);
+  return parts;
+}
+
+function editorialDeepHtml(html) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  doc.querySelectorAll("script,style,button,input,select,textarea").forEach((el) => el.remove());
+  doc.body.querySelectorAll("*").forEach((el) => {
+    for (const attr of Array.from(el.attributes)) el.removeAttribute(attr.name);
+    if (el.tagName === "DIV") {
+      const p = doc.createElement("p");
+      p.append(...el.childNodes);
+      el.replaceWith(p);
+    }
+  });
+  doc.body.querySelectorAll("p").forEach((p) => {
+    const chunks = splitReportParagraph(p.textContent);
+    if (chunks.length < 2) return;
+    // DOM ranges preserve emphasis (including the initial bold label), unlike
+    // replacing the paragraph with plain text or slicing serialized HTML.
+    const walker = doc.createTreeWalker(p, 4 /* SHOW_TEXT */);
+    const nodes = [];
+    let node, total = 0;
+    while ((node = walker.nextNode())) {
+      nodes.push({ node, start: total, end: total + node.textContent.length });
+      total += node.textContent.length;
+    }
+    const boundary = (offset) => {
+      const item = nodes.find((entry) => entry.end >= offset) || nodes.at(-1);
+      return [item.node, offset - item.start];
+    };
+    let offset = 0;
+    for (const chunk of chunks) {
+      const range = doc.createRange();
+      range.setStart(...boundary(offset));
+      offset += chunk.length;
+      range.setEnd(...boundary(offset));
+      const paragraph = doc.createElement("p");
+      paragraph.append(range.cloneContents());
+      p.before(paragraph);
+    }
+    p.remove();
+  });
+  doc.body.querySelectorAll("h2,h3,h4").forEach((heading) => {
+    const paragraph = heading.nextElementSibling;
+    if (!paragraph || paragraph.tagName !== "P" || heading.textContent.length + paragraph.textContent.length > 1100) return;
+    const lead = doc.createElement("div");
+    lead.className = "report-lead";
+    heading.before(lead);
+    lead.append(heading, paragraph);
+  });
+  return doc.body.innerHTML;
+}
+
+function natalReportAppendices(data) {
+  const label = (ru, en) => LANG === "en" ? en : ru;
+  const cell = (value) => escapeHtml(value == null || value === "" ? "—" : String(value));
+  const table = (title, headers, rows) => rows.length
+    ? `<section><h2>${cell(title)}</h2><table><thead><tr>${headers.map((h) => `<th scope="col">${cell(h)}</th>`).join("")}</tr></thead><tbody>${rows.map((row) => `<tr>${row.map((v) => `<td>${cell(v)}</td>`).join("")}</tr>`).join("")}</tbody></table></section>` : "";
+  const position = (p) => `${p.sign_symbol || ""} ${p.sign_ru || ""}${p.deg != null ? ` ${p.deg}°${String(p.min ?? 0).padStart(2, "0")}′` : ""}`.trim();
+  const m = data.meta || {};
+  const facts = [
+    [label("Имя", "Name"), m.name],
+    [label("Дата и местное время", "Local date and time"), m.local_datetime],
+    [label("Место рождения", "Birth place"), m.city],
+    [label("Широта", "Latitude"), m.lat], [label("Долгота", "Longitude"), m.lng],
+    [label("Часовой пояс", "Time zone"), m.tz_str],
+    [label("Система домов", "House system"), m.houses_system_name || m.houses_system],
+  ].filter(([, value]) => value != null && value !== "");
+  let html = table(label("Исходные данные расчёта", "Calculation data"), [label("Параметр", "Parameter"), label("Значение", "Value")], facts);
+  // Explicit column selections keep prose, internal IDs and API flags out of appendices.
+  html += table(label("Планеты и угловые точки", "Planets and angles"),
+    [label("Объект", "Object"), label("Положение", "Position"), label("Дом", "House"), label("Достоинство", "Dignity"), label("Ретроградность", "Retrograde")],
+    [...(data.planets || []), ...(data.angles || [])].map((p) => [p.name_ru, position(p), p.house_num, p.dignity, p.retrograde ? "R" : "—"]));
+  html += table(label("Куспиды домов", "House cusps"),
+    [label("Дом", "House"), label("Положение", "Position"), label("Сфера жизни", "Life area")],
+    (data.houses || []).map((h) => [h.house_num, position(h), h.sphere || h.meaning]));
+  html += table(label("Таблица аспектов", "Aspect table"),
+    [label("Первый объект", "First object"), label("Аспект", "Aspect"), label("Второй объект", "Second object"), label("Орб", "Orb")],
+    (data.aspects || []).map((a) => [a.p1_ru, a.aspect_ru, a.p2_ru, a.orbit == null ? null : `${a.orbit}°`]));
+  return html;
+}
+
+function buildEditorialReport(data, tool, title) {
+  if (!data) return "";
+  const toolTitle = title || t("tab_" + tool);
+  let body = `<h1>${escapeHtml(toolTitle)}</h1>`;
+  const svg = data.svg_light || data.svg;
+  if (svg) body += `<figure class="report-chart">${svg}</figure>`;
+  if (tool === "natal") {
+    body += editorialDeepHtml(buildDeepReport(data));
+    body += natalReportAppendices(data);
+  } else {
+    // Each technique uses only its own payload, including every day/event/candidate.
+    // Prioritize narrative before detailed calculation data, independent of UI selection.
+    const sections = {
+      transit: ["natal_meta", "transit_meta", "overview", "aspects", "transit_planets"],
+      progression: ["natal_meta", "prog_meta", "target_date", "elapsed_years", "solar_arc", "highlights", "aspects", "directed_aspects", "prog_planets"],
+      return: ["natal_meta", "meta", "period_start", "period_end", "theme", "profile", "psych", "spheres", "planets", "houses", "aspects"],
+      synastry: ["a_meta", "b_meta", "couple", "score", "aspects", "a_planets", "b_planets"],
+      forecast: ["natal_meta", "location_meta", "start", "end", "summary", "profection", "progressed_moon", "sphere_forecast", "events"],
+      calendar: ["natal_meta", "location_meta", "start", "end", "events", "lunar"],
+      rectification: ["meta", "best", "top"], vedic: ["year", "month", "days"],
+    };
+    const keys = sections[tool] || [];
+    const seen = new Set();
+    for (const key of keys) {
+      let sectionData = data[key];
+      if (tool === "synastry" && key === "score" && sectionData) {
+        sectionData = { value: sectionData.value, description_ru: sectionData.description_ru };
+      }
+      if (key === "lunar" && sectionData && !Array.isArray(sectionData)) {
+        sectionData = Object.entries(sectionData).map(([date, day]) => ({ date, ...day }));
+      }
+      const content = reportValue(sectionData, 0, seen);
+      if (content) body += `<section><h2>${escapeHtml(reportLabel(key))}</h2>${content}</section>`;
+    }
+  }
+  return `<article class="editorial-report">${body}</article>`;
+}
+
+const EDITORIAL_PRINT_STYLE = `
+  .editorial-report { display:block; color:#29253a; }
+  .editorial-report section { display:block; margin:0 0 16pt; }
+  .editorial-report h1,.editorial-report h2,.editorial-report h3,.editorial-report h4 { break-after:avoid; font-family:Georgia,serif; }
+  .editorial-report h2 { margin-top:24pt; border-bottom:1px solid #d9d3e4; padding-bottom:5pt; }
+  .editorial-report p { margin:0 0 9pt; orphans:3; widows:3; white-space:normal; break-inside:avoid; }
+  .editorial-report table { width:100%; border-collapse:collapse; margin:12pt 0; font-size:9pt; }
+  .editorial-report th,.editorial-report td { text-align:left; vertical-align:top; padding:5pt; border-bottom:1px solid #e2dfea; overflow-wrap:anywhere; }
+  .editorial-report th { width:auto; }
+  .editorial-report tbody th { width:30%; }
+  .editorial-report .report-lead { break-inside:avoid; page-break-inside:avoid; }
+  .print-legal { break-inside:avoid; }
+  .editorial-report td p { margin:0; }
+  .editorial-report tr { break-inside:avoid; }
+  .report-chart { margin:20pt auto; text-align:center; break-inside:avoid; }
+  .report-chart svg { max-width:100%; height:auto; }
+`;
+
 function buildPrintFrame(srcId, title, extraHead) {
   const src = document.getElementById(srcId);
   if (!src) return null;
-  const content = src.innerHTML;
+  const reportData = srcId === "deep-content" ? deepReportData : lastData;
+  const reportTool = srcId === "deep-content" ? "natal" : lastMode;
+  if (!reportData || !reportTool) return null;
+  const content = buildEditorialReport(reportData, reportTool, title);
   const old = document.getElementById("print-frame");
   if (old) old.remove();
   const frame = document.createElement("iframe");
@@ -2020,14 +2274,23 @@ function buildPrintFrame(srcId, title, extraHead) {
        <div class="print-brand-date">${dateStr}</div>
      </div>`;
   const brandFooter = `<div class="print-footer">${brandTitle} · astrosmap.ru</div>`;
-  const cover = printCover(title || brandSub, brandTitle, dateStr);
+  const cover = reportTool === "natal"
+    ? printCover(title || brandSub, brandTitle, dateStr, reportData.meta)
+    : `<section class="print-cover">
+        <div class="print-cover-mark" aria-hidden="true">✦</div>
+        <div class="print-cover-brand">${escapeHtml(brandTitle)}</div>
+        <div class="print-cover-domain">ASTROSMAP.RU</div>
+        <div class="print-cover-rule"></div>
+        <div class="print-cover-type">${escapeHtml(title || t("tab_" + reportTool))}</div>
+        <p class="print-cover-note">${escapeHtml(dateStr)}</p>
+      </section>`;
   const doc = frame.contentWindow.document;
   doc.open();
   doc.write(
     `<!DOCTYPE html><html lang="${LANG}" data-theme="light"><head><meta charset="utf-8">` +
     `<title>${brandTitle} — ${title || brandSub}</title>` +
     `<link rel="stylesheet" href="${location.origin}/css/style.css">` +
-    `<style>${PRINT_OVERRIDE}</style>${extraHead || ""}</head>` +
+    `<style>${PRINT_OVERRIDE}${EDITORIAL_PRINT_STYLE}</style>${extraHead || ""}</head>` +
     `<body data-theme="light"><main class="print-document">${cover}<div class="print-body">${brandHeader}${content}${printLegal(LANG)}</div></main>${brandFooter}</body></html>`
   );
   doc.close();
@@ -2070,6 +2333,57 @@ function printFrom(srcId, title) {
 // Одноклик-экспорт активного отчёта в готовый PDF-файл — без системного диалога.
 // Рендер идёт в том же печатном iframe (та же вёрстка, что и «Печать»), а html2pdf
 // подключается локально (script-src 'self') и работает внутри iframe.
+async function renderPagedReportPdf(win, source, options, onProgress = () => {}) {
+  if (win.document.fonts) await win.document.fonts.ready;
+  const worker = win.html2pdf().set({ ...options, enableLinks: false }).from(source).toContainer();
+  const container = await worker.get("container");
+  const overlay = await worker.get("overlay");
+  try {
+    const size = await worker.get("pageSize");
+    // Exactly the same CSS-pixel page height used by html2pdf's pagebreak plugin.
+    const pageHeight = size.inner.px.height;
+    const width = Math.ceil(container.getBoundingClientRect().width);
+    const height = Math.ceil(container.scrollHeight);
+    if (!(width > 0 && pageHeight > 0 && height > 0)) throw new Error("Invalid PDF layout");
+    const total = Math.ceil(height / pageHeight);
+    // Obtain the bundled jsPDF instance without ever rasterizing the full document.
+    const seed = win.document.createElement("canvas");
+    seed.width = seed.height = 1;
+    const pdf = await win.html2pdf().set({ ...options, enableLinks: false }).from(seed).toPdf().get("pdf");
+    pdf.deletePage(1);
+    seed.width = seed.height = 0;
+    for (let page = 0; page < total; page++) {
+      // toCanvas removes its overlay after rendering. Reattach the SAME laid-out
+      // container rather than invoking toContainer again and adding pagebreaks twice.
+      if (!win.document.body.contains(overlay)) win.document.body.appendChild(overlay);
+      const sliceHeight = Math.min(pageHeight, height - page * pageHeight);
+      const canvas = await worker.set({ html2canvas: {
+        ...options.html2canvas, width, height: sliceHeight, y: page * pageHeight,
+        scrollX: 0, scrollY: 0,
+      } }).toCanvas().get("canvas");
+      try {
+        if (!canvas.width || !canvas.height) throw new Error("Empty PDF page canvas");
+        const encoded = canvas.toDataURL("image/jpeg", options.image.quality);
+        if (encoded === "data:,") throw new Error("PDF canvas limit exceeded");
+        pdf.addPage();
+        pdf.addImage(encoded, "JPEG", 10, 10, size.inner.width, size.inner.height * sliceHeight / pageHeight);
+        if (page > 0) {
+          pdf.setFontSize(8);
+          pdf.setTextColor(145, 137, 156);
+          pdf.text(`${page + 1} / ${total}`, 200, 291, { align: "right" });
+        }
+        onProgress(page + 1, total);
+      } finally {
+        canvas.width = canvas.height = 0; // release each raster before the next page
+        await worker.set({ canvas: null });
+      }
+    }
+    return pdf;
+  } finally {
+    overlay.remove();
+  }
+}
+
 function downloadPdf(srcId, title, btn, onDone) {
   const extraHead =
     `<script src="${location.origin}/js/vendor/html2pdf.bundle.min.js"></script>`;
@@ -2108,21 +2422,15 @@ function downloadPdf(srcId, title, btn, onDone) {
     const opt = {
       margin: 10,
       filename: fname,
-      image: { type: "jpeg", quality: 0.98 },
+      image: { type: "jpeg", quality: 0.9 },
       html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", logging: false },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
       pagebreak: { mode: ["css", "legacy"] },
     };
     try {
-      win.html2pdf().set(opt).from(win.document.body).toPdf().get("pdf").then((pdf) => {
-        const total = pdf.internal.getNumberOfPages();
-        for (let page = 2; page <= total; page += 1) {
-          pdf.setPage(page);
-          pdf.setFontSize(8);
-          pdf.setTextColor(145, 137, 156);
-          pdf.text(`${page} / ${total}`, 200, 291, { align: "right" });
-        }
-      }).save().then(cleanup).catch(fail);
+      renderPagedReportPdf(win, win.document.body, opt, (page, total) => {
+        if (btn) btn.textContent = `${t("pdf_wait")} ${page}/${total}`;
+      }).then((pdf) => pdf.save(fname, { returnPromise: true })).then(cleanup).catch(fail);
     } catch (e) { fail(); }
   };
   // Дождаться загрузки html2pdf внутри iframe и прогрузки стилей, затем рендерить.
@@ -2145,8 +2453,7 @@ if ($("deep-pdf")) {
 }
 
 function activeToolTitle() {
-  const activeTab = document.querySelector(".tab.active");
-  return activeTab ? activeTab.textContent.trim() : "";
+  return lastMode ? t("tab_" + lastMode) : "";
 }
 // Кнопка системной печати результата любого инструмента.
 $("result-print").addEventListener("click", () => printFrom("results", activeToolTitle()));
@@ -2808,7 +3115,7 @@ const clearToken = () => localStorage.removeItem(TOKEN_KEY);
 
 function authHeaders() {
   const t = getToken();
-  return t ? { Authorization: `Bearer ${t}` } : {};
+  return { "Accept-Language": LANG, ...(t ? { Authorization: `Bearer ${t}` } : {}) };
 }
 
 let IS_PREMIUM = false;
@@ -3069,7 +3376,7 @@ async function loadDaily() {
         url += `?${qs}`;
       }
     } catch (_) {}
-    const r = await fetch(url, { headers: authHeaders() });
+    const r = await fetch(`${url}${url.includes("?") ? "&" : "?"}lang=${LANG}`, { headers: authHeaders() });
     if (!r.ok) { block.classList.add("hidden"); return; }
     const d = await r.json();
     renderDaily(d);
@@ -3776,7 +4083,7 @@ async function loadProfiles() {
 
 function renderSavedList(profiles) {
   if (!profiles.length) {
-    $("saved-list").innerHTML = `<li style="color:var(--text-dim);font-size:12px;border:none;background:none">Пока нет сохранённых карт.</li>`;
+    $("saved-list").innerHTML = `<li style="color:var(--text-dim);font-size:12px;border:none;background:none">${t("ui_saved_empty")}</li>`;
     return;
   }
   $("saved-list").innerHTML = profiles

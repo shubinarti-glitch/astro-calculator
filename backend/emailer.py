@@ -86,6 +86,9 @@ def digest_letter(person: str, events: list[dict], unsub_link: str, lang: str = 
     events — список {date, title, text}. Возвращает (subject, text, html)."""
     empty_note = ("На этой неделе крупных транзитов нет — спокойный фон, "
                   "хорошее время для рутины и накопленных дел.")
+    if lang == "en":
+        empty_note = ("There are no major transits this week: a calm background and "
+                      "a good time for routine tasks and unfinished business.")
     if not events:
         body_events = empty_note
     else:
@@ -96,12 +99,25 @@ def digest_letter(person: str, events: list[dict], unsub_link: str, lang: str = 
             "Подробный прогноз с точными датами — на astrosmap.ru, вкладка «Прогноз».\n\n"
             "———\n"
             f"Чтобы отписаться от еженедельных писем: {unsub_link}")
-    return subject, body, _digest_html(person, events, empty_note, unsub_link)
+    if lang == "en":
+        subject = f"Your weekly astrology forecast — {person}"
+        body = (f"Hello!\n\nThe week's key transits for the natal chart of {person}:\n\n"
+                f"{body_events}\n\n"
+                "For the detailed forecast with exact dates, visit the Forecast tab at astrosmap.ru.\n\n"
+                f"———\nTo unsubscribe from weekly emails: {unsub_link}")
+    return subject, body, _digest_html(person, events, empty_note, unsub_link, lang)
 
 
-def _digest_html(person: str, events: list[dict], empty_note: str, unsub_link: str) -> str:
+def _digest_html(person: str, events: list[dict], empty_note: str, unsub_link: str, lang: str = "ru") -> str:
     """HTML-открытка дайджеста. Инлайн-стили — почтовые клиенты не читают <style>/классы."""
     esc = html_mod.escape
+    en = lang == "en"
+    heading = "Your weekly astrology forecast" if en else "Ваш астропрогноз на неделю"
+    chart_label = "Natal chart" if en else "Натальная карта"
+    open_label = "Open the detailed forecast" if en else "Открыть подробный прогноз"
+    footer = "An email for Astrocalculator subscribers" if en else "Письмо для подписчиков Астрокалькулятора"
+    unsubscribe = "Unsubscribe from weekly emails" if en else "Отписаться от еженедельных писем"
+    site_url = "https://astrosmap.ru/?lang=en" if en else "https://astrosmap.ru"
     if events:
         rows = "".join(
             f'<tr><td style="padding:14px 18px;border-bottom:1px solid rgba(201,168,106,0.18);">'
@@ -117,22 +133,22 @@ def _digest_html(person: str, events: list[dict], empty_note: str, unsub_link: s
         events_block = (f'<p style="color:#b9b4d6;font-size:15px;line-height:1.6;'
                         f'padding:16px 18px;margin:0;">{esc(empty_note)}</p>')
     return f"""\
-<!DOCTYPE html><html><body style="margin:0;padding:0;background:#0a0a1a;">
+<!DOCTYPE html><html lang="{'en' if en else 'ru'}"><body style="margin:0;padding:0;background:#0a0a1a;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a1a;padding:24px 12px;">
 <tr><td align="center">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#14142b;border:1px solid rgba(139,123,216,0.28);border-radius:16px;overflow:hidden;">
     <tr><td style="background:linear-gradient(135deg,#2a2350,#3a2f1a);padding:30px 24px;text-align:center;">
       <div style="font-size:30px;letter-spacing:6px;color:#c9a86a;">☉&nbsp;☽&nbsp;✦</div>
-      <div style="color:#c9a86a;font-family:Georgia,serif;font-size:24px;font-weight:700;margin-top:10px;">Ваш астропрогноз на неделю</div>
-      <div style="color:#b9b4d6;font-size:14px;margin-top:6px;">Натальная карта · {esc(person)}</div>
+      <div style="color:#c9a86a;font-family:Georgia,serif;font-size:24px;font-weight:700;margin-top:10px;">{heading}</div>
+      <div style="color:#b9b4d6;font-size:14px;margin-top:6px;">{chart_label} · {esc(person)}</div>
     </td></tr>
     <tr><td style="padding:6px 6px 0;">{events_block}</td></tr>
     <tr><td style="padding:22px 24px;text-align:center;">
-      <a href="https://astrosmap.ru" style="display:inline-block;background:#8b7bd8;color:#fff;text-decoration:none;font-size:15px;font-weight:600;padding:12px 26px;border-radius:10px;">Открыть подробный прогноз</a>
+      <a href="{site_url}" style="display:inline-block;background:#8b7bd8;color:#fff;text-decoration:none;font-size:15px;font-weight:600;padding:12px 26px;border-radius:10px;">{open_label}</a>
     </td></tr>
     <tr><td style="padding:0 24px 24px;text-align:center;">
-      <div style="color:#6f6b90;font-size:12px;line-height:1.6;">Письмо для подписчиков Астрокалькулятора · Project Artemisa.<br>
-      <a href="{esc(unsub_link)}" style="color:#8b8ab0;">Отписаться от еженедельных писем</a></div>
+      <div style="color:#6f6b90;font-size:12px;line-height:1.6;">{footer} · Project Artemisa.<br>
+      <a href="{esc(unsub_link)}" style="color:#8b8ab0;">{unsubscribe}</a></div>
     </td></tr>
   </table>
 </td></tr>

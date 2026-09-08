@@ -54,11 +54,12 @@ def main() -> int:
             skipped += 1
             continue
         params = dict(primary["data"])
-        params["lang"] = "ru"
+        lang = "en" if params.get("lang") == "en" else "ru"
+        params["lang"] = lang
         try:
             events = week_events(params)
-            unsub = f"{BASE_URL}/api/unsubscribe?token={sub['unsub_token']}"
-            subject, body, html = emailer.digest_letter(primary["label"], events, unsub)
+            unsub = f"{BASE_URL}/api/unsubscribe?token={sub['unsub_token']}&lang={lang}"
+            subject, body, html = emailer.digest_letter(primary["label"], events, unsub, lang)
             emailer.send(sub["email"], subject, body, html)
             sent += 1
             time.sleep(SEND_PAUSE_SEC)
