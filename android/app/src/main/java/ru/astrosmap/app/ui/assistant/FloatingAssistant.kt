@@ -182,7 +182,7 @@ fun FloatingAssistant(route: String?, modifier: Modifier = Modifier) {
 
     BoxWithConstraints(modifier.fillMaxSize()) {
         val density = LocalDensity.current
-        val assistantSize = 88.dp
+        val assistantSize = AssistantPrefs.size(context).dp
         val maxX = with(density) { (maxWidth - assistantSize).coerceAtLeast(0.dp).toPx() }
         val maxY = with(density) { (maxHeight - assistantSize).coerceAtLeast(0.dp).toPx() }
         val bubbleWidth = 232.dp.coerceAtMost(maxWidth - 16.dp)

@@ -29,6 +29,8 @@ object AssistantPrefs {
     fun animations(context: Context) = prefs(context).getBoolean(ANIMATIONS, true)
     fun setAnimations(context: Context, value: Boolean) = prefs(context).edit().putBoolean(ANIMATIONS, value).apply()
     fun hints(context: Context) = prefs(context).getBoolean(HINTS, true)
+    fun size(context: Context) = prefs(context).getInt("size_dp", 88).coerceIn(64, 104)
+    fun setSize(context: Context, value: Int) = prefs(context).edit().putInt("size_dp", value.coerceIn(64, 104)).apply()
     fun setHints(context: Context, value: Boolean) = prefs(context).edit().putBoolean(HINTS, value).apply()
     fun positionX(context: Context) = prefs(context).getFloat(POSITION_X, 0.92f).coerceIn(0f, 1f)
     fun positionY(context: Context) = prefs(context).getFloat(POSITION_Y, 0.72f).coerceIn(0f, 1f)

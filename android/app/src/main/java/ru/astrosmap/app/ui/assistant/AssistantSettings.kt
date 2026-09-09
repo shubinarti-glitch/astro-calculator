@@ -34,6 +34,7 @@ fun AssistantSettings(context: Context) {
     var enabled by remember { mutableStateOf(AssistantPrefs.enabled(context)) }
     var animations by remember { mutableStateOf(AssistantPrefs.animations(context)) }
     var hints by remember { mutableStateOf(AssistantPrefs.hints(context)) }
+    var size by remember { mutableStateOf(AssistantPrefs.size(context)) }
 
     Text(stringResource(R.string.assistant_title), style = MaterialTheme.typography.titleSmall,
         color = MaterialTheme.colorScheme.primary)
@@ -55,6 +56,20 @@ fun AssistantSettings(context: Context) {
                 Text(stringResource(character.nameRes), style = MaterialTheme.typography.labelSmall,
                     color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
             }
+        }
+    }
+    Text(stringResource(R.string.assistant_size))
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+        listOf(64, 88, 104).forEach { value ->
+            androidx.compose.material3.FilterChip(
+                selected = size == value,
+                onClick = { size = value; AssistantPrefs.setSize(context, value) },
+                label = { Text(stringResource(when (value) {
+                    64 -> R.string.assistant_size_small
+                    88 -> R.string.assistant_size_medium
+                    else -> R.string.assistant_size_large
+                })) },
+            )
         }
     }
     AssistantSwitch(stringResource(R.string.assistant_show), enabled) {
