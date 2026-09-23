@@ -101,6 +101,20 @@ class AccountViewModel @Inject constructor(
         syncManager.sync()
     }
 
+    var recoverySent by mutableStateOf(false)
+        private set
+
+    fun resetRecovery() {
+        recoverySent = false
+        errorText = null
+        errorRes = null
+    }
+
+    fun recoverPassword(email: String) = submit {
+        api.forgotPassword(ru.astrosmap.app.data.api.ForgotPasswordRequest(email.trim(), lang()))
+        recoverySent = true
+    }
+
     fun logout() {
         viewModelScope.launch {
             runCatching { api.logout() } // сеть могла пропасть — локальный выход всё равно делаем
@@ -125,6 +139,8 @@ class AccountViewModel @Inject constructor(
             busy = true
             try {
                 block()
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: HttpException) {
                 errorText = parseDetail(e)
             } catch (e: IOException) {

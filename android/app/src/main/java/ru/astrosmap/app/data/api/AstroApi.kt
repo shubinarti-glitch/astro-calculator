@@ -43,6 +43,9 @@ data class RegisterRequest(
 data class DeleteAccountRequest(val password: String)
 
 @Serializable
+data class ForgotPasswordRequest(val email: String, val lang: String = "ru")
+
+@Serializable
 data class AuthResponse(
     val token: String,
     val username: String,
@@ -153,6 +156,9 @@ interface AstroApi {
         @retrofit2.http.Query("lang") lang: String,
         @retrofit2.http.Query("tz") timezone: String? = null,
     ): TransitsResponse
+
+    @POST("api/auth/forgot")
+    suspend fun forgotPassword(@Body body: ForgotPasswordRequest): kotlinx.serialization.json.JsonObject
 
     @POST("api/auth/login")
     suspend fun login(@Body body: LoginRequest): AuthResponse

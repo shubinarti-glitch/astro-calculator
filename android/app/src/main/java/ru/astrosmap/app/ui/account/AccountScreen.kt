@@ -178,6 +178,7 @@ private fun AuthForm(viewModel: AccountViewModel, onMaterials: () -> Unit) {
         ) {
             Text(stringResource(if (registerMode) R.string.auth_do_register else R.string.auth_do_login))
         }
+        RecoveryButton(viewModel, if (registerMode) email else username.takeIf { '@' in it }.orEmpty())
         TextButton(onClick = { registerMode = !registerMode }) {
             Text(stringResource(if (registerMode) R.string.auth_have_account else R.string.auth_no_account))
         }
@@ -235,6 +236,7 @@ private fun Profile(me: MeResponse, viewModel: AccountViewModel, onMaterials: ()
             stringResource(R.string.acc_charts_count, chartsCount),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        RecoveryButton(viewModel, me.email.orEmpty(), true)
         OutlinedButton(onClick = viewModel::logout, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.auth_logout))
         }
@@ -321,6 +323,7 @@ private fun PremiumInfoPanel() {
 private fun LegalPanel() {
     val context = LocalContext.current
     ru.astrosmap.app.ui.theme.AstroPanel {
+        FeedbackButton()
         ru.astrosmap.app.ui.assistant.AssistantSettings(context)
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         LanguageRow(context)

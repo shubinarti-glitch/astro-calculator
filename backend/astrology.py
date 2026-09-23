@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Ядро астрологических расчётов на базе Kerykeion (Swiss Ephemeris)."""
 from __future__ import annotations
+from .editorial_data import text as _editorial_text
 
 import contextvars
 import math
@@ -50,7 +51,7 @@ def _ord(n: int) -> str:
         suf = "th"
     else:
         suf = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
-    return f"{n}{suf}"
+    return f'{n}{suf}'
 
 try:
     from timezonefinder import TimezoneFinder  # noqa: E402
@@ -96,7 +97,7 @@ def build_subject(
 
     try:
         return AstrologicalSubjectFactory.from_birth_data(
-            name=name or "Без имени",
+            name=name or _editorial_text('astrology.0106f3ae25023cf58ed2b23e078a455399cb5da527c9f99cb9022733ba21a629'),
             year=year,
             month=month,
             day=day,
@@ -114,15 +115,13 @@ def build_subject(
         )
     except Exception as exc:
         msg = str(exc).lower()
-        if "non-existent time" in msg or "does not exist due to dst" in msg:
+        if _editorial_text('astrology.432ab99a48f05576130612e6b96ad91e1ce5d21c7cbe7461d5142c1746091354') in msg or _editorial_text('astrology.e4ac547615b5f9798a19e5b8ce77d8864b14e4f9a9279b5c90b2be10d9ac299e') in msg:
             raise ValueError(
-                "Такого местного времени не существовало из-за перевода часов. "
-                "Укажите время до или после перехода."
+                _editorial_text('astrology.c197de83032daa1a94a2ed0b3c634a195bed30f95b2a705df02dc7b6a358417f')
             ) from exc
-        if "ambiguous time" in msg or "ambiguous" in msg and "dst" in msg:
+        if _editorial_text('astrology.b5d886a2688e60f1a0c525b918380c7d0f931199625b2fbb3df20089c8ee7803') in msg or "ambiguous" in msg and "dst" in msg:
             raise ValueError(
-                "Это местное время повторилось при переводе часов и неоднозначно. "
-                "Укажите время с поправкой на первый или второй час."
+                _editorial_text('astrology.5ccd4f1c8617fbb9c9cf4d5240dfc31cfc6c78ed3ceb09213cbbb05b0a294332')
             ) from exc
         raise
 
@@ -546,7 +545,7 @@ def _deep_analysis(model, lang: str) -> dict:
                               "planets": [C.point_name(x, lang) for x in names]})
     for house, names in by_house.items():
         if len(names) >= 3:
-            stelliums.append({"where": (f"house {house}" if lang == "en" else f"{house}-й дом"),
+            stelliums.append({"where": (f"{_editorial_text('astrology.f4851fee58557351743015665339e7e712937ed68cf5e56edf43e12cd1f2fe6e')}{house}" if lang == "en" else f"{house}{_editorial_text('astrology.685547d6d819c039ea9fd4e48a0d6e77dcbe52bf84d16c95903cbb7cdd7e5a65')}"),
                               "planets": [C.point_name(x, lang) for x in names]})
 
     # Конфигурации
@@ -708,9 +707,9 @@ def return_report(
     }
     payload["return_type"] = rtype
     if lang == "en":
-        payload["return_type_ru"] = "Solar return" if rtype == "Solar" else "Lunar return"
+        payload["return_type_ru"] = _editorial_text('astrology.ebf43f61e74abd9d8811ace1a8ef85573d5a79dfe4bb0cd20f6e715f27e765ba') if rtype == "Solar" else _editorial_text('astrology.c2815e010954639351ef917c6bf898eaac9e17874b90abba10bfef07f6b34c5a')
     else:
-        payload["return_type_ru"] = "Солнечное возвращение (соляр)" if rtype == "Solar" else "Лунное возвращение (лунар)"
+        payload["return_type_ru"] = _editorial_text('astrology.e4dd68fbb03cf2cca9ac2d9a4276d28f817918e54d4fee052de630dda9017598') if rtype == "Solar" else _editorial_text('astrology.9c694185f08835d7fd8041aad90445c376bcbfbb27d9a38d5d077072f275b3df')
     payload["natal_meta"] = _meta(natal_model)
     # Наложение Асцендента возвращения на натальные дома — главная сфера периода.
     natal_cusps = [getattr(natal_model, h).abs_pos for h in C.HOUSE_ORDER]
@@ -1053,50 +1052,50 @@ def _refine_transit_pass(natal_model, loc: dict, tz: str, key: tuple, info: dict
 
 # Сфера жизни по натальной точке, которой касается транзит
 _SPHERE_OF = {
-    "Venus": {"ru": "Любовь и отношения", "en": "Love & relationships"},
-    "Mars": {"ru": "Энергия и страсть", "en": "Energy & passion"},
+    "Venus": {"ru": _editorial_text('astrology.097ad7b8e0a6fb3ed83342d1091ffe5b61eb051a1e680b3b08189b060ac646b8'), "en": _editorial_text('astrology.537a8d24ca437099f0f19c40ed8cef140207dd477eaacb2beacab0ffa62dfdd2')},
+    "Mars": {"ru": _editorial_text('astrology.02a55ef5222549174da43b4b7b88a8bcb0808a2455a4bddc14e4b50442253607'), "en": _editorial_text('astrology.8fae67f4940955b9e4510e1115b51f22284f2852f9603f12ea17c1b39ebd9707')},
     "Descendant": {"ru": "Партнёрство", "en": "Partnership"},
-    "Moon": {"ru": "Эмоции и дом", "en": "Emotions & home"},
+    "Moon": {"ru": _editorial_text('astrology.86f852b61a647bb81d2160e92471b52fc1bd4542cc408b1ca70d6a17277a4e68'), "en": _editorial_text('astrology.294654ea98a22c066c83ed7bb928095c480a227a2c7a4b3dee6d645208433a52')},
     "Sun": {"ru": "Самореализация", "en": "Self-realization"},
-    "Saturn": {"ru": "Карьера и ответственность", "en": "Career & responsibility"},
-    "Medium_Coeli": {"ru": "Карьера и статус", "en": "Career & status"},
-    "Ascendant": {"ru": "Личность и жизненный ритм", "en": "Self & life rhythm"},
-    "Mercury": {"ru": "Общение и дела", "en": "Communication & affairs"},
-    "Jupiter": {"ru": "Рост и возможности", "en": "Growth & opportunities"},
-    "Uranus": {"ru": "Перемены и свобода", "en": "Change & freedom"},
-    "Neptune": {"ru": "Идеалы и вдохновение", "en": "Ideals & inspiration"},
-    "Pluto": {"ru": "Глубокая трансформация", "en": "Deep transformation"},
-    "Mean_North_Lunar_Node": {"ru": "Путь развития", "en": "Path of growth"},
-    "True_North_Lunar_Node": {"ru": "Путь развития", "en": "Path of growth"},
+    "Saturn": {"ru": _editorial_text('astrology.130ff584af0729ca7355663d37aab8fe60c9fd768650e1655d39b4447cbff0b0'), "en": _editorial_text('astrology.6a352f743256d54ad7a64539b67fb77c29f78bfd89f0683c02337d9a059cf14e')},
+    "Medium_Coeli": {"ru": _editorial_text('astrology.193c068965adf5cd8649cde2e30a23886361e3809bad063d01bdd2be0dfc8dd7'), "en": _editorial_text('astrology.7d61306bcd1fa05cf8ed5d0ea4531be8c62b0db5083482158e4cbc281db48a5c')},
+    "Ascendant": {"ru": _editorial_text('astrology.02f9f9d1a3e4d1dbccc669d1e1781cf4ada84cdedae3e5f5873aea6133a4c393'), "en": _editorial_text('astrology.9095c77e38bd29bf6569e99795d84cff3554f1bfd02e4946e0d9158d65777880')},
+    "Mercury": {"ru": _editorial_text('astrology.d323e89cb1b5f1b6a296228e7d32f6fdd14a0304c6f52f1047696f711d49b196'), "en": _editorial_text('astrology.3b862420935cfa1a92d545cf5522f4a3e06cb47939d7d3f799f34650d52cb35e')},
+    "Jupiter": {"ru": _editorial_text('astrology.3824d6c20d0bd5907f6565c5a70e99b92d3e0fd449629ae8b536b047ad7b7e54'), "en": _editorial_text('astrology.aebfeaa68279e160471835f8faf2dec92eed8ebc522ae79bd200e6e53badd1d3')},
+    "Uranus": {"ru": _editorial_text('astrology.df92f6f42434c5edef545faa7992ec0458cacc3da4a63ee49520dcd092d294ef'), "en": _editorial_text('astrology.442c2d6376df1cb3f01efefe79323ff1b464d0ce19113f9e398286cd16c82ab4')},
+    "Neptune": {"ru": _editorial_text('astrology.85891e9e9401ba467d63f6ebeb37fdb6ae8dd74615a72e6bea1825cb8b0dd3c9'), "en": _editorial_text('astrology.d015b6c255b056deaf41e0d4b821199aff674494eeb8bca269bda3cbca077e37')},
+    "Pluto": {"ru": _editorial_text('astrology.7944a78ada25c65dd1fdc4db46e48cbab195fc14d67b465718ac063aeeffe5b4'), "en": _editorial_text('astrology.eb385854a375b9b3e6607dbe0e79dcaf6e2d0968e6a144233adb79bf475ca27f')},
+    "Mean_North_Lunar_Node": {"ru": _editorial_text('astrology.6c7bf77037bb1a3485057905ff8ce153cd478bf6b46c523ebb88a798d14154f1'), "en": _editorial_text('astrology.e4ed09aec466522189d4804ca5c5d5286dbf713710e2b1eabdcaf1432666ced2')},
+    "True_North_Lunar_Node": {"ru": _editorial_text('astrology.6c7bf77037bb1a3485057905ff8ce153cd478bf6b46c523ebb88a798d14154f1'), "en": _editorial_text('astrology.e4ed09aec466522189d4804ca5c5d5286dbf713710e2b1eabdcaf1432666ced2')},
 }
 _SIGN_ORDER = ["Ari", "Tau", "Gem", "Can", "Leo", "Vir", "Lib", "Sco", "Sag", "Cap", "Aqu", "Pis"]
 
 # Сферы жизни и натальные точки-сигнификаторы (для прогноза «что вас ждёт»)
 _LIFE_SPHERES = [
-    ("love", ("Любовь и отношения", "Love & relationships"), "💗",
+    ("love", (_editorial_text('astrology.097ad7b8e0a6fb3ed83342d1091ffe5b61eb051a1e680b3b08189b060ac646b8'), _editorial_text('astrology.537a8d24ca437099f0f19c40ed8cef140207dd477eaacb2beacab0ffa62dfdd2')), "💗",
      {"Venus", "Descendant", "Mars"}),
-    ("career", ("Карьера и финансы", "Career & finances"), "💼",
+    ("career", (_editorial_text('astrology.6e60483b499d714b340f78b894617d87ccb01db1476088b290dfb17a737e1bef'), _editorial_text('astrology.13c5ed30d3a44d1d7db359354deb64e355184b2e212979510d6efb5373e9a03d')), "💼",
      {"Medium_Coeli", "Saturn", "Sun", "Jupiter"}),
-    ("health", ("Самочувствие и баланс", "Wellbeing & balance"), "🌿",
+    ("health", (_editorial_text('astrology.1678294c898b9f99b909a44ebde233cd629c9780cb07df39ba8e0b72ca62e495'), _editorial_text('astrology.20069a5e663aff4f2c3ae72d59130db44d0424bc3544d66559ab58b955b8d0c2')), "🌿",
      {"Ascendant", "Moon", "Mars"}),
-    ("home", ("Дом и семья", "Home & family"), "🏠",
+    ("home", (_editorial_text('astrology.5504f1338f15e59763b2dd3b616dbe52e1d1d1c8755aea6985e70942f1bda24f'), _editorial_text('astrology.be51feb2cac6393c1e26fc867e2c0d37607c611a4c85d1a1b30c8078eb77450c')), "🏠",
      {"Imum_Coeli", "Moon"}),
-    ("growth", ("Развитие и мировоззрение", "Growth & worldview"), "🧭",
+    ("growth", (_editorial_text('astrology.aae3c8d017117e983a9ecdd9b1f5e36c5bcdbbcfeaff9bcf3aee61800ff2b2ba'), _editorial_text('astrology.f981c6178facc74da0834f31725c989bfac4f9d605525368ae504f53ccf7dcb1')), "🧭",
      {"Mercury", "Jupiter", "Mean_North_Lunar_Node", "True_North_Lunar_Node",
       "Mean_South_Lunar_Node", "True_South_Lunar_Node"}),
 ]
 
 _SPHERE_TONE = {
-    "favorable": ("благоприятный период — хорошее время развивать эту сферу и пользоваться возможностями",
-                  "a favorable period — a good time to develop this area and seize opportunities"),
-    "challenging": ("период проверки и роста — здесь важно действовать осознанно и не избегать трудностей",
-                    "a period of testing and growth — act consciously here and don't avoid difficulties"),
-    "mixed": ("и возможности, и испытания одновременно — многое зависит от вашего выбора",
-              "both opportunities and challenges at once — much depends on your choices"),
-    "active": ("сфера сильно активизируется и выходит на первый план",
-               "this area is strongly activated and comes to the foreground"),
-    "calm": ("спокойный период без сильных астрологических акцентов",
-             "a calm period without strong astrological emphasis"),
+    "favorable": (_editorial_text('astrology.432f16a30b85b9abf508747fd769004a7d86021ce301292bb0b61ed725a19950'),
+                  _editorial_text('astrology.d73110972aadadbb0626ce5525b373007d6471828612413720d248ffd2b374dc')),
+    "challenging": (_editorial_text('astrology.71cf8536d60aa17bc59b85bee5e8a9ec3a98d45d452b4b3ceac0b1d2bbcd2f68'),
+                    _editorial_text('astrology.cf13071b8c516b59200e790bf3f2f49d1d97ed18264e0112c0a39149566e91d6')),
+    "mixed": (_editorial_text('astrology.92c4e304c71dba21e91c2c9c21127f30bbb74e238c12af8dd1f16afd7874c055'),
+              _editorial_text('astrology.8edfcd14073e052a1880ad18d35bb427a0bc59c0d9f00be930947d9b80462dd1')),
+    "active": (_editorial_text('astrology.7601b70d7bf58fdbc2a3b5d21253aa3851934167c49bf8644fc7048853673130'),
+               _editorial_text('astrology.c7a972c20f3202e57e229ef96d0f4e24d406b1b9bf9f4055389173d292b77dd6')),
+    "calm": (_editorial_text('astrology.4e06dfc37fea7cef0904dba25f0f58d6cc069b5037da820fb7d14fae00813075'),
+             _editorial_text('astrology.47824195206872f041debe5ee1de8ca7a2ddca9c7ff112a5b016c0bf1891629a')),
 }
 
 
@@ -1123,7 +1122,7 @@ def _sphere_key_of(point: str):
     for key, label, icon, sigs in _LIFE_SPHERES:
         if point in sigs:
             return key, label, icon
-    return "general", ("Глубинные и фоновые темы", "Deeper, background themes"), "🌌"
+    return "general", (_editorial_text('astrology.375fc05b5375ee7d7b09e169919958678ff873145da37281c5ccbae6a8d70f44'), _editorial_text('astrology.b9189a32d3af891d5c7ab242ab6a4011e3ae2895dea306f1470a6134bde6a8f0')), "🌌"
 
 
 _TR_MAJOR_ASPECTS = {"conjunction", "opposition", "square", "trine", "sextile"}
@@ -1172,15 +1171,15 @@ def _transit_overview(aspects: list[dict], lang: str) -> dict:
     good = sum(1 for i in items if i["tone"] == "good")
     tense = sum(1 for i in items if i["tone"] == "tense")
     if tense > good:
-        mood = ("период проверок и роста", "a period of tests and growth")
+        mood = (_editorial_text('astrology.0a6b82d8d72f0fd903eb7d43639631957dddb041624c30c460b39b44c8e948e3'), _editorial_text('astrology.2570a5eb6f1bc9658847d2053c1010e9ff644b3f23163e73043d4610c86c2730'))
     elif good > tense:
-        mood = ("в целом поддерживающий период", "an overall supportive period")
+        mood = (_editorial_text('astrology.f919da576d4ce03cccc63ec613c0f9097c394cc8248290aab28df95942167f52'), _editorial_text('astrology.12abee2e6943b11a02d97268d2bfe829313bb72492ccd672bd23749967dbf503'))
     else:
-        mood = ("смешанный, динамичный период", "a mixed, dynamic period")
+        mood = (_editorial_text('astrology.391eb6c22b98aed1a0bfc9b6e08338ded97be79dfc1d3976c1b23cd1e7167165'), _editorial_text('astrology.c0593851c90ac8d0cdf6327884afc21312c90bebabb191a31a501ea6399e03c3'))
     if lang == "en":
-        headline = f"{len(items)} active influences right now, {len(key)} of them key. Overall mood: {mood[1]}."
+        headline = f"{len(items)}{_editorial_text('astrology.31077737e43761dedd261d638789efb7564de8b60f1a20efe97303ee5b609d40')}{len(key)}{_editorial_text('astrology.515672e054d57874aefd96924412d5fc1a667677c0000b6760c15b170771c0cf')}{mood[1]}."
     else:
-        headline = f"Сейчас активно {len(items)} влияний, из них ключевых — {len(key)}. Общий фон: {mood[0]}."
+        headline = f"{_editorial_text('astrology.84a894ff62f0ac590920da122438a27ed70252ff339198c9fb22c3628550e20b')}{len(items)}{_editorial_text('astrology.6ab61561854d033143f7dbadc713c3b0aafc058e16c7bcc745fad51f89dae545')}{len(key)}{_editorial_text('astrology.1d36ed14b50f4ecec43615a90e79bcfbfd42c5d80ae3bfcdcb0aefb2648cd66b')}{mood[0]}."
 
     return {"headline": headline, "key": key, "groups": groups}
 
@@ -1204,8 +1203,8 @@ def _forecast_by_sphere(events: list[dict], lang: str) -> list[dict]:
         else:
             tone = "active"
         name = name_pair[1] if lang == "en" else name_pair[0]
-        intro = "In the period ahead this area is" if lang == "en" else "В наступающем периоде эта сфера —"
-        text = f"{intro} {_l_pair(_SPHERE_TONE[tone], lang)}."
+        intro = _editorial_text('astrology.24e87bb94b4a5e5357ac5afb638702539e20d8868fa01fcda0dbdb4c056899fe') if lang == "en" else _editorial_text('astrology.36f76a461e8a373ce39c5355799adc909bccbbdc8127d714115faaa5139dca39')
+        text = f'{intro} {_l_pair(_SPHERE_TONE[tone], lang)}.'
         out.append({
             "key": key,
             "name": name,
@@ -1255,27 +1254,23 @@ def _annual_profection(model, age: int) -> dict:
     focus = I.house_focus(house_num, lang)
     if lang == "en":
         text = (
-            f"At age {age} the {_ord(house_num)} house is activated — area: {sphere.lower()}. "
-            f"The sign of the year is {sign_ru}. "
+            f"{_editorial_text('astrology.3843bfd18688285924cc3944f490cc433627fe2dca7fae3efafe5ce5b9c47f63')}{age}{_editorial_text('astrology.dab142a394a33ce21ae2080e97168604ba8b84f9cd7fe6d27e8b012b88c163bb')}{_ord(house_num)}{_editorial_text('astrology.f8daea1a24ec2e31055f6227df991b08d66a0600882daad78c32a7cf1378b9e2')}{sphere.lower()}{_editorial_text('astrology.68270a84dd85d90596fcfbeb9233586a595f53531d6cdd0dde950c27c4e8fcbd')}{sign_ru}. "
         )
         if lord:
             text += (
-                f"Lord of the year — {lord['name_ru']} (ruler of the year's sign), natally in "
-                f"{lord['sign_ru']}"
-                + (f", house {lord['house_num']}" if lord['house_num'] else "")
-                + f". The year's themes point {focus}; transits to {lord['name_ru']} and {_ord(house_num)}-house matters are especially significant."
+                f"{_editorial_text('astrology.60358abd3189ba4e2382cb10a77f64cb65d06e9de70921740d704092b45083bd')}{lord['name_ru']}{_editorial_text('astrology.5e3f4fcd4bc35db569e83d9b979953a604c7c5412067fa68a657874673bedd38')}{lord['sign_ru']}"
+                + (f"{_editorial_text('astrology.c9e58b82913b666785e1ef47f2d954a9b0fc764215eeadaec2e9a34c1c06b045')}{lord['house_num']}" if lord['house_num'] else "")
+                + f"{_editorial_text('astrology.99b8d595769e05dc366490da774702ce11100d7e41eb83e52677d075bdcb27f8')}{focus}{_editorial_text('astrology.daba704543e1a302624af3af9dce9c99d880b5c7e98f6a11c8b5a0c2418d83fa')}{lord['name_ru']}{_editorial_text('astrology.e3ee915a8e8c7aa02d2fced443314522b20824abd2535d5959c41dc8ab8a09e4')}{_ord(house_num)}{_editorial_text('astrology.ffbb38a5fca9648c20e9a75555733986b3742508c86a22b485fe280a4a154ac7')}"
             )
     else:
         text = (
-            f"В возрасте {age} лет активизируется {house_num}-й дом — сфера: {sphere.lower()}. "
-            f"Знак года — {sign_ru}. "
+            f"{_editorial_text('astrology.0159b67b0b8ee8b0cb19a60fa422e97c4d09c78bbdea9eda8007e17260ab6b52')}{age}{_editorial_text('astrology.ae2bf49bf70c0838f53914a03eda5ab3a5a8194aac3db4957e1cf9e503160538')}{house_num}{_editorial_text('astrology.6643edcaad982c6be53b8c09c0fdcbc625e94c3fb58e7e6392b829bb29c3630a')}{sphere.lower()}{_editorial_text('astrology.e6eca097eec89de19d78f7b3cd2a6b9a13ab8a27df39096740d7b73c06b66f18')}{sign_ru}. "
         )
         if lord:
             text += (
-                f"Хозяин года — {lord['name_ru']} (управитель знака года), в натальной карте "
-                f"в знаке {lord['sign_ru']}"
-                + (f", {lord['house_num']}-й дом" if lord['house_num'] else "")
-                + f". Темы года направлены {focus}; особенно значимы транзиты к {lord['name_ru']} и события {house_num}-го дома."
+                f"{_editorial_text('astrology.a39996d43f7b66ebda00eab21cd286c27283fb0c377d326f197357c00e32a580')}{lord['name_ru']}{_editorial_text('astrology.2d42433e82a29a77869ffc764717a2dee76e5bd55f320a9746070fdf5d939d44')}{lord['sign_ru']}"
+                + (f", {lord['house_num']}{_editorial_text('astrology.685547d6d819c039ea9fd4e48a0d6e77dcbe52bf84d16c95903cbb7cdd7e5a65')}" if lord['house_num'] else "")
+                + f"{_editorial_text('astrology.87704f27c80dc1723f86983f86577d94da127f77783eee52e35abe25263863aa')}{focus}{_editorial_text('astrology.d440f217881c3628d2fd05151c78f55a7bc10765040f1b2566fc4bf578801294')}{lord['name_ru']}{_editorial_text('astrology.56a336d9c8301a00da8b6c344769b83634531e06bf1ebb6b567e605931cce6bf')}{house_num}{_editorial_text('astrology.8c7ced1371e8d6b773775b97a58213816b9d74fb74bccc10756f4c90c99c35f1')}"
             )
     return {
         "age": age,
@@ -1308,13 +1303,11 @@ def _progressed_moon(natal_model, natal_params: dict, at: datetime) -> dict:
     manner = I.sign_manner(moon["sign"], lang)
     if lang == "en":
         text = (
-            f"Progressed Moon in {moon['sign_ru']}: the emotional tone of the period is coloured by "
-            f"experiencing feelings {manner}. This cycle lasts about 2.5 years and sets the inner mood."
+            f"{_editorial_text('astrology.f2b878a815d78336bb747880b288dd4cc7bdb6d2b7cf745946c57938e9020200')}{moon['sign_ru']}{_editorial_text('astrology.ec61ffee7bffc3c82f5d4175d06986aae439039aff2d8f85a892f0046a6f5deb')}{manner}{_editorial_text('astrology.4c4ed91e1e728e533e188c4fb796717d4652c2eb345890b8eac09357f2a0f26c')}"
         )
     else:
         text = (
-            f"Прогрессивная Луна в знаке {moon['sign_ru']}: эмоциональный фон периода окрашен тем, чтобы "
-            f"проживать чувства {manner}. Этот цикл длится около 2,5 лет и задаёт внутреннее настроение."
+            f"{_editorial_text('astrology.78f7736207a0b49e11127c3028ac6f1259e8148e63d3d7fe51734648d43afe03')}{moon['sign_ru']}{_editorial_text('astrology.77dcde04dc03c33084c2cdefc1cb26850e1bb81dabe0d0404e44bbde7b9bd8da')}{manner}{_editorial_text('astrology.cb997a2ce8c98e9ec4162ee35e2204fcc1ee06a81af23dd5ef1ba18e92e9de67')}"
         )
     return {"sign": moon["sign"], "sign_ru": moon["sign_ru"], "deg": moon["deg"], "text": text}
 
@@ -1338,9 +1331,9 @@ def forecast_report(
     start_dt = datetime(start["year"], start["month"], start["day"], 12, 0)
     end_dt = datetime(end["year"], end["month"], end["day"], 12, 0)
     if end_dt <= start_dt:
-        raise ValueError("Дата конца должна быть позже даты начала")
+        raise ValueError(_editorial_text('astrology.9f1cdcd39d555297c2a729335eace939500a41dae51ecc017715d8fe17418be2'))
     if (end_dt - start_dt).days > 1100:
-        raise ValueError("Период прогноза слишком большой — максимум 3 года")
+        raise ValueError(_editorial_text('astrology.08b959126104478ef88e140bd7fe0ec8e97fbbf729d7a67a580cf8f75346b856'))
 
     birth = datetime(natal_params["year"], natal_params["month"], natal_params["day"])
     age = _completed_age(birth, start_dt)
@@ -1361,7 +1354,7 @@ def forecast_report(
     )
 
     lang = _lang()
-    default_sphere = {"ru": "Общие тенденции", "en": "General trends"}
+    default_sphere = {"ru": _editorial_text('astrology.84c78f79451e45ee8b404284d71e7b1d0e52d7ed7ed21d231f1f2c1fed386661'), "en": _editorial_text('astrology.2df4ea120db5b615d5c4bb8e13096ca1fb4895976864ea50cdd4d75335b9e760')}
     events = []
     for (p1, kind, p2), info in passes:
         if info["orb"] > 3.0:
@@ -1393,17 +1386,11 @@ def forecast_report(
 
     if lang == "en":
         summary = (
-            f"The main theme of the period is set by the annual profection ({_ord(profection['house_num'])} house, "
-            f"sign {profection['sign_ru']}) and the progressed Moon {C.sign_in(prog_moon['sign'], lang)}. "
-            f"For the exact dates of transits, see the “Calendar” tab. "
-            f"The forecast describes astrological tendencies and opportunities, not predetermined events."
+            f"{_editorial_text('astrology.a0e092d3b2b8900d9f35aefa0b0a119a3c4bba5765bfe49f7f83986a6fe46e26')}{_ord(profection['house_num'])}{_editorial_text('astrology.6af072264af0a605148165f983bd2e4d0b16f8b298b7ee977c037812c57bf50f')}{profection['sign_ru']}{_editorial_text('astrology.2a0e5f5c3a5a1d9faa0c6ba9970221e294fd4df8951d142dd0ff997b5de0d0f0')}{C.sign_in(prog_moon['sign'], lang)}{_editorial_text('astrology.d77151f147603bdf7820df055ceca7b679d57da049b074bf1ec47dcdf741be15')}"
         )
     else:
         summary = (
-            f"Главная тема периода задаётся годовой профекцией ({profection['house_num']}-й дом, "
-            f"знак {profection['sign_ru']}) и прогрессивной Луной {C.sign_in(prog_moon['sign'], lang)}. "
-            f"Конкретные даты транзитов смотрите во вкладке «Календарь». "
-            f"Прогноз описывает астрологические тенденции и возможности периода, а не предопределённые события."
+            f"{_editorial_text('astrology.31632658eb7a9d7b4bc9a75d464618d3acda7d8e342198e21f60af30b00e54b2')}{profection['house_num']}{_editorial_text('astrology.ca61285f8477cf303e62248632e454a8fde700aea8b31cd44f97b274f631e0f9')}{profection['sign_ru']}{_editorial_text('astrology.27fb2d19cea2aa01ae85bc34fa3127ddd0f3d4a0b6260333fecbf261549010bb')}{C.sign_in(prog_moon['sign'], lang)}{_editorial_text('astrology.6da1b446ac003116a82ad1559f1277cb9f306b78093991e119be4509ea9a78be')}"
         )
 
     sphere_forecast = _forecast_by_sphere(events, _lang())
@@ -1445,9 +1432,9 @@ def transit_calendar_report(
     start_dt = datetime(start["year"], start["month"], start["day"], 12, 0)
     end_dt = datetime(end["year"], end["month"], end["day"], 12, 0)
     if end_dt <= start_dt:
-        raise ValueError("Дата конца периода должна быть позже даты начала")
+        raise ValueError(_editorial_text('astrology.a87f6de2bf71a60c8a74bcd622109a5e639138d1e7822c58ee1c2cf28fa88e8a'))
     if (end_dt - start_dt).days > 730:
-        raise ValueError("Период слишком большой — максимум 2 года")
+        raise ValueError(_editorial_text('astrology.ffab982d4da2721c46286cb43cf55428bcd4cca4da6db694cc9eb1e3e890e8cc'))
 
     eph_points = EphemerisDataFactory(
         start_datetime=start_dt,
@@ -1464,7 +1451,7 @@ def transit_calendar_report(
     lunar = {}
     for subj in eph_points:
         try:
-            ds = f"{subj.year:04d}-{subj.month:02d}-{subj.day:02d}"
+            ds = f'{subj.year:04d}-{subj.month:02d}-{subj.day:02d}'
         except Exception:
             continue
         if ds in lunar:
@@ -1768,7 +1755,7 @@ def _rect_score_candidate(minute, natal_params, ev_data, asc_sign_hits, asc_max_
     _symdir = "sym.dir." if lang == "en" else "сим.дир."
     _naibod = "Naibod" if lang == "en" else "Найбод"
     _tr = "transit" if lang == "en" else "транзит"
-    _pm = "prog. Moon" if lang == "en" else "прог. Луна"
+    _pm = _editorial_text('astrology.118517d989cca4ec1b2233b172e82a7a70a7d6764eed9976f06f9f1f8201fad7') if lang == "en" else _editorial_text('astrology.5fc866fa6ab1f36ead7f732957c57ac9813c4ad330310c9b841f4e60c9770367')
     _angle = "angle" if lang == "en" else "угол"
     _planet = "planet" if lang == "en" else "планета"
     _house = "house" if lang == "en" else "дом"
@@ -1795,7 +1782,7 @@ def _rect_score_candidate(minute, natal_params, ev_data, asc_sign_hits, asc_max_
 
         # метка куспида по номеру дома: RU "1 дом" / EN "house 1"
         def cusp_label(num):
-            return f"{num} {_house}" if lang != "en" else f"{_house} {num}"
+            return f'{num} {_house}' if lang != "en" else f'{_house} {num}'
 
         # Три ключа дирекций: (дуга, вес ключа, метка). Все направляются на куспиды и планеты.
         keys = (
@@ -1813,19 +1800,19 @@ def _rect_score_candidate(minute, natal_params, ev_data, asc_sign_hits, asc_max_
             # направленные планеты → натальные планеты
             for p, lon in natal_lons.items():
                 consider(_rect_best_contact((lon + karc) % 360, natal_lon_list, orb_dir),
-                         f"{klabel} {C.point_name(p.capitalize(), lang)} → {_planet}", sigma_dir, p, kw)
+                         f'{klabel} {C.point_name(p.capitalize(), lang)} → {_planet}', sigma_dir, p, kw)
             # направленные куспиды → натальные планеты (вес куспида свёрнут в key_weight)
             for lon, num, cw in cusp_all:
                 consider(_rect_best_contact((lon + karc) % 360, natal_lon_list, orb_dir),
-                         f"{klabel} {cusp_label(num)} → {_planet}", sigma_dir, None, kw * cw)
+                         f'{klabel} {cusp_label(num)} → {_planet}', sigma_dir, None, kw * cw)
 
         # транзиты медленных планет → углы
         for p, lon in ev["transit_lons"].items():
             consider(_rect_best_contact(lon, [asc, mc], orb_tr),
-                     f"{_tr} {C.point_name(p.capitalize(), lang)} → {_angle}", sigma_tr, p)
+                     f'{_tr} {C.point_name(p.capitalize(), lang)} → {_angle}', sigma_tr, p)
         # прогрессивная Луна → углы (быстрый триггер; долгота экстраполируется от середины)
         pm_lon = (ev["prog_moon_mid"] + ev["prog_moon_rate"] * (minute - mid)) % 360
-        consider(_rect_best_contact(pm_lon, [asc, mc], orb_dir), f"{_pm} → {_angle}", sigma_dir, "moon")
+        consider(_rect_best_contact(pm_lon, [asc, mc], orb_dir), f'{_pm} → {_angle}', sigma_dir, "moon")
 
         if best and best["sc"] > 0.02:
             event_total += ev_sum * ev["weight"]
@@ -1851,7 +1838,7 @@ def _rect_score_candidate(minute, natal_params, ev_data, asc_sign_hits, asc_max_
 
     return {
         "minute": minute,
-        "time": f"{minute // 60:02d}:{minute % 60:02d}",
+        "time": f'{minute // 60:02d}:{minute % 60:02d}',
         "score": round(total, 3),
         "event_score": round(event_total, 3),
         "asc_score": round(asc_score, 2),
@@ -1893,9 +1880,9 @@ def rectification_report(
     parent_sun_signs = [s for s in (parent_sun_signs or []) if s in _SIGN_ORDER]
     if not events and not asc_traits and not pred_ratings:
         raise ValueError(
-            "Add at least one life event, fill the Ascendant questionnaire or the predisposition table"
+            _editorial_text('astrology.e0adde9188ae4769cdc91a8945e2084e0fab408c8b5f54cefa3ed7c263d561fc')
             if lang == "en" else
-            "Добавьте событие, заполните анкету по Асценденту или таблицу предрасположенностей"
+            _editorial_text('astrology.bb81bb05ee52df6394b08e6df4d3fe2fb27c48e8fc959d482c6abe05ff6aaa4d')
         )
     step_minute = max(1, int(step_minute))
     # Режим уточнения вокруг известного центра: окно ±window_minutes, шаг форсируется до 1 мин.
@@ -1904,10 +1891,10 @@ def rectification_report(
         end_minute = min(1439, center_minute + window_minutes)
         step_minute = 1
     if end_minute <= start_minute:
-        raise ValueError("Конец диапазона должен быть позже начала")
+        raise ValueError(_editorial_text('astrology.aefe40512166c156b8e43a48f0077ddceb7804e419ea3c7ee3f2604c523b4b27'))
     n_candidates = (end_minute - start_minute) // step_minute + 1
     if n_candidates > 400:
-        raise ValueError("Слишком много вариантов — увеличьте шаг или сузьте диапазон")
+        raise ValueError(_editorial_text('astrology.5c99ea535f1896501f28e2ddacc1004613001fcdc97e089f45890ff653afdca9'))
 
     birth_date = datetime(natal_params["year"], natal_params["month"], natal_params["day"])
 
@@ -1966,9 +1953,9 @@ def rectification_report(
 
     if events and not ev_data:
         raise ValueError(
-            "All events are before the birth date — check the dates"
+            _editorial_text('astrology.ae25fc572e24efe07bbe731b24a04fb9109f684a7fe2b52e8033f8dcf643d2db')
             if lang == "en" else
-            "Все события раньше даты рождения — проверьте даты"
+            _editorial_text('astrology.7286126e02a5202d2248d5692c52a0b176cad7c0cb0e836eb77ac07dc3da3346')
         )
 
     # Предрасчёт анкеты Асцендента: знак -> сколько выбранных признаков ему соответствуют.
@@ -2034,7 +2021,7 @@ def rectification_report(
     sign_mins = [c["minute"] for c in coarse if c["_asc"] == best_asc_code]
     if sign_mins:
         lo_m, hi_m = min(sign_mins), max(sign_mins)
-        window = {"from": f"{lo_m // 60:02d}:{lo_m % 60:02d}", "to": f"{hi_m // 60:02d}:{hi_m % 60:02d}",
+        window = {"from": f'{lo_m // 60:02d}:{lo_m % 60:02d}', "to": f'{hi_m // 60:02d}:{hi_m % 60:02d}',
                   "width": hi_m - lo_m, "sign": best["asc_sign"]}
     else:
         window = {"from": best["time"], "to": best["time"], "width": 0, "sign": best["asc_sign"]}
@@ -2092,7 +2079,7 @@ def rectification_report(
                 "point": label,
                 "from_sign": C.sign_name(first_sign, lang),
                 "to_sign": C.sign_name(last_sign, lang),
-                "time": f"{change_min // 60:02d}:{change_min % 60:02d}" if change_min is not None else None,
+                "time": f'{change_min // 60:02d}:{change_min % 60:02d}' if change_min is not None else None,
             })
 
     return {

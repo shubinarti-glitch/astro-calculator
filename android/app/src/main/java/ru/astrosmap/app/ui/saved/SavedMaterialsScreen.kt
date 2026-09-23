@@ -120,7 +120,7 @@ fun SavedMaterialsScreen(viewModel: SavedMaterialsViewModel = hiltViewModel()) {
                         maxLines = if (expanded) Int.MAX_VALUE else 5,
                         style = MaterialTheme.typography.bodyMedium,
                     )
-                    if (value.body.count { it == '\n' } >= 5 || value.body.length > 300) {
+                    if (value.body.isNotBlank()) {
                         TextButton(onClick = {
                             expandedIds = if (expanded) expandedIds - value.id else expandedIds + value.id
                         }) {

@@ -26,6 +26,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -71,6 +72,8 @@ import kotlin.math.abs
 data class DayAspect(val hit: AspectHit, val interp: String?)
 
 data class TodayState(
+    val calculatedAt: java.time.ZonedDateTime = java.time.ZonedDateTime.now(),
+    val forecastCity: String = "",
     val loading: Boolean = true,
     val chartName: String? = null,     // null — нет сохранённых карт
     val moonPhaseKey: String = "",
@@ -136,18 +139,20 @@ class TodayViewModel @Inject constructor(
     }
 
     private suspend fun calculate(all: List<ChartEntity>) {
-            val today = LocalDate.now()
+            val now = java.time.ZonedDateTime.now()
+            val today = now.toLocalDate()
+            val moon = withContext(Dispatchers.Default) { moonOnly(now) }
             // Карта «это я»: выбранная пользователем, иначе самая ранняя.
             val chart = PrimaryChart.resolve(context, all)
             if (chart == null) {
                 // Без карты показываем только лунную часть — она считается без данных рождения.
-                val moon = withContext(Dispatchers.Default) { moonOnly(today) }
                 _state.value = TodayState(
+                    calculatedAt = now,
                     loading = false,
                     chartName = null,
                     moonPhaseKey = moon.first,
                     moonSign = moon.second,
-                    lunarDay = lunarDay(today),
+                    lunarDay = moon.third,
                     charts = all,
                 )
                 return
@@ -162,15 +167,16 @@ class TodayViewModel @Inject constructor(
                 tzId = location?.tzStr ?: natal.tzId,
             )
             val tc = withContext(Dispatchers.Default) { engine.transit(natal, transitInput) }
-            val moonSign = tc.transitPoints.firstOrNull { it.name == "Moon" }?.sign ?: ""
             val sorted = tc.aspects.sortedByDescending { strength(it) }
             val top = sorted.take(3).map { DayAspect(it, null) }
             _state.value = TodayState(
+                calculatedAt = now,
+                forecastCity = location?.city?.takeIf { it.isNotBlank() } ?: chart.city,
                 loading = false,
                 chartName = chart.name,
-                moonPhaseKey = tc.lunarPhase.name,
-                moonSign = moonSign,
-                lunarDay = lunarDay(today),
+                moonPhaseKey = moon.first,
+                moonSign = moon.second,
+                lunarDay = moon.third,
                 aspects = top,
                 insights = DayInsightCalculator.calculate(sorted),
                 charts = all,
@@ -199,20 +205,14 @@ class TodayViewModel @Inject constructor(
             }
     }
 
-    /** Approximate astronomical lunar day (1–30), derived from the synodic Moon age at local noon. */
-    private fun lunarDay(date: LocalDate): Int {
-        val knownNewMoon = LocalDateTime.of(2000, 1, 6, 18, 14).toEpochSecond(ZoneOffset.UTC)
-        val sample = date.atTime(12, 0).toEpochSecond(ZoneOffset.UTC)
-        val ageDays = Math.floorMod(sample - knownNewMoon, 2_551_443L) / 86_400.0
-        return (ageDays.toInt() + 1).coerceIn(1, 30)
-    }
-
-    /** Фаза и знак Луны без данных рождения — точка 0/0, полдень. */
-    private fun moonOnly(date: LocalDate): Pair<String, String> {
-        val input = BirthInput(date.year, date.monthValue, date.dayOfMonth, 12, 0, 0.0, 0.0, java.time.ZoneId.systemDefault().id)
+    /** Общий лунный фон на один момент UTC, независимо от натальной карты. */
+    private fun moonOnly(now: java.time.ZonedDateTime): Triple<String, String, Int> {
+        val date = now.withZoneSameInstant(ZoneOffset.UTC)
+        val input = BirthInput(date.year, date.monthValue, date.dayOfMonth, date.hour, date.minute, 0.0, 0.0, "UTC")
         val chart = engine.natal(input)
         val moon = chart.points.first { it.name == "Moon" }
-        return chart.lunarPhase.name to moon.sign
+        return Triple(chart.lunarPhase.name, moon.sign,
+            ru.astrosmap.app.ui.tools.PersonalCalendarEventCalculator.lunarDay(chart.lunarPhase.degreesBetween))
     }
 
     private suspend fun loadTexts(name: String, natal: BirthInput, city: String, date: LocalDate) {
@@ -284,7 +284,16 @@ fun TodayScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val locale = if (AstroLabels.isRu()) Locale("ru") else Locale.ENGLISH
-    val today = LocalDate.now()
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.LaunchedEffect(viewModel, lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.RESUMED) {
+            while (true) {
+                viewModel.load()
+                kotlinx.coroutines.delay(60_000)
+            }
+        }
+    }
+    val today = state.calculatedAt.toLocalDate()
     val dateLine = "%d %s, %s".format(
         today.dayOfMonth,
         today.month.getDisplayName(TextStyle.FULL, locale),
@@ -299,6 +308,13 @@ fun TodayScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         AppHeader(stringResource(R.string.section_today))
+        Text(stringResource(R.string.today_calculated_at,
+            state.calculatedAt.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm z"))),
+            style = MaterialTheme.typography.bodySmall)
+        if (state.forecastCity.isNotBlank()) {
+            Text(stringResource(R.string.forecast_location_selected, state.forecastCity),
+                style = MaterialTheme.typography.bodySmall)
+        }
 
         AstroPanel {
             Text(
@@ -313,7 +329,7 @@ fun TodayScreen(
                     style = MaterialTheme.typography.titleSmall,
                 )
                 Text(
-                    stringResource(R.string.today_lunar_day, state.lunarDay),
+                    stringResource(R.string.today_lunar_day_estimate, state.lunarDay),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.secondary,
                 )
