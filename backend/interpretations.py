@@ -4,6 +4,7 @@
 Каждая локализуемая строка хранится кортежем (ru, en); функции принимают lang.
 """
 from __future__ import annotations
+from .editorial_data import text as _editorial_text
 
 import json
 from pathlib import Path
@@ -24,27 +25,27 @@ def g(pair, lang="ru"):
 #  Планеты: роль (за что отвечает)
 # --------------------------------------------------------------------------- #
 PLANET_ROLE = {
-    "Sun": ("ядро личности, воля и жизненная цель", "the core of personality, will and life purpose"),
-    "Moon": ("эмоции, инстинкты и потребность в безопасности", "emotions, instincts and the need for security"),
-    "Mercury": ("мышление, речь и способ обмена информацией", "thinking, speech and the way of exchanging information"),
-    "Venus": ("любовь, ценности и чувство гармонии", "love, values and the sense of harmony"),
-    "Mars": ("энергия, воля к действию и умение отстаивать себя", "energy, the will to act and the ability to assert oneself"),
-    "Jupiter": ("рост, мировоззрение, вера и расширение возможностей", "growth, worldview, faith and the expansion of possibilities"),
-    "Saturn": ("дисциплина, ответственность и жизненная опора", "discipline, responsibility and inner backbone"),
-    "Uranus": ("стремление к свободе, оригинальность и потребность в переменах", "the drive for freedom, originality and the need for change"),
-    "Neptune": ("воображение, духовность и тонкая чувствительность", "imagination, spirituality and subtle sensitivity"),
-    "Pluto": ("глубинная трансформация, воля к власти и перерождение", "deep transformation, the will to power and rebirth"),
-    "Mean_North_Lunar_Node": ("вектор развития и кармические задачи будущего", "the vector of growth and the karmic tasks of the future"),
-    "True_North_Lunar_Node": ("вектор развития и кармические задачи будущего", "the vector of growth and the karmic tasks of the future"),
-    "Mean_South_Lunar_Node": ("врождённый багаж и зона комфорта прошлого", "inborn baggage and the comfort zone of the past"),
-    "True_South_Lunar_Node": ("врождённый багаж и зона комфорта прошлого", "inborn baggage and the comfort zone of the past"),
-    "Chiron": ("глубинная рана и дар целительства через её исцеление", "a deep wound and the gift of healing through healing it"),
-    "Mean_Lilith": ("вытесненные желания, теневая страсть и точка бунта", "repressed desires, shadow passion and the point of rebellion"),
-    "True_Lilith": ("вытесненные желания, теневая страсть и точка бунта", "repressed desires, shadow passion and the point of rebellion"),
-    "Ascendant": ("личность, тело и жизненный курс", "the personality, the body and the life course"),
-    "Medium_Coeli": ("карьеру, статус и публичную роль", "career, status and public role"),
-    "Descendant": ("партнёрство и значимые отношения", "partnership and significant relationships"),
-    "Imum_Coeli": ("дом, семью и внутренние основы", "home, family and inner foundations"),
+    "Sun": (_editorial_text('interpretations.e560cb59ef6db3bf06210b9b4b39c7276970800b9a09ad289d9a92c16477310e'), _editorial_text('interpretations.305cbb8289e420dc3ea7ab3cdd87b12d6770c39d170c469656cc67cf0bf34f26')),
+    "Moon": (_editorial_text('interpretations.9b7b84b1851c2c35ad86a378d4a931e8463ee407c5c8e6866a37efd1655062e7'), _editorial_text('interpretations.e6cedfd736069fd5df25363c23e94c93b3774b409f5a97d76d2a66998cf16aad')),
+    "Mercury": (_editorial_text('interpretations.ab971292099ded227961d72a2e05219b95488161004d8124a3d14f706ee80400'), _editorial_text('interpretations.32a51c113ef508ff55e78e84bf016dd4dbacc3b79a0a4e3b90fc6d0a9533b50a')),
+    "Venus": (_editorial_text('interpretations.02a5134649ff44ee32ed5aee689737b81f1ae4481dddef99433d74e2908f5ab6'), _editorial_text('interpretations.395b042d87adcf566c8a404626e02a6a060d249bfc31772b2b7ecb5a894ef2f6')),
+    "Mars": (_editorial_text('interpretations.3f8ca4c538e9a58404b29958aabc2907f49a3f75b585dd5eb2bf1c06c717b3b2'), _editorial_text('interpretations.59134b69ef8013cf6570e03ade85b21d4e6af1be9c50626fd32078ee8d486ec9')),
+    "Jupiter": (_editorial_text('interpretations.1072e3e1244752f0eac70d2712bf05ea747018ab9f880165f7089acc8f0a09fc'), _editorial_text('interpretations.7e78d36c6958a99f5ab3ac3a74b1c5a34d2b63cea71d437731b19fe7b7ad4040')),
+    "Saturn": (_editorial_text('interpretations.97b6ff9f5a2d2580d2536a2cb309fc899721a6ad085ca95b35249afa20eab34f'), _editorial_text('interpretations.9e4bcd33f038d920de5651085715942e703a418ac919a1f2656103b041881276')),
+    "Uranus": (_editorial_text('interpretations.e3614675abe07a070f3b698db46ea55f516e4b3b793f2e10572b918bccde472a'), _editorial_text('interpretations.8fd92bc59b5cc7ebc97c914c1f45f4256d2084c24ebbfc660d2dbc7daf492b92')),
+    "Neptune": (_editorial_text('interpretations.ac2ed7859b6ef62c4bd306ab18557a82fd104ae344d2b99da83eabc15e4a8d83'), _editorial_text('interpretations.d2bce1fad3e1f85e0bed03329eaa5a4911d6ea18ad132031b5b682d79fd70660')),
+    "Pluto": (_editorial_text('interpretations.a97c2ae7f2b7023f0beed67243a9636ece796160fd16fccc42b60bd976d5d79c'), _editorial_text('interpretations.c3c43c74818b28426d6643ac383a8cbb03d3987cfde48df551fdf63014b6d50e')),
+    "Mean_North_Lunar_Node": (_editorial_text('interpretations.d9ec2e727bed88f9292d71a61087539453a648482cf4bb1f4cd592f45354f502'), _editorial_text('interpretations.3895ca31b6113d9bb4d822bed1d545a444b2657bb9d6021cafc5ec243f830d5b')),
+    "True_North_Lunar_Node": (_editorial_text('interpretations.d9ec2e727bed88f9292d71a61087539453a648482cf4bb1f4cd592f45354f502'), _editorial_text('interpretations.3895ca31b6113d9bb4d822bed1d545a444b2657bb9d6021cafc5ec243f830d5b')),
+    "Mean_South_Lunar_Node": (_editorial_text('interpretations.166fec123ba281995fe4df8925015e9f32de61e45ccb022038fde0dfae090f6d'), _editorial_text('interpretations.d97138ad6d048758b27d2569cb93b552e82d2edd7c423520e0ae14afb56bfb2c')),
+    "True_South_Lunar_Node": (_editorial_text('interpretations.166fec123ba281995fe4df8925015e9f32de61e45ccb022038fde0dfae090f6d'), _editorial_text('interpretations.d97138ad6d048758b27d2569cb93b552e82d2edd7c423520e0ae14afb56bfb2c')),
+    "Chiron": (_editorial_text('interpretations.9f91dd1514a45886a5bad543fa0f095023269810fd2c5b65255dcfdb6df16f06'), _editorial_text('interpretations.6721eb82f27baf573b1c53b02f4ef15462df7fa907d878e2a16ee6d7f6573ffd')),
+    "Mean_Lilith": (_editorial_text('interpretations.1c21248118efb7116c5ec97f046c6b3b75d08e7478594446b2c06096192f6448'), _editorial_text('interpretations.98f1f345a9dbbbb546a25bef5916d5ffd1a45635774e0e3c78114b358ac754ed')),
+    "True_Lilith": (_editorial_text('interpretations.1c21248118efb7116c5ec97f046c6b3b75d08e7478594446b2c06096192f6448'), _editorial_text('interpretations.98f1f345a9dbbbb546a25bef5916d5ffd1a45635774e0e3c78114b358ac754ed')),
+    "Ascendant": (_editorial_text('interpretations.14e74f2e3143a131cc00c1adb2cde8a845563e491b902be5376914f8b1868a3f'), _editorial_text('interpretations.0b95a998463609f6f66107f3f05687a3c458b3901c44b14fd2c794b50bdebebf')),
+    "Medium_Coeli": (_editorial_text('interpretations.adf83d944310f6b6a24faba84aaa979dc50cf799880b3d23baeb170c006c5257'), _editorial_text('interpretations.8a34e8019deb398c9b766997a8e8a45b04d76dd9ec8c3bf989e37c703237db4e')),
+    "Descendant": (_editorial_text('interpretations.eba3b54da3e7ed6d85f1009e6248b68aa5012dbbcb9e3ad021d83551575fced3'), _editorial_text('interpretations.3c23f589c41bf5b89dbe27ac28f1f1404c8758521cd3fd8c68c0b4864f1bf565')),
+    "Imum_Coeli": (_editorial_text('interpretations.f52ddb36e2608b78c879ee1b07ee51e522b7fc765d21dd29f72e8a09770d6fac'), _editorial_text('interpretations.f80eb10bf6913bc568a137c490cf83eb2b631980f2b3b3589a21c29f441dc19f')),
 }
 
 
@@ -56,21 +57,21 @@ def planet_role(name, lang="ru"):
 #  Прогностика: что приносит транзитная планета
 # --------------------------------------------------------------------------- #
 TRANSIT_THEME = {
-    "Jupiter": ("расширение, рост, новые возможности и удачу", "expansion, growth, new opportunities and luck"),
-    "Saturn": ("проверку на прочность, ответственность, структуру и взросление", "a test of endurance, responsibility, structure and maturing"),
-    "Uranus": ("неожиданные перемены, свободу и прорывы", "unexpected change, freedom and breakthroughs"),
-    "Neptune": ("вдохновение, идеализм, духовный поиск и размывание границ", "inspiration, idealism, spiritual search and the blurring of boundaries"),
-    "Pluto": ("глубокую трансформацию, кризис и перерождение", "deep transformation, crisis and rebirth"),
-    "Chiron": ("исцеление старых ран и работу с уязвимостью", "the healing of old wounds and work with vulnerability"),
-    "Mean_North_Lunar_Node": ("поворот к новому опыту и точки судьбы", "a turn toward new experience and points of destiny"),
-    "True_North_Lunar_Node": ("поворот к новому опыту и точки судьбы", "a turn toward new experience and points of destiny"),
-    "Mean_South_Lunar_Node": ("проработку прошлого и кармические узлы", "working through the past and karmic knots"),
-    "True_South_Lunar_Node": ("проработку прошлого и кармические узлы", "working through the past and karmic knots"),
-    "Mars": ("всплеск энергии, активность и возможные конфликты", "a surge of energy, activity and possible conflicts"),
-    "Sun": ("акцент внимания и активацию темы", "a focus of attention and the activation of the theme"),
-    "Venus": ("тему отношений, ценностей и удовольствий", "the theme of relationships, values and pleasures"),
-    "Mercury": ("переговоры, информацию и поездки", "negotiations, information and short trips"),
-    "Moon": ("смену настроения и эмоциональные акценты дня", "shifts of mood and the emotional accents of the day"),
+    "Jupiter": (_editorial_text('interpretations.0bf15f2ae3760cd49e22137c3d1c9aefc653b99a155aa7e21d214eba42df7e82'), _editorial_text('interpretations.b88b29c2ade3cac1f42d57fe4c9dbdccbf4c4137b07909630bee1ef5ab96034d')),
+    "Saturn": (_editorial_text('interpretations.54a14b4f196bce54461504b71d38e1767e4736b60494f339abafd276b91eb802'), _editorial_text('interpretations.4a9363fad81e442eafd18365f962c0789e2f5121ce01438c581182d52ef003dc')),
+    "Uranus": (_editorial_text('interpretations.5725ef371e6909f53fe162df4728a54ad64d9d1e97778060a880205418b6ec32'), _editorial_text('interpretations.fd1810835c6c5abb7af7443bc8bc252542a8deb014e1f736ae9554780841a207')),
+    "Neptune": (_editorial_text('interpretations.28aef0cb483b709b0a82713f68381b5e4e31df2d8ba31f80db17ed9f84a9c777'), _editorial_text('interpretations.ccaf001a2f307f583bdcad6bd45933a5e32c3b9072f7c31115125a6887faf709')),
+    "Pluto": (_editorial_text('interpretations.6f99c3135e4f9b722394f7ae62f7857143a42856d83804ec13a4eecd2b68895e'), _editorial_text('interpretations.52e4ac527bf8b10e69157f6e3f821b709e93e453150489cebb91a1c4bc0cdb92')),
+    "Chiron": (_editorial_text('interpretations.fed5e4e9ab113e510bfebf17d80c14a9505a546708f5fb28ca7567fced4760c2'), _editorial_text('interpretations.8d2a3dc12b24ba2233015412851607362fa5267d1d9ae272ca4050ab3bf5d380')),
+    "Mean_North_Lunar_Node": (_editorial_text('interpretations.15dcbc0797321c10ae7a5953698ccf48d3314db4f2095a8f6269b7656d6e04c1'), _editorial_text('interpretations.56b56263a5c7da465912e88418d54510fda74ce288a8c373a16f0188e18977be')),
+    "True_North_Lunar_Node": (_editorial_text('interpretations.15dcbc0797321c10ae7a5953698ccf48d3314db4f2095a8f6269b7656d6e04c1'), _editorial_text('interpretations.56b56263a5c7da465912e88418d54510fda74ce288a8c373a16f0188e18977be')),
+    "Mean_South_Lunar_Node": (_editorial_text('interpretations.8ff02a47caddcc1f387d60fdff6af19843cbc0110e1ab13b1d032c4a068895cf'), _editorial_text('interpretations.17aef6b2cee5fe8b43180335b5b53680d3bdd3911489826b21057ae5973216da')),
+    "True_South_Lunar_Node": (_editorial_text('interpretations.8ff02a47caddcc1f387d60fdff6af19843cbc0110e1ab13b1d032c4a068895cf'), _editorial_text('interpretations.17aef6b2cee5fe8b43180335b5b53680d3bdd3911489826b21057ae5973216da')),
+    "Mars": (_editorial_text('interpretations.0d68bf30c131412926adb787e2a97879da5157b3c7d05cf43fbb9520b523edbd'), _editorial_text('interpretations.908e240aada0e6ce701dd97ad4266c498a3497c253935cbc8a0ac5a98c22a983')),
+    "Sun": (_editorial_text('interpretations.39927ca3215294c12269e62b123c2a55b33a2b5b6f8f7df8d867b7f13d8320fb'), _editorial_text('interpretations.7bfd2bd84739624cd7084aa257816522f534ec23346bf10b2f279de3d46df942')),
+    "Venus": (_editorial_text('interpretations.cf1dc7972d9c9350b8c49a4ddf1732d4df7cf13efdb58160a5137244064cf944'), _editorial_text('interpretations.933f5167ec749b8447c3a9457b24ed9e866e86c49012f6f9ae51e125f9e54e82')),
+    "Mercury": (_editorial_text('interpretations.ff734f717d04bb473b2a3827594c4175a066c5f155d65d1d4ed3eee3de78c115'), _editorial_text('interpretations.a7ef85d883eecbfa2153b7f47f22305abb5f00e03c16160287327712b9568088')),
+    "Moon": (_editorial_text('interpretations.9f342e1fcb30e764228195aae4eefc1030233262558684a37dd9633369734256'), _editorial_text('interpretations.f392ec19615622a2ed293162d2e0c0f51bdd28d1c3f869540e90582410709356')),
 }
 
 _ASPECT_CATEGORY = {
@@ -83,20 +84,20 @@ _ASPECT_CATEGORY = {
 
 _TRANSIT_GUIDANCE = {
     "conjunction": (
-        "Тема выходит на первый план и активизируется напрямую — ключевой момент для осознанных шагов в этой сфере.",
-        "The theme comes to the foreground and is activated directly — a key moment for conscious steps in this area.",
+        _editorial_text('interpretations.942c89e7b5b7344feafb318cd1ba5ca311f1a30d0f6e2e18c9ff5faf4f8309f2'),
+        _editorial_text('interpretations.dc5e8f3d4dead8593c3ecbc694f5066815eb845bd7dd7e7e5a647163d9a002b3'),
     ),
     "harmony": (
-        "Благоприятное окно: энергия периода легко поддерживает эту сферу — удачное время действовать и развивать начатое.",
-        "A favorable window: the energy of the period easily supports this area — a good time to act and develop what was begun.",
+        _editorial_text('interpretations.9e30f889e6ae4f56c22a9174a53b29c6f6f6127fd941914124306c6cb2db5751'),
+        _editorial_text('interpretations.957926259462318a25463512dbc67ab0c9dfbaeff24e884d341c110914cb8216'),
     ),
     "creative": (
-        "Творческий аспект помогает найти необычный способ соединить эти темы; результат требует личного участия и практики.",
-        "A creative aspect helps find an unusual way to combine these themes; results require personal involvement and practice.",
+        _editorial_text('interpretations.ff9ceefc102fcb2eeb3355812921c6c160635e7487f378e58163c0cfc1cf6e92'),
+        _editorial_text('interpretations.ea842e7190e5558e5bc61da133d74aaa9c6a05d9c0cdebb5b6118ac3a4b030a1'),
     ),
     "tension": (
-        "Период проверки и роста: возникает напряжение, которое важно не избегать, а сознательно прорабатывать — оно ведёт к зрелости.",
-        "A time of testing and growth: tension arises that is important not to avoid but to work through consciously — it leads to maturity.",
+        _editorial_text('interpretations.6f3f5db9f28ee63993bb707e8f119f3c214ff805f3cd04b2084d6edc7dedf2bd'),
+        _editorial_text('interpretations.90a69944eccaed9d2e9402a3f80bde851080d1609bd95e626e018131f0c72979'),
     ),
 }
 
@@ -120,27 +121,25 @@ def interpret_transit(t_name: str, aspect: str, n_name: str, lang: str = "ru",
     guidance = g(_TRANSIT_GUIDANCE[category], lang)
     if lang == "en":
         return (
-            f"{t_ru} by transit brings {g(theme, lang)}. In a “{aspect_ru}” aspect to natal "
-            f"“{n_ru}” it touches the area of “{g(role, lang)}”. {guidance}"
+            f"{t_ru}{_editorial_text('interpretations.ab037c8f517860a2fe8b216f1a6e05afafc3148b7c2eea194811d09af0247bdf')}{g(theme, lang)}{_editorial_text('interpretations.2cb11a70ca113bb936ac88f68f5069c7ff287e1831f93a37b41e6ec10aea729a')}{aspect_ru}{_editorial_text('interpretations.cb55a35efea76767f5f4bed353b1d30b53168ab5a2db06a372fd109f951df7f7')}{n_ru}{_editorial_text('interpretations.d37c8a0e5f0c06bcc2f922097ace1c49ffdcfdcfaea901319cc4b6bf537408b0')}{g(role, lang)}”. {guidance}"
         )
     return (
-        f"{t_ru} транзитом приносит {g(theme, lang)}. В аспекте «{aspect_ru}» к натальной точке "
-        f"«{n_ru}» затрагивается сфера «{g(role, lang)}». {guidance}"
+        f"{t_ru}{_editorial_text('interpretations.de43e28cd84f5a3025c672fb4d4de1910360a5f676db3c9f396b247254e8d215')}{g(theme, lang)}{_editorial_text('interpretations.2035ff025b2226157e5866da7741220d88df2691449bc236514b330a00b46cb9')}{aspect_ru}{_editorial_text('interpretations.62d1e02a977d30ddf38fb87bebf43a154d5e38c6915a56cca528b5a2199507eb')}{n_ru}{_editorial_text('interpretations.9e200b003175531197966672c3b643620fedcbe6eb90f3a0d98bfaa2defe8e40')}{g(role, lang)}». {guidance}"
     )
 
 
 _PROGRESSION_GUIDANCE = {
     "conjunction": (
-        "Эта тема постепенно становится частью нового внутреннего этапа и требует внимательного осмысления.",
-        "This theme gradually becomes part of a new inner phase and calls for attentive reflection.",
+        _editorial_text('interpretations.37bb1b68bb9d62f6175402cb78b3473feed70a0081b686fd917ea9e44d29028b'),
+        _editorial_text('interpretations.354e7228539d0b39a2813755a305dac8a1ba5e6b41115f67a2b487d090377510'),
     ),
     "harmony": (
-        "Изменения созревают естественно: новые качества легче встроить в привычный образ жизни.",
-        "The change matures naturally, making new qualities easier to integrate into everyday life.",
+        _editorial_text('interpretations.69fbc22774c36db6123c4502b0469358a27447bf2a5a303ff60160755d3b9848'),
+        _editorial_text('interpretations.d66ae5f58901d825f545e4339c6bd0763bf76ce1542d0879245cca57f934efbe'),
     ),
     "tension": (
-        "Внутреннее противоречие обозначает точку взросления: важно дать переменам время и найти более зрелый способ выражения этой темы.",
-        "The inner contradiction marks a point of growth: give the change time and find a more mature way to express this theme.",
+        _editorial_text('interpretations.6171c150252448507469aaf49e8e9c2a8fbb52373aa92a44f1f8a6e6ab5a834b'),
+        _editorial_text('interpretations.91bb764786b20b7f32890ffe1368925b70cdb952a562b7e764cfffb379a8ad09'),
     ),
 }
 
@@ -162,35 +161,35 @@ _TRANSIT_TARGET_NAME = {
 _TRANSIT_ANGLES = {"Ascendant", "Medium_Coeli", "Descendant", "Imum_Coeli"}
 
 _TRANSIT_ASPECT_RU = {
-    "conjunction": "Соединение сводит обе функции в один поток: тема становится заметной и требует прямого участия. Энергия действует концентрированно, поэтому особенно важно осознанно выбрать способ её выражения.",
-    "sextile": "Секстиль открывает возможность, которая раскрывается через инициативу, разговор или конкретный шаг. Поддержка периода не действует автоматически: шанс важно заметить и перевести в практику.",
-    "square": "Квадрат создаёт трение между привычным способом жить и новым требованием периода. Препятствия показывают слабое место, а накопленное напряжение просит действия, дисциплины и изменения навыка.",
-    "trine": "Трин даёт естественную поддержку и позволяет включить обе функции без острой внутренней борьбы. Лёгкость становится результатом, когда человек не успокаивается на хорошем фоне, а развивает доступный ресурс.",
-    "opposition": "Оппозиция проявляет тему через людей и внешние обстоятельства, сталкивая два полюса одной задачи. Вместо выбора одной крайности требуется договорённость, границы и возвращение себе качества, замеченного в другом.",
-    "quintile": "Квинтиль раскрывает творческую связь между двумя функциями и побуждает найти нестандартный способ их выражения. Это не пассивная удача, а способность, которая становится заметной через интерес, эксперимент и практику.",
+    "conjunction": _editorial_text('interpretations.2f7130ed532f2513682d1bd028b65ee812f245c62f429c1eeb1bc3758982a085'),
+    "sextile": _editorial_text('interpretations.6b0251a3f8774fb9fb9e827cefe10f5d9607db370890361b740782134d1f0cc0'),
+    "square": _editorial_text('interpretations.0cdc9f04f0c7bf62804514d9efbdac99ef81b8ebaa36a273f6e563a4cedec2ad'),
+    "trine": _editorial_text('interpretations.b5ca7795b716ac6d6986e941bfdbd50e3227d99a70253fbadf74f756cedb4935'),
+    "opposition": _editorial_text('interpretations.852ec62912e4041611de32d7616b4de09ec65cff18d2596e6918bee67ad827a5'),
+    "quintile": _editorial_text('interpretations.04b3e9546f168068e4161fae210769f573ae5bf97581ba6642fe20be08f0ae77'),
 }
 
 _TRANSIT_TIMING_RU = {
-    "Sun": "Солнечный акцент действует недолго: обычно несколько дней вокруг точного аспекта.",
-    "Moon": "Лунный акцент быстротечен и чаще всего заметен несколько часов или один-два дня.",
-    "Mercury": "Меркурианская тема обычно проявляется в течение нескольких дней, а при ретроградности может повториться.",
-    "Venus": "Венерианский акцент обычно длится несколько дней или недель и может вернуться на ретроградной петле.",
-    "Mars": "Влияние Марса обычно развивается быстро и ощущается от нескольких дней до нескольких недель.",
-    "Jupiter": "Юпитерианская тема развивается месяцами и может возвращаться при ретроградном прохождении.",
-    "Saturn": "Сатурнианский процесс длится месяцами и нередко проходит несколькими волнами, закрепляя новый уровень ответственности.",
-    "Uranus": "Уран действует длительно и волнообразно: внешнее событие может быть быстрым, но перестройка занимает месяцы.",
-    "Neptune": "Нептунианский фон созревает медленно, иногда оставаясь заметным больше года и повторяясь на ретроградной петле.",
-    "Pluto": "Плутоническая перестройка относится к длительным циклам и раскрывается этапами, а не одним событием.",
-    "Chiron": "Тема Хирона развивается постепенно и может возвращать к одной уязвимости несколько раз, каждый раз открывая новый способ обращения с ней.",
-    "North_Node": "Узловой акцент действует как этап цикла: он связывает текущий выбор с направлением дальнейшего развития.",
-    "South_Node": "Узловой акцент поднимает накопленный опыт и повторяющиеся сюжеты, чтобы отделить полезный навык от исчерпанной привычки.",
-    "Lilith": "Акцент Лилит требует отделять сильную эмоциональную реакцию от фактов и осознанно обращаться с теневой темой.",
+    "Sun": _editorial_text('interpretations.8f72eb0654b4f081f1a4d64737579ca2e8a9401201172aa900e3f4f643fe530e'),
+    "Moon": _editorial_text('interpretations.da19a1a0c74619832580637d400e3c3556611c4f14d2467565ec9e97ed29a4d1'),
+    "Mercury": _editorial_text('interpretations.644adc3cf8b4480dde9b52161dda89570c8a75f12e0ec6b45d8c0c271b738bcc'),
+    "Venus": _editorial_text('interpretations.b20c582244da801808771f1474cc02aa2919b28fcf9001ca81fd86cce4de54b8'),
+    "Mars": _editorial_text('interpretations.4c6ae37afeb016789f29f780c9346fd074db0015cf8f4b096695578dab72b1c4'),
+    "Jupiter": _editorial_text('interpretations.a85c048fd22943b579c033e088733c2d89321ec15daa39c2c5052bb94a043bc8'),
+    "Saturn": _editorial_text('interpretations.050bc26575d5a06f1a6b916441ec57f7c8cff90ef1a1e21fdb76f0fa63648f24'),
+    "Uranus": _editorial_text('interpretations.02503aecc4c32291e1998d305761491b4cc52a076d869cbd2dfc27a8c672bbf8'),
+    "Neptune": _editorial_text('interpretations.610ec735ccce0dcef595c9743335e442471917feae41e67050bb571563f96ecd'),
+    "Pluto": _editorial_text('interpretations.bbbc7442298732b8938b3f009d6d8d1cbc6a1e4d16a776d62f56bb4c343f5bcf'),
+    "Chiron": _editorial_text('interpretations.d66ccaecdada90bf6db62da68e423c3fa9f01ebea3bea099e8a7d346bbdbf7fc'),
+    "North_Node": _editorial_text('interpretations.def2c9e630ee9b9eb1bc2d510103364c6ad7c2c04f4e6a433c37f48f538d47d9'),
+    "South_Node": _editorial_text('interpretations.1a8a9f5e4b1670246e199f93525b3cf44f9a485a272f06729a78a8a451d5b517'),
+    "Lilith": _editorial_text('interpretations.c347f9c441eb1105dd3def1b621ea3437d6a16874f204c30ddb665b9f8a9ca2c'),
 }
 
 _TRANSIT_CANONICAL_ROLE_RU = {
-    "North_Node": "вектор развития и задачи нового опыта",
-    "South_Node": "накопленный опыт, привычные сценарии и прошлое",
-    "Lilith": "вытесненные желания, теневая страсть и точка бунта",
+    "North_Node": _editorial_text('interpretations.42ae68d74b7c0aca0898befc7f1291d3990f0d9a2ea2c60fdad09275b2658ca4'),
+    "South_Node": _editorial_text('interpretations.7dc41ccb4bef0f6ab5e244363731e9c731ad97b6da147af580ef1caf550624bb'),
+    "Lilith": _editorial_text('interpretations.1c21248118efb7116c5ec97f046c6b3b75d08e7478594446b2c06096192f6448'),
 }
 
 
@@ -209,12 +208,12 @@ def _generic_transit_pair(moving: str, target: str) -> Optional[dict]:
     if not source or not focus:
         return None
     return {
-        "energy": f"Энергия, связанная с темой «{source}», активирует сферу «{focus}» и делает её события заметнее.",
-        "psychology": f"Внутренне становится важнее согласовать импульс периода с тем, как проявляются {focus}.",
-        "relationships": "Контакты показывают, где нужны честный обмен, ясные границы и уважение к различию реакций.",
-        "realization": "В делах полезно перевести возникший импульс в одно наблюдаемое действие и оценить его результат.",
-        "risks": "Сложность возникает, если принять временную интенсивность за окончательное решение или действовать без проверки обстоятельств.",
-        "advice": "Наблюдайте за повторяющимся сюжетом, соотносите его с орбисом и выбирайте действие, соответствующее реальной ситуации.",
+        "energy": f"{_editorial_text('interpretations.92f5a32faded17b81dabb9dcd096a081fb2d18547b611b62a58ed98d1691020a')}{source}{_editorial_text('interpretations.a3b5cf2a049a5f2bc01aaa5148800da067195105d0d96d2ffa8ea11ccdec0db7')}{focus}{_editorial_text('interpretations.1c1b720d3fb34b08ad8003ff62c891867eb68b5f36794c6bf49c3b604283a858')}",
+        "psychology": f"{_editorial_text('interpretations.d973a933f8cfe9e7fbcd65303be57ac512c5b80f1e568736d39d548a2ce0fea0')}{focus}.",
+        "relationships": _editorial_text('interpretations.6b1b64f461ccebad94285380ea0e8f5c07483ee9806fa76b5e5f797eb2a2054b'),
+        "realization": _editorial_text('interpretations.abbf7aef03c5cda6393ae94ac8ce0ec8b8069155c465fee8d280bbbf24a55ae9'),
+        "risks": _editorial_text('interpretations.5ab7b6da17776eaee729c60b132d5727ad0fab6ee7d572122bed046a92137d50'),
+        "advice": _editorial_text('interpretations.b81faeaa2116099910a4373331046aec568c857dc4826071d354f81d38b5e192'),
     }
 
 
@@ -231,14 +230,10 @@ def _interpret_moving_angle(t_name: str, aspect: str, n_name: str, lang: str,
     aspect_name = C.aspect_name(aspect, lang).lower()
     if lang == "en":
         return (
-            f"The moving chart angle {angle} forms a {aspect_name} to natal {target}. "
-            "This is a time-sensitive contact of a chart axis, not a planetary transit; "
-            f"it highlights {g(role, lang)} and is best read for the exact time and location. {TE.phase(orbit, movement)}"
+            f"{_editorial_text('interpretations.98a55840e309e4b95c883bc9c4641ff8f3d76acb3ddd5e12b6278a31b7a2e048')}{angle}{_editorial_text('interpretations.d424b59d7ba0c7b359369e6dfb02d293130e835bff997f3036a882c825296bcf')}{aspect_name}{_editorial_text('interpretations.e2630387138f131bd4318393915be8ff844497c5afe5fe889289e6aea33336fe')}{target}{_editorial_text('interpretations.ba531332704fbc1af028cf878c392248f081de33579696042dce53cee22261c0')}{g(role, lang)}{_editorial_text('interpretations.95483f01a56225a3354d9bd4583443d8deb70a6dc2baa7f786409924b1f2d0a8')}{TE.phase(orbit, movement)}"
         )
     return (
-        f"Транзитный угол карты «{angle}» образует аспект «{aspect_name}» к натальной точке «{target}». "
-        "Это краткий, зависящий от точного времени и места контакт оси карты, а не действие транзитной планеты. "
-        f"Он выделяет сферу «{g(role, lang)}». {_transit_phase_ru(orbit, movement)}"
+        f"{_editorial_text('interpretations.217d3d0039f6fa88ce96b2995fb3f742e4385e24b2ed05d02634dd75923c578d')}{angle}{_editorial_text('interpretations.cd4dc1144b5928a5e87d8b9bc23484d977e18e897721868bb4f412f26146d196')}{aspect_name}{_editorial_text('interpretations.62d1e02a977d30ddf38fb87bebf43a154d5e38c6915a56cca528b5a2199507eb')}{target}{_editorial_text('interpretations.b783f346967c54ea4511409ccdc6da818c1dd82dc7a1c4a9d1ffb5357b110d82')}{g(role, lang)}». {_transit_phase_ru(orbit, movement)}"
     )
 
 
@@ -257,16 +252,16 @@ AUTHORED_TRANSIT_EN = TE.load_authored()
 
 def _transit_phase_ru(orbit: Optional[float], movement: str) -> str:
     if orbit is None:
-        return "Точный орбис, скорость и ретроградные повторы уточняют силу и этап этого влияния."
-    phase = "близок к точности" if orbit <= 1 else "находится в рабочем орбисе"
+        return _editorial_text('interpretations.62b595cbe10d1825f53d2902dc62d31521d98a5fbc82d4f975e730998194bfad')
+    phase = _editorial_text('interpretations.262856401231c67b8e3e278ec4ed6d2ab91505610885a0d517267e09367cb151') if orbit <= 1 else _editorial_text('interpretations.2aedbfae41c8ab0191d6db90cd6528a15747f689d94a96ed4a6a556546d3abda')
     movement_l = (movement or "").lower()
     if "расход" in movement_l or "separ" in movement_l:
-        direction = "Пик уже пройден, и сейчас важнее осмыслить последствия и закрепить результат."
+        direction = _editorial_text('interpretations.68a60bed3794420e06917711b5fede81702fe1a93aa4022ee7f5f179a10de192')
     elif "сход" in movement_l or "app" in movement_l:
-        direction = "Энергия нарастает, поэтому основные решения лучше готовить уже сейчас."
+        direction = _editorial_text('interpretations.d5000b1ff6ec8eba0030b879efafa9f3e1b5489274123619ccd7f414affd0000')
     else:
-        direction = "Текущая фаза уточняется по скорости и возможному ретроградному повтору."
-    return f"При орбисе {orbit:.2f}° аспект {phase}. {direction}"
+        direction = _editorial_text('interpretations.5d79e67754841fbec531b93b7bb41d4067a7195c5c13f2478d711a8763e78551')
+    return f"{_editorial_text('interpretations.7d30bf0fdf612eedde89da32adb4ea6721cc5da4837e0401f4ad086a838acaeb')}{orbit:.2f}{_editorial_text('interpretations.ce2d530f8a7dd12e909b0a9eb65cfd4286b4fdd671e5904024cad110051fe547')}{phase}. {direction}"
 
 
 def _interpret_transit_deep(t_name: str, aspect: str, n_name: str,
@@ -276,7 +271,7 @@ def _interpret_transit_deep(t_name: str, aspect: str, n_name: str,
     if lang == "en":
         if not moving or aspect not in TE.ASPECTS:
             return ""
-        pair = AUTHORED_TRANSIT_EN.get(f"transit|{moving}|{target}")
+        pair = AUTHORED_TRANSIT_EN.get(f'transit|{moving}|{target}')
         if not pair:
             source = g(PLANET_ROLE.get(moving), "en") or TE.ROLES.get(moving)
             focus = g(PLANET_ROLE.get(target), "en") or TE.ROLES.get(target)
@@ -284,7 +279,7 @@ def _interpret_transit_deep(t_name: str, aspect: str, n_name: str,
                 return ""
             pair = TE.generic_pair(source, focus)
         return TE.render(pair, moving, aspect, orbit, movement)
-    pair = AUTHORED_TRANSIT.get(f"transit|{moving}|{target}") if moving else None
+    pair = AUTHORED_TRANSIT.get(f'transit|{moving}|{target}') if moving else None
     dynamic = _TRANSIT_ASPECT_RU.get(aspect)
     if not moving or not dynamic:
         return ""
@@ -296,13 +291,7 @@ def _interpret_transit_deep(t_name: str, aspect: str, n_name: str,
     if any(not isinstance(pair.get(key), str) or not pair[key].strip() for key in required):
         return ""
     return (
-        f"Суть транзита. {dynamic} {_TRANSIT_TIMING_RU.get(moving, '')}\n\n"
-        f"Энергия периода. {pair['energy']} {_transit_phase_ru(orbit, movement)}\n\n"
-        f"Психология. {pair['psychology']}\n\n"
-        f"Отношения. {pair['relationships']}\n\n"
-        f"Реализация. {pair['realization']}\n\n"
-        f"Сложные проявления. {pair['risks']}\n\n"
-        f"Рекомендации. {pair['advice']}"
+        f"{_editorial_text('interpretations.e4bdf131c6ff6eeae38249d6b0e8283aa0260a952a9c290619f484f2042778bc')}{dynamic} {_TRANSIT_TIMING_RU.get(moving, '')}{_editorial_text('interpretations.ebf380bda096ba7d3bb3e994b9ed2dbd027382d0c8301ca6efcafe6959b29f46')}{pair['energy']} {_transit_phase_ru(orbit, movement)}{_editorial_text('interpretations.020ab0371a42de6cc61b0bd9decfd89f4b9dd29aea66d4e9d9e1488de789eff3')}{pair['psychology']}{_editorial_text('interpretations.40b763cede157fcd0faa3984ad162f969da6ec450c590b82c4419824b0846cc5')}{pair['relationships']}{_editorial_text('interpretations.2da700f14872e2d7e40c248dcb1fbfa17984514dcb8094b1cd46f7a27a632859')}{pair['realization']}{_editorial_text('interpretations.55f2407147ab3bc82404b1a0d86219968508f883549e3a6c0c65a5e84e76d12b')}{pair['risks']}{_editorial_text('interpretations.a3c6d20215199715c9d3ec3afbcd32d04cc56258bf3cbda7899d930f236f7bc1')}{pair['advice']}"
     )
 
 
@@ -318,27 +307,25 @@ def interpret_progression(p_name: str, aspect: str, n_name: str, lang: str = "ru
     guidance = g(_PROGRESSION_GUIDANCE[category], lang)
     if lang == "en":
         return (
-            f"Progressed {progressed} forms a “{aspect_name}” aspect to natal “{natal}”. "
-            f"This describes a slowly maturing inner process in the area of “{g(role, lang)}”. {guidance}"
+            f"{_editorial_text('interpretations.7c3d3a71041fb3d2dd417be30da9b03b1d5277a65ee1b4641ef14482a986e3f3')}{progressed}{_editorial_text('interpretations.a8130b15b39f685b3469f2b098940cf873795cd8fe6dad03800dba85b5e5770e')}{aspect_name}{_editorial_text('interpretations.cb55a35efea76767f5f4bed353b1d30b53168ab5a2db06a372fd109f951df7f7')}{natal}{_editorial_text('interpretations.5beed14f0ee2062531284e299f3ee7b46d2d39af07fdcd864cd68755977fbe0d')}{g(role, lang)}”. {guidance}"
         )
     return (
-        f"Прогрессивная точка «{progressed}» образует аспект «{aspect_name}» к натальной точке «{natal}». "
-        f"Это описывает постепенно созревающий внутренний процесс в сфере «{g(role, lang)}». {guidance}"
+        f"{_editorial_text('interpretations.2b7b4f8f3931f9bbfd4f2531f929afd3554eeee4cd481bbc9834720d1da6400d')}{progressed}{_editorial_text('interpretations.cd4dc1144b5928a5e87d8b9bc23484d977e18e897721868bb4f412f26146d196')}{aspect_name}{_editorial_text('interpretations.62d1e02a977d30ddf38fb87bebf43a154d5e38c6915a56cca528b5a2199507eb')}{natal}{_editorial_text('interpretations.3df07062be68ba3c783df6e895e23edaa7060a6d43faaf7b50aa92cbfc9395c6')}{g(role, lang)}». {guidance}"
     )
 
 
 _DIRECTION_GUIDANCE = {
     "conjunction": (
-        "Тема входит в заметную фазу жизненного цикла и просит определить свою позицию в этой сфере.",
-        "The theme enters a visible phase of the life cycle and asks you to define your position in this area.",
+        _editorial_text('interpretations.33547cbd11a78cf17afa27c6ff9719c9206f1c7b1de466cb7b1efab576f049d8'),
+        _editorial_text('interpretations.d637281bf3f65ed5dda4b01793fd5084063d17daa48f4e4d384086077f3a0e80'),
     ),
     "harmony": (
-        "Период помогает последовательно закрепить результат и использовать уже накопленный опыт.",
-        "The period supports steady consolidation and constructive use of experience already gained.",
+        _editorial_text('interpretations.6dc1deb82c4700756233567dda9f65c00149ffc386d8f6364faa223a537f3d87'),
+        _editorial_text('interpretations.29ce311d4ae6de200af6df5826834e61cf9da3535fe2bfd60fa4aa58f9ae8650'),
     ),
     "tension": (
-        "Период обозначает рубеж, где прежний способ действия требует пересмотра и большей ответственности.",
-        "The period marks a threshold where the previous way of acting needs revision and greater responsibility.",
+        _editorial_text('interpretations.08ea6dd5a07304d1f01b3df34bf3dd46e0c4e11aabb747bf2bacead137cd3941'),
+        _editorial_text('interpretations.cf0d6ec52e8b3988916d5492eb58db11d45d0f4ec51ce22230609ab69e34ed52'),
     ),
 }
 
@@ -355,13 +342,10 @@ def interpret_direction(d_name: str, aspect: str, n_name: str, lang: str = "ru")
     guidance = g(_DIRECTION_GUIDANCE[category], lang)
     if lang == "en":
         return (
-            f"Solar-arc directed “{directed}” forms a “{aspect_name}” aspect to natal “{natal}”. "
-            f"This symbolic timing highlights a developmental milestone in the area of “{g(role, lang)}”. {guidance}"
+            f"{_editorial_text('interpretations.b6d8dc8c0e14dba2672c9663b67fbd2d021afd3389357644ddc095ad1acb15b1')}{directed}{_editorial_text('interpretations.00ac1a1ea4979041c5832d74843cc3c445372dc4a20b8d0a92d9f357253687bf')}{aspect_name}{_editorial_text('interpretations.cb55a35efea76767f5f4bed353b1d30b53168ab5a2db06a372fd109f951df7f7')}{natal}{_editorial_text('interpretations.2e5414b6ff8b7baeb4421546ef07deb95f65b7c504fc56443a2fcb1513323617')}{g(role, lang)}”. {guidance}"
         )
     return (
-        f"Дирекционная точка «{directed}» по солнечной дуге образует аспект «{aspect_name}» "
-        f"к натальной точке «{natal}». Этот символический показатель отмечает жизненный рубеж "
-        f"в сфере «{g(role, lang)}». {guidance}"
+        f"{_editorial_text('interpretations.e816a0b53bfafa6fc7c3f6166ec580109dfc0b8fa77174ff638803da10ea2fb4')}{directed}{_editorial_text('interpretations.b37aa98a1f6b87fd15bb10166fb6589f93020b24df22e8c228ed40f356c8797a')}{aspect_name}{_editorial_text('interpretations.62d1e02a977d30ddf38fb87bebf43a154d5e38c6915a56cca528b5a2199507eb')}{natal}{_editorial_text('interpretations.efefa413309c92704076d4dbdc91044790e4e3b50df9aec88e581a3a492f7a38')}{g(role, lang)}». {guidance}"
     )
 
 
@@ -371,15 +355,13 @@ def prog_moon_text(sign: str, house, lang: str = "ru") -> str:
     hexp = g(HOUSE_EXP.get(house, ("", "")), lang) if house else ""
     sname = C.sign_name(sign, lang)
     if lang == "en":
-        out = (f"For about 2–2.5 years your progressed Moon moves through {sname}: the emotional "
-               f"“chapter” of this period is coloured by {essence}.")
+        out = (f"{_editorial_text('interpretations.04983fcfaa7d504a09918c6bb804c7f84423f0c0b5d4f9abd0b41e5d113e9c0d')}{sname}{_editorial_text('interpretations.7536404d694c1d665ef2d9d722ed2c3bb84a24ac5a7bb429cdc9eefb6460b8a9')}{essence}.")
         if hexp:
-            out += f" Its focus falls on the {_ord_en(house)} house — {hexp}"
+            out += f"{_editorial_text('interpretations.f53c8750a4f78829c37bb562078a6800891bb683cf9fee13aa8cea5a30ebbc39')}{_ord_en(house)}{_editorial_text('interpretations.e5befaa4852c2b2011ea1a55e4bd5a01f4259d4aea1ec24a9b8eaf4dd308709d')}{hexp}"
         return out
-    out = (f"Около 2–2,5 лет прогрессивная Луна идёт по знаку {sname}: «эмоциональная глава» периода "
-           f"окрашена в {essence}.")
+    out = (f"{_editorial_text('interpretations.86653cb11cd4b26719a6ec01ead1d0f2a2cf817ea8273ae7baa5c11469e97663')}{sname}{_editorial_text('interpretations.5ea7ef4940842548eaf83ddb871d567ecfe0aefd4579b2e6b7aa69ad776abc7a')}{essence}.")
     if hexp:
-        out += f" Её фокус — в сфере {house}-го дома: {hexp}"
+        out += f"{_editorial_text('interpretations.9939dbe00d7e0f545ee343b42ed877343bc14f9a31880eed0e65e54f0f288ee6')}{house}{_editorial_text('interpretations.c8358a0c7bd569229184e5b8b25d04a4ded23831f982a4942a0e027ca965e48f')}{hexp}"
     return out
 
 
@@ -390,13 +372,11 @@ def prog_sun_text(sign: str, changed: bool, natal_sign: str, lang: str = "ru") -
     nname = C.sign_name(natal_sign, lang)
     if lang == "en":
         if changed:
-            return (f"Your progressed Sun has moved from {nname} into {sname} — a slow but deep change of life "
-                    f"phase. In the coming years these qualities come to the fore: {light}.")
-        return (f"Your progressed Sun keeps developing through {sname}, gradually ripening its qualities: {light}.")
+            return (f"{_editorial_text('interpretations.2b7f75da5c8767d813e11baf5be94cf6ac9f47f2555139e5a3a77ff12e518f76')}{nname}{_editorial_text('interpretations.3a68c5d43f6a077dbe61a2d9ea891e37f2cf2a83ca08bfc3240dea3ddbe5540c')}{sname}{_editorial_text('interpretations.b1539dd71c18bf81b1c64333b2174529a64203ea03ae0e64a414d75a7cfded61')}{light}.")
+        return (f"{_editorial_text('interpretations.c114b16b89b296f9d6c7a0bbd9debaba9a97318c747e85c0869a20c8ba50f52b')}{sname}{_editorial_text('interpretations.e11fad9bb748e86b12f740dbb1f71070e1565f0e12553957653760a601a0ad3f')}{light}.")
     if changed:
-        return (f"Прогрессивное Солнце сменило знак: раньше — {nname}, теперь {C.sign_in(sign, lang)} — медленная, но глубокая смена жизненного "
-                f"этапа. В ближайшие годы на первый план выходят качества: {light}.")
-    return (f"Прогрессивное Солнце продолжает развиваться по знаку {sname}, постепенно раскрывая качества: {light}.")
+        return (f"{_editorial_text('interpretations.4502c9e1278226efd0eb8709f9725cfbee393014e6dc7fd06cd8a73a059cb032')}{nname}{_editorial_text('interpretations.c29269eb02f3a57a8fb2dbc1559492ae13a1cf7a111964d7cad3cc73062d48e2')}{C.sign_in(sign, lang)}{_editorial_text('interpretations.6f0cb448250fbb93dc92fa497eb520b3c6626f76288b9a77117f504d61b16e61')}{light}.")
+    return (f"{_editorial_text('interpretations.da10cbe2edbb7bc5d6ce2e4b3bb66f68738258658e7f85dc3a44cd0b46cd9ed9')}{sname}{_editorial_text('interpretations.5c37b65bc76320aa97e0f2b505506a3f297019b6fc0d0e6b2969643bb1d71158')}{light}.")
 
 
 # --------------------------------------------------------------------------- #
@@ -404,64 +384,64 @@ def prog_sun_text(sign: str, changed: bool, natal_sign: str, lang: str = "ru") -
 # --------------------------------------------------------------------------- #
 SIGN_FACETS = {
     "Ari": {
-        "manner": ("напористо и прямо, через инициативу и быстрые решения", "assertively and directly, through initiative and quick decisions"),
-        "motive": ("желание быть первым и действовать без промедления", "the desire to be first and to act without delay"),
-        "shadow": ("импульсивность, нетерпеливость и склонность к конфликтам", "impulsiveness, impatience and a tendency toward conflict"),
+        "manner": (_editorial_text('interpretations.dd19257b3c9c9aeb3a253cd7b1a53c281e18fbdb46219b691ee19050c9da4dda'), _editorial_text('interpretations.feb03bb3f795dcdac14770387cd6b1ca17e1d6062b51ab39fecc386cdf6c2ae6')),
+        "motive": (_editorial_text('interpretations.22c6f3c142e609e7a0d8c1b3848af437d6f980b7d5552e966eaa0bf236100c08'), _editorial_text('interpretations.00554ff5002d2faec2822c9dacebb41cc4af071b41e3f7419f1cee1e725e89e1')),
+        "shadow": (_editorial_text('interpretations.c79ffb0c3ab78d3cefbe08de65094c233f9d17f6a32adf9c73bc931b67953be8'), _editorial_text('interpretations.86f0339f5aec86348c574ee955cc216777b063111f0059366f366d5671270363')),
     },
     "Tau": {
-        "manner": ("устойчиво, размеренно и чувственно, опираясь на надёжность", "steadily, calmly and sensually, relying on reliability"),
-        "motive": ("потребность в стабильности, комфорте и материальной опоре", "the need for stability, comfort and material security"),
-        "shadow": ("упрямство, инертность и страх перемен", "stubbornness, inertia and fear of change"),
+        "manner": (_editorial_text('interpretations.9acac153bf9590f4a2decb3614266ce262aa5335c14aacf12d6e5be33131c1dd'), _editorial_text('interpretations.9d3949c191a5104b2eaeee9bd270b800e85b7c26217bd5a9286ee48e10d15879')),
+        "motive": (_editorial_text('interpretations.bb294e9b9340b07180adfb46ab97401782524f3204f9130af63098b795eecd75'), _editorial_text('interpretations.e9aa0d8f35797406a5f1f9d59c5ba616288025fec9f14c80f9d6d91c43c407b7')),
+        "shadow": (_editorial_text('interpretations.b16e8742942abec04a5c927a9ffcd05dd82e283deff6b827d9341f1488c45fc8'), _editorial_text('interpretations.61eb086183ee972a609c2210da2f37fb0ede39c54c0d7d7c679fb1ac86b10fab')),
     },
     "Gem": {
-        "manner": ("гибко, любознательно и общительно, через слово и информацию", "flexibly, curiously and sociably, through word and information"),
-        "motive": ("жажда новых впечатлений, контактов и понимания", "a thirst for new impressions, contacts and understanding"),
-        "shadow": ("поверхностность, разбросанность и непостоянство", "superficiality, scatteredness and inconstancy"),
+        "manner": (_editorial_text('interpretations.e4bb941d4ad20152a3a1b7500c45229bf4351b5810f7c7890c63ef73675b39a1'), _editorial_text('interpretations.dfc610253b96f59d07541ad576200afc58bb4613585bfad23a360f98840a51af')),
+        "motive": (_editorial_text('interpretations.aec6a8c4d7bf3059a3cccdb80dd0d5ac7cc56f86cb0c7419345380e7d2757ac8'), _editorial_text('interpretations.2de80d2c1e3f9ddadb84d96eef9e42bb1c978c89b8c058ad2263afc22d248893')),
+        "shadow": (_editorial_text('interpretations.db1215d2f63329ce253080e50bb4adea3c60763b60aab8f6bd2c1232e855406d'), _editorial_text('interpretations.042b618b052ebeb7f47aa4cde3745fece32648764c0cb1a274d36a6e6cec3a6a')),
     },
     "Can": {
-        "manner": ("чутко и заботливо, опираясь на чувства, память и привязанности", "sensitively and caringly, relying on feelings, memory and attachments"),
-        "motive": ("потребность в эмоциональной близости и чувстве дома", "the need for emotional closeness and a sense of home"),
-        "shadow": ("обидчивость, тревожность и уход в защиту", "touchiness, anxiety and withdrawal into defense"),
+        "manner": (_editorial_text('interpretations.e0559d12f9edc4f7f72754b85d87a6cf2ca5607677061c4d3f2e5a8325147486'), _editorial_text('interpretations.6754cfb06784cbd84dd41b32862d09e4efdab2cf371bde18785d9cf4a28d55af')),
+        "motive": (_editorial_text('interpretations.8a82fde6122a981b41f1cc3171afe77615fee7029d048a41e1646cb2853827b6'), _editorial_text('interpretations.081e301af51a4dcd2fbb96295548c674fcd203497d6599db2906cfe61798f132')),
+        "shadow": (_editorial_text('interpretations.d74e2cefc6f301920c834ea9b2b3e1ed1eb13f20171db395cc8e1e3207873453'), _editorial_text('interpretations.15a8d18e9364fb4ce539be1d4d1f343854f00e088dba4aba2734abb293479af0')),
     },
     "Leo": {
-        "manner": ("ярко, творчески и великодушно, с потребностью быть замеченным", "brightly, creatively and generously, with a need to be noticed"),
-        "motive": ("стремление к самовыражению, признанию и любви", "the drive for self-expression, recognition and love"),
-        "shadow": ("гордыня, эгоцентризм и зависимость от похвалы", "pride, egocentrism and dependence on praise"),
+        "manner": (_editorial_text('interpretations.8a16ec0b3e78b61795a9e2236744e0f326e54bdca7fe9e1968cb86ccf13136c5'), _editorial_text('interpretations.897032b0f68a577fe8bd5e79257f7a33834df3d693af59a50db4222de2847768')),
+        "motive": (_editorial_text('interpretations.6a6af68304e852be6028f55ee1063837e44ee73c8de313e23edaba540a6e970b'), _editorial_text('interpretations.713b7bc944161e7135063b2d93226f2b6776c5ee55f2a016ceff4e6c2611c94f')),
+        "shadow": (_editorial_text('interpretations.69756bae2292c0cecccbb1609682c2bedabeaa02673fbbb97fab68f62118fe83'), _editorial_text('interpretations.314c1f26e95844fa67076e2eb8a5b0d1d4fb3f86c2bdaeb75ff00356e661d162')),
     },
     "Vir": {
-        "manner": ("тщательно, практично и аналитично, через пользу и порядок", "carefully, practically and analytically, through usefulness and order"),
-        "motive": ("желание совершенствовать, служить и приносить пользу", "the desire to perfect, to serve and to be useful"),
-        "shadow": ("придирчивость, тревога о деталях и самокритика", "fault-finding, anxiety over details and self-criticism"),
+        "manner": (_editorial_text('interpretations.6620406a7335fd81e8ce3269fe36bbb44dfc44860e2552f9986ae755e8bb0116'), _editorial_text('interpretations.de62bde72e7e32c52744d7ad4559477b9dfd7884e8f70219e849c51a8a65d750')),
+        "motive": (_editorial_text('interpretations.1bc9ef8b5c343117c9ff12210dfc07414df11127b2962306ac520d161a8556dd'), _editorial_text('interpretations.af5472fa0bb2c31b7f71b44100f19491598e5c9721d57b54a736c47469fc7de9')),
+        "shadow": (_editorial_text('interpretations.214c2b68983783a51542c0c76b36384b3f6ea0f71254ea4a4b62ab3ad98b4bee'), _editorial_text('interpretations.5ed29786a4f9f4252f21a2a81797245e4ffa39dd82c5b8575e9f10ae1deaceec')),
     },
     "Lib": {
-        "manner": ("дипломатично и эстетично, ориентируясь на партнёрство и баланс", "diplomatically and aesthetically, oriented toward partnership and balance"),
-        "motive": ("потребность в гармонии, справедливости и согласии", "the need for harmony, fairness and accord"),
-        "shadow": ("нерешительность, зависимость от чужого мнения и избегание конфликтов", "indecision, dependence on others' opinions and avoidance of conflict"),
+        "manner": (_editorial_text('interpretations.d5adc78e95c4d4dd0f43e3fb12c33bee3b753291d1c57f232b2db71a3dac80ab'), _editorial_text('interpretations.d67a3ac8ce3533b29b59f6ef426f9cd9df279d10c5502b8e6bfcc81a421f6505')),
+        "motive": (_editorial_text('interpretations.6b7e3e6924344daadb001ba2c5bc138acd602c94314560e123e3876efcd93d15'), _editorial_text('interpretations.cc98276ba0fcd191120e4066b7504138f0086111aafee37755e04701963fb4d8')),
+        "shadow": (_editorial_text('interpretations.0ea60168536968bf588dda1d69b3258f5f5471d634bc4825ba31569edfcb2dc9'), _editorial_text('interpretations.62d9fa33c9b1bfd724feb1d14dc6abbba629c4867c38318eb80974dd15cf3ea8')),
     },
     "Sco": {
-        "manner": ("глубоко, страстно и бескомпромиссно, проникая в самую суть", "deeply, passionately and uncompromisingly, penetrating to the core"),
-        "motive": ("стремление к подлинности, контролю и внутренней силе", "the drive for authenticity, control and inner power"),
-        "shadow": ("ревность, подозрительность и разрушительные крайности", "jealousy, suspicion and destructive extremes"),
+        "manner": (_editorial_text('interpretations.0e5272d3df60b7da4b882ea57c77a7da72fdcf1ba04823d6929a1a47cb890c00'), _editorial_text('interpretations.2a6b56f3b0496cdc85058d4f25def96ad1b09ea488f842b7ecee4093ec599578')),
+        "motive": (_editorial_text('interpretations.9815b6fb35062314cf0a114f572937fb88273590dc7f4a3e9beb85726bc614cd'), _editorial_text('interpretations.14e0513a09711123285789a98142685603e80a7c83d4604a208066cf72563486')),
+        "shadow": (_editorial_text('interpretations.517aba40be57f202992aa9bbae8c5a7a31994dd0fe836b8f3d24ba21d7e32dc2'), _editorial_text('interpretations.c746163a1fe50dd1b5019ff5e290c8617ddc77bac99e84df9a4497aa837cc950')),
     },
     "Sag": {
-        "manner": ("свободно, широко и оптимистично, в поиске смысла и горизонтов", "freely, broadly and optimistically, in search of meaning and horizons"),
-        "motive": ("жажда свободы, истины и расширения границ", "a thirst for freedom, truth and the widening of boundaries"),
-        "shadow": ("самоуверенность, нетерпение к деталям и склонность к проповеди", "overconfidence, impatience with details and a tendency to preach"),
+        "manner": (_editorial_text('interpretations.a097ca8250baff4a3f8af1c54118410096f52b9a0dad85dd6d0805ff497cb87a'), _editorial_text('interpretations.e50bfbc9758f39df1c6596dc86d17130e3b6d19f62981a99c88dc3403fa4a2e8')),
+        "motive": (_editorial_text('interpretations.bcaef2c0db2fe1d099362b6f18be710fa6e051e7f462c62b4be4f78818310e99'), _editorial_text('interpretations.456a92c935204de3af3ca721a07854e17e049b3e10a05dc39304a14ca2417be8')),
+        "shadow": (_editorial_text('interpretations.2e2841c0c4a6aa4504749b84a51bfdcf25a3d4161cf64e0db89d2eb116a37d09'), _editorial_text('interpretations.a328896020143e270830828204053974303a914aaf94fb8821539e3e61b20e6c')),
     },
     "Cap": {
-        "manner": ("ответственно, дисциплинированно и целеустремлённо", "responsibly, with discipline and determination"),
-        "motive": ("стремление к результату, статусу и долговременной опоре", "the drive for results, status and a lasting foundation"),
-        "shadow": ("жёсткость, пессимизм и подавление чувств ради дела", "rigidity, pessimism and the suppression of feelings for the sake of the goal"),
+        "manner": (_editorial_text('interpretations.a3e257cd4ab42129ba9c55690b3d07ddbc77f949ebe115195f91242f91ec7294'), _editorial_text('interpretations.422e32be3d176708d5e6cb7b0b5d01592e2c38660a5b49843648be70c1d4cb52')),
+        "motive": (_editorial_text('interpretations.386f1e56cec460c1b4b0c43180018c3c43780bb7c4ac8a65a433af49e005ba51'), _editorial_text('interpretations.1dae7cdde48b92703690667fc6da78ce4813d29ad4d5c537c42b12e779af321a')),
+        "shadow": (_editorial_text('interpretations.dec6acb0b8fa3b8b8f88dc9ce04a160bfb41de2d03ac7cecb801719dca47c01a'), _editorial_text('interpretations.ce66b850f3b6acb20450c3caef39ed40054ceb446b10059cc95418d184900545')),
     },
     "Aqu": {
-        "manner": ("независимо, оригинально и нестандартно, устремляясь в будущее", "independently, originally and unconventionally, reaching toward the future"),
-        "motive": ("потребность в свободе, идеях и принадлежности к единомышленникам", "the need for freedom, ideas and belonging to like-minded people"),
-        "shadow": ("отстранённость, упрямый бунт и эмоциональная холодность", "detachment, stubborn rebellion and emotional coldness"),
+        "manner": (_editorial_text('interpretations.183698f98f02e54ddeb28899a3aec12de8d5c82c2cdcb79e102c5111dc851992'), _editorial_text('interpretations.0a601ceeda95798c80a4209cb8340a6e83574b853262dac95deaa6554cb94c41')),
+        "motive": (_editorial_text('interpretations.903aba64b5a1ea1945ce991821589dd98f03d13bfe3d5bc225cdde92b29513e5'), _editorial_text('interpretations.33aad825a90fdaa9abebc1d46a84e6d1a30d5a8e17ccb4a2216126a59fdeaa9c')),
+        "shadow": (_editorial_text('interpretations.89549c8cb5091e362126d911841ea0817c21e94bf35e073264ff3e91e588784a'), _editorial_text('interpretations.fced967a6f96c620c95511e9067cc11098667a9888a899a320dd06b2d363bd4c')),
     },
     "Pis": {
-        "manner": ("мечтательно, сострадательно и интуитивно, размывая границы", "dreamily, compassionately and intuitively, dissolving boundaries"),
-        "motive": ("стремление к единству, состраданию и высшему смыслу", "the longing for unity, compassion and higher meaning"),
-        "shadow": ("уход от реальности, жертвенность и размытость воли", "escape from reality, self-sacrifice and a blurred will"),
+        "manner": (_editorial_text('interpretations.7721819d56a6a147b3c9b3bb441bb4f4140da75f8009f865395ec47dc0b3f212'), _editorial_text('interpretations.e704b1df63407c90a75c721445328ff83dd11f3be7dfbe13fc5ee3ca5644309b')),
+        "motive": (_editorial_text('interpretations.c4fae202fdb617b092092fab9acb37bb0b57077f9e20f1be88fd5f349f7257ca'), _editorial_text('interpretations.f9b5a05bc9cbaef88e0ca30e9f2388788ec350b0e826cfd51aa86b75eb349b7b')),
+        "shadow": (_editorial_text('interpretations.c8cf03f1fe8da43ea0b6fc5037a608950a3f5dab836c6a9f931c50fffdd19d64'), _editorial_text('interpretations.2a0b56fa433b1f467488d42c18abdbf836ac07d8bc8ac61a0be352a29f1df991')),
     },
 }
 
@@ -475,18 +455,18 @@ def sign_manner(sign, lang="ru"):
 #  Дома: на что направлена энергия
 # --------------------------------------------------------------------------- #
 HOUSE_FOCUS = {
-    1: ("на формирование личности, внешний облик и способ заявлять о себе миру", "toward shaping the personality, outward image and the way of presenting oneself to the world"),
-    2: ("на деньги, ресурсы, таланты и систему личных ценностей", "toward money, resources, talents and the system of personal values"),
-    3: ("на общение, обучение, ближнее окружение и повседневные связи", "toward communication, learning, the immediate circle and everyday connections"),
-    4: ("на дом, семью, корни и внутреннюю опору", "toward home, family, roots and inner support"),
-    5: ("на творчество, любовь, детей и радость самовыражения", "toward creativity, love, children and the joy of self-expression"),
-    6: ("на работу, обязанности, рутину и служение", "toward work, duties, routine and service"),
-    7: ("на партнёрство, брак, союзы и отношения «один на один»", "toward partnership, marriage, alliances and one-to-one relationships"),
-    8: ("на кризисы, трансформации, интимность и чужие ресурсы", "toward crises, transformation, intimacy and shared resources"),
-    9: ("на мировоззрение, путешествия, высшее образование и поиск смысла", "toward worldview, travel, higher education and the search for meaning"),
-    10: ("на карьеру, репутацию, призвание и положение в обществе", "toward career, reputation, vocation and standing in society"),
-    11: ("на друзей, единомышленников, цели и сообщества", "toward friends, like-minded people, goals and communities"),
-    12: ("на подсознание, уединение, тайны и духовную жизнь", "toward the subconscious, solitude, secrets and spiritual life"),
+    1: (_editorial_text('interpretations.778de849f46b8a5f90f9bc518b6037139d17c85d8d14ac7a515b5e820a4f5127'), _editorial_text('interpretations.24c5b8f5be39e5d74891b86592c10008bb4691f821fd26c698fd32faf6fa9d13')),
+    2: (_editorial_text('interpretations.4d13c27f64bc2fa38f687098ad9417723e308fc4a93a28ced56da4f292ee927f'), _editorial_text('interpretations.c48dc0f298f353247d8c3effd3964c0f71ae5bcea2fce63765f337bde6a9b72f')),
+    3: (_editorial_text('interpretations.28f203c282e16eb084f5a928a3f665bfdc129fc164c037a68522e46b32c8dc0d'), _editorial_text('interpretations.e52ba075f2ed60dfe39e68effb17e218dd573db2520330b92a09691d3eb3b71f')),
+    4: (_editorial_text('interpretations.32f9febf382b0dc80a6f888638b5a8b1f3390938cfac56081ce9269fbe1efd13'), _editorial_text('interpretations.1c5922f2eb35608fc21336e413d2990c0e5eba3d07c5ead345e2494e20d23085')),
+    5: (_editorial_text('interpretations.3041a3aa71065199f1eb2827c94d8cda10ff0726646349a78acb7f9f62214565'), _editorial_text('interpretations.3d33e9ac3264dd2b21f56d8f4b92c781ff51d5a745c053e7ece1b2f7a1b73700')),
+    6: (_editorial_text('interpretations.5760637ce94be8bbf759f9bff62a7122d103ad8cd178490976b313e55d9b3ce9'), _editorial_text('interpretations.abd6b9a5e8999a3cf2aba65451d6187b3798908d4c8d2e7f59af560be842e74c')),
+    7: (_editorial_text('interpretations.f78fc7afdeeb404882e51532fa4409917291fc81dd83f9cf11b4fe8eb2583890'), _editorial_text('interpretations.77a3ec8417a4b103faebda395e10939a783a6db5c97ee7501510bd98dbe7ea47')),
+    8: (_editorial_text('interpretations.cfb276a8dd9f32e19e3d1ec46bb6c549bac2a2aec8875f4951b09fee111bb43a'), _editorial_text('interpretations.4ff5c210c82d05ed070bad8cc7cdfe3372da16f815f11279aa0d3ec23dccb2a3')),
+    9: (_editorial_text('interpretations.e8e5f717a170b16188cd1fe05095cbe9dfdbf1f2f980485d33d84529ff539449'), _editorial_text('interpretations.1ab791cfd8ae1c5f44d1bba58e4fa336aca9befbadeef9d6faf87dc6ce3bb524')),
+    10: (_editorial_text('interpretations.963cdf5e037d39b91901911eeb64f6a6ac4a0a909ccb91f4b427d96e08b1baf9'), _editorial_text('interpretations.595794b7910f61f265dd64e93406c5270c19d288c8a2a4fefa893c016fdee856')),
+    11: (_editorial_text('interpretations.43a53e9d292dfaf2d5b5876f8f91288325c05ffcb5f88b19424b0c67951249c4'), _editorial_text('interpretations.813e55bf255136467000f15a73d00cc4463a33e4f5492778ab6fb0a50248e975')),
+    12: (_editorial_text('interpretations.bb9fc36be7a6757367bd164194336a02e91d1e10d51cfde2003c5b906c415767'), _editorial_text('interpretations.c7dad4ffbea42197f94817bb439dd140483f79d92062f36d0f9966b2dba60df0')),
 }
 
 
@@ -498,18 +478,18 @@ def house_focus(num, lang="ru"):
 #  Аспекты: характер взаимодействия функций
 # --------------------------------------------------------------------------- #
 ASPECT_INTERP = {
-    "conjunction": ("сливаются в единую мощную функцию, усиливая и окрашивая друг друга — важно научиться сознательно управлять этой связкой", "merge into a single powerful function, amplifying and colouring each other — it is important to learn to manage this blend consciously"),
-    "opposition": ("находятся в напряжении противоположностей, требуя осознанного баланса; часто проявляется через отношения и внешние ситуации", "stand in the tension of opposites, demanding conscious balance; often expressed through relationships and outer situations"),
-    "trine": ("гармонично поддерживают друг друга, давая природный талант и лёгкость — но без усилий этот дар можно не реализовать", "harmoniously support each other, granting natural talent and ease — yet without effort this gift may go unrealized"),
-    "square": ("вступают во внутренний конфликт, и это напряжение становится мощным двигателем роста через преодоление", "enter into inner conflict, and this tension becomes a powerful engine of growth through overcoming"),
-    "sextile": ("дают благоприятные возможности и лёгкое сотрудничество, которое раскрывается при небольшом сознательном усилии", "offer favorable opportunities and easy cooperation that unfolds with a little conscious effort"),
-    "quincunx": ("плохо согласуются и требуют постоянной тонкой подстройки и компромиссов", "fit together poorly and require constant fine adjustment and compromise"),
-    "semisextile": ("связаны слабо, давая лёгкий, едва ощутимый импульс к взаимодействию", "are weakly linked, giving a light, barely perceptible impulse to interact"),
-    "semisquare": ("создают подспудное раздражение и мелкое, но настойчивое напряжение", "create underlying irritation and minor but persistent tension"),
-    "sesquiquadrate": ("несут скрытое напряжение, прорывающееся в кризисные моменты", "carry hidden tension that breaks through in moments of crisis"),
-    "sesquisquare": ("несут скрытое напряжение, прорывающееся в кризисные моменты", "carry hidden tension that breaks through in moments of crisis"),
-    "quintile": ("дают творческую искру и нестандартную одарённость", "give a creative spark and unconventional giftedness"),
-    "biquintile": ("дают творческую искру и нестандартную одарённость", "give a creative spark and unconventional giftedness"),
+    "conjunction": (_editorial_text('interpretations.ba58b5de6c2380913e8229c292cf04050e5a57de711fa1ede9446ebc170cdd47'), _editorial_text('interpretations.1d013a4c63600689184bd1f5db1e583e5780aa623b3cd77164e67f7a0a37bcf8')),
+    "opposition": (_editorial_text('interpretations.86c90f276aef2f6f14020b6a42c73e1fa76d5e064d0c7caef5d0d008a048f91f'), _editorial_text('interpretations.f10597d25b45310693410df72a82826abda9689f5d53b2ea0f97fe538b3437b3')),
+    "trine": (_editorial_text('interpretations.53fa50ec71a6fdb4385b991e48b591a6f3060f9d9b7ef87009cac83b61554867'), _editorial_text('interpretations.8bee051be21ef2c0f252e8124732e4725780120d3ccc22cb1cb5879c12419e47')),
+    "square": (_editorial_text('interpretations.a5bef45c75f65fb9ac6aa81acf2efb4ecd6b457ff1a45d754c4192e74871df3c'), _editorial_text('interpretations.1ab0ecb0a1508f8e328ffa482457d4f96ae0c640bd05150e24f2bc4120f936b5')),
+    "sextile": (_editorial_text('interpretations.a8dc659fd24e7d6bb8ec612b7f57c5252cfdfc631cb7628f3a7f4c1ac475112c'), _editorial_text('interpretations.926c7f4de0b69ef70e5b416496ee63b72538c3fb27656b6f7ac8b4776e14f892')),
+    "quincunx": (_editorial_text('interpretations.8dece8f8cac4a2d1f177f8dca59c116e323225c0b7be21011f1f90412c6f7afe'), _editorial_text('interpretations.c4ed2ab7a094558040a81965c83afa4340dc70da84b58435c225cc7f0f38f80b')),
+    "semisextile": (_editorial_text('interpretations.553f67e2fcc0d10aaf512f04030828976b15d7582e1005e1ac13ed64504ce01c'), _editorial_text('interpretations.e3db45c18459bbd3ae8f3fec59dda19a89748b7a7801ef4f3223eb12cbe8d721')),
+    "semisquare": (_editorial_text('interpretations.c4e47f5898e8037c5c7b5f1b8a6a268e78d916bc0b5a81b94c38593779507ace'), _editorial_text('interpretations.69635f7ddb4b2feaccb9c68df59449067690ea16076b015beee224bd39760603')),
+    "sesquiquadrate": (_editorial_text('interpretations.477efe1af1ef3f6406f102e0f6250f90484b44c0dca53510c1c74ed6772784df'), _editorial_text('interpretations.d8d8013d7c27ef03b57582df927aace1d66546a4a1eb47d7dc3425b58800b0fb')),
+    "sesquisquare": (_editorial_text('interpretations.477efe1af1ef3f6406f102e0f6250f90484b44c0dca53510c1c74ed6772784df'), _editorial_text('interpretations.d8d8013d7c27ef03b57582df927aace1d66546a4a1eb47d7dc3425b58800b0fb')),
+    "quintile": (_editorial_text('interpretations.eb56be786761210511925c185c83e70ae61fd1b96b3d370691568e0adef2ef15'), _editorial_text('interpretations.797cf2d94b7258fca99bd4dab624199324b60bb4ae465c81bee73a88f6f76127')),
+    "biquintile": (_editorial_text('interpretations.eb56be786761210511925c185c83e70ae61fd1b96b3d370691568e0adef2ef15'), _editorial_text('interpretations.797cf2d94b7258fca99bd4dab624199324b60bb4ae465c81bee73a88f6f76127')),
 }
 
 # Авторские темы для пар планет: о чём встреча двух функций, что даёт в гармонии и в напряжении.
@@ -517,109 +497,109 @@ ASPECT_INTERP = {
 _PAIR_ORDER = ["Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"]
 ASPECT_PAIR = {
     ("Sun", "Moon"): {
-        "theme": ("встреча сознательной воли и эмоциональных потребностей — «хочу» и «чувствую», мужского и женского начал внутри", "the meeting of conscious will and emotional needs — “I want” and “I feel”, the masculine and feminine within"),
-        "harmony": ("цельность натуры: разум и сердце заодно, лёгкость в семье и в ладу с собой", "wholeness of nature: mind and heart in accord, ease in family and at peace with oneself"),
-        "tension": ("разлад между желаниями и потребностями, разумом и чувствами; внутренний конфликт, нередко уходящий корнями в отношения родителей", "a rift between wants and needs, mind and feeling; an inner conflict often rooted in the parents' relationship"),
+        "theme": (_editorial_text('interpretations.49b290bdf0be425ef47e102666cb8c262cc8b4a77dff52c042bf7d78388e2f36'), _editorial_text('interpretations.5c0143f050f2a2ba9fb5dc918d2ffbc72c7d6e93f89d296b7ef4fdb6848ae0e5')),
+        "harmony": (_editorial_text('interpretations.bb4d2e7602e344503327450e0195139352a7912753040c5dacf49a0ff11e1ab0'), _editorial_text('interpretations.61e1132f9ce2ff7e5ee603bd0c9cd426a506ae35682d46f455bbb7dac33ecb88')),
+        "tension": (_editorial_text('interpretations.43894f8f05c3f1c6e1477c12a436936746a7688922fc494130c84311a0598a47'), _editorial_text('interpretations.432f9dc2895337b28bed344f1d5e7bcff1e62b6c032225c2719010b938c9f225')),
     },
     ("Sun", "Mercury"): {
-        "theme": ("связь личности и мышления — насколько слово выражает суть", "the link of personality and thinking — how far the word expresses the essence"),
-        "harmony": ("ясный ум, уверенная речь, совпадение того, кто вы есть, и того, что вы говорите", "a clear mind, confident speech, an alignment of who you are and what you say"),
-        "tension": ("субъективность суждений и склонность переоценивать свои идеи, не слыша других", "subjectivity of judgement and a tendency to overvalue one's own ideas while not hearing others"),
+        "theme": (_editorial_text('interpretations.235d731851925fdfef098a565d19fd303028b944da4389715b8f9dd946ce10ba'), _editorial_text('interpretations.d78c6c4bd8d7d4693a51561fbeb4691943a0210cce81b915e55d6b56137d4cd4')),
+        "harmony": (_editorial_text('interpretations.a8cb02e91253b86333b967fa574c8e428fd43ac698650d8129ef126704f0f05d'), _editorial_text('interpretations.46b258ba33f0ccd5d24f7f5ebf53b8a82a937615a5c84384f489c292bcd32d7e')),
+        "tension": (_editorial_text('interpretations.bf43a1b94ba3a1983962c0bd804afdef23fce2e9b89ffae8b5c39ba14b75860a'), _editorial_text('interpretations.5780b8516c2bec9291607101d1d6f7a09ca53cd737cbbde1785925aca6eb0ef6')),
     },
     ("Sun", "Venus"): {
-        "theme": ("личность и способность любить, нравиться и ценить", "personality and the capacity to love, to please and to value"),
-        "harmony": ("обаяние, артистизм, умение располагать к себе и здоровое чувство собственной ценности", "charm, artistry, the ability to win others over and a healthy sense of self-worth"),
-        "tension": ("тщеславие, зависимость от одобрения и склонность потакать себе", "vanity, dependence on approval and a tendency toward self-indulgence"),
+        "theme": (_editorial_text('interpretations.b59aa67ae18b3f4f2b41eb1a5d871d96eb3425ec4b21a3bedc2035d187a31317'), _editorial_text('interpretations.3ee7f419aa02c6fea896b19ac55d440839cd8e61b6ceae9d9ab25e41cc5a52f5')),
+        "harmony": (_editorial_text('interpretations.a5acf0edaec49cddf76e3d080d6827cfe7656187a53f479d1efd99e2523e6ec2'), _editorial_text('interpretations.e3412d8f00bf6cb1a2c08a4f003569e91d60066c4069e6ac4683b92055463b6f')),
+        "tension": (_editorial_text('interpretations.ba82f201d6dda1bf2b870ecbd26ee6f5be694c02c59b52bfab1c80edb124f3e4'), _editorial_text('interpretations.3260804b21870156f0f2d31e240a20fdc05bbb9d9481ecf7e4dd73dd62c72997')),
     },
     ("Sun", "Mars"): {
-        "theme": ("воля и действие, эго и напор — как вы добиваетесь своего", "will and action, ego and drive — how you get what you want"),
-        "harmony": ("сильная воля, смелость и энергия достигать целей, здоровая напористость", "strong will, courage and the energy to reach goals, healthy assertiveness"),
-        "tension": ("вспыльчивость, импульсивность, борьба с авторитетами и перерасход сил", "a quick temper, impulsiveness, struggle with authority and burning out your strength"),
+        "theme": (_editorial_text('interpretations.62c0b5fc79d2167f93b8966f24bd341d58927bbfaaf3dcdba583ebaed8c17b1b'), _editorial_text('interpretations.9b2f66582a3410c6e7dc6b688de16d10ba19a6d961ba8798d57dde3b98af4864')),
+        "harmony": (_editorial_text('interpretations.d46206f3e755d850b4b4b515fc533976af08bedbf2a6e72bc84d3673c21cb65b'), _editorial_text('interpretations.ebc2dd688f874913273279ddeb21c931b5613eb29321811339ae1cd79edcbd6f')),
+        "tension": (_editorial_text('interpretations.96b40cefbfca568f347664268c463440803cce8f826dc1043c674ac3071527e5'), _editorial_text('interpretations.aca06833def9f300fdf34bc8b4d820d3431491240e591a86d643c9a73f971545')),
     },
     ("Sun", "Jupiter"): {
-        "theme": ("личность и рост, вера в себя и в жизнь", "personality and growth, faith in oneself and in life"),
-        "harmony": ("оптимизм, щедрость, широта натуры и природное везение", "optimism, generosity, breadth of nature and natural luck"),
-        "tension": ("переоценка себя, самоуверенность и расточительность", "overestimating oneself, overconfidence and extravagance"),
+        "theme": (_editorial_text('interpretations.61c21353aeed747b83aa2fc759d1624a753fa90109c57a844037dbda177c3257'), _editorial_text('interpretations.4440cefbbd1c718ff1792896dff4376208fe9ba94e3455bfaf2f99b6b5f3ff94')),
+        "harmony": (_editorial_text('interpretations.ab9e95232bd599bbc0323bbd19a74c55632af61884182c9cdbc5f9f20e6ef045'), _editorial_text('interpretations.ab7193211d4159fb5d35056e80e12968ad56ed495c6169b3c5b85ec044ad3316')),
+        "tension": (_editorial_text('interpretations.1293f40789b9d58e1395caea6aba422977517ab30f92886b4558ffcab4622bc8'), _editorial_text('interpretations.116e0a0eb4f203e0a959d7538ccc6cdeef53d1ebd9a847d05fc60bd3e7f2e74f')),
     },
     ("Sun", "Saturn"): {
-        "theme": ("эго и дисциплина, самовыражение и долг", "ego and discipline, self-expression and duty"),
-        "harmony": ("самодисциплина, ответственность и умение строить надолго; зрелая опора на себя", "self-discipline, responsibility and the ability to build for the long term; a mature reliance on oneself"),
-        "tension": ("строгий внутренний критик, неуверенность и давление долга; страх оказаться недостаточно хорошим", "a strict inner critic, insecurity and the pressure of duty; the fear of not being good enough"),
+        "theme": (_editorial_text('interpretations.0fd385ba7190d78bbf656d1c59abd93ea6315b6289618659348cf11f5af6b823'), _editorial_text('interpretations.9a00d91bfa5dbb013c5081360fae5738eb6301efdf4c7ccb9b6d74c1dac7793d')),
+        "harmony": (_editorial_text('interpretations.a50838c32b15d530f4fd5ccacf45d8334a99adf85a5826939def505b897afdd6'), _editorial_text('interpretations.4f8c34edccd4d0b58a9d6edaf26509b0f74b90452febf81d2d9a6662ce1816d6')),
+        "tension": (_editorial_text('interpretations.6108e03d2a4b9664a5f7e6d4360944a6c0af0746df000307bef39847f1a22309'), _editorial_text('interpretations.3971dbe7e792e781f1f22e4d7c600c9c48def828b9b48c1be580e8f370e208ed')),
     },
     ("Moon", "Mercury"): {
-        "theme": ("чувства и ум — как переживания связаны с мыслями и речью", "feeling and mind — how emotions connect with thoughts and speech"),
-        "harmony": ("эмоциональный интеллект, чуткая речь и единство мысли и чувства", "emotional intelligence, sensitive speech and a unity of thought and feeling"),
-        "tension": ("тревожность мешает думать ясно, переменчивость мнений и субъективность", "anxiety clouds clear thinking, with changeable opinions and subjectivity"),
+        "theme": (_editorial_text('interpretations.ecd41e3bf59e16753589f904f56ebb5cf68c2d6a184bff3b20b2bdb8b3a2331b'), _editorial_text('interpretations.44e1dfdc52849fbc414ff47e4ce5b366cfbbd9cc0559c7896a2e79026d9504f7')),
+        "harmony": (_editorial_text('interpretations.3826e07735eae40a4564dbc3cc7018dd2b940f22e093d3c67d217d53bf67049c'), _editorial_text('interpretations.e2af354b457997e1d654e25b0df1572136b29ee46b0b3e3c87b1b4c1b6e9dbc0')),
+        "tension": (_editorial_text('interpretations.db77990cf0862a0772b9bccf689c6d28bbfbb0d37db117d01c5afb5864ae1976'), _editorial_text('interpretations.5b1a38ca92a13b54af44b0029ade3bdd818fc0dee8b5a47a6da65e57777fbf07')),
     },
     ("Moon", "Venus"): {
-        "theme": ("чувства и любовь, потребность в тепле и нежности", "feeling and love, the need for warmth and tenderness"),
-        "harmony": ("нежность, обаяние, теплота в отношениях и любовь к красоте и уюту", "tenderness, charm, warmth in relationships and a love of beauty and comfort"),
-        "tension": ("эмоциональная зависимость, капризность в любви и тяга потакать себе", "emotional dependence, moodiness in love and a pull toward self-indulgence"),
+        "theme": (_editorial_text('interpretations.47db782058405f0ecd794d21c416a05f796f3aab7b07b97be5818b34b353fbb3'), _editorial_text('interpretations.e5839a8384cbd0b5051c9fede0106a80f3775b1d20081f07ac8a4130d799871e')),
+        "harmony": (_editorial_text('interpretations.bc8d92ed5f5a18d8a37277fb03d5a753047258d83b7b264feb353360937628b2'), _editorial_text('interpretations.b6841dde76cf43dbf70cc9ccf6633fbb3e497c94973162a1eceec280c96bd759')),
+        "tension": (_editorial_text('interpretations.a494cc0a284582c02acc8c9a5198fa8737f9eb402689b7e53b82825db4f79626'), _editorial_text('interpretations.8675f0215191e7f6e789e78564fcaf759922c89ba2676f7cfed71bfd20cf62be')),
     },
     ("Moon", "Mars"): {
-        "theme": ("чувства и желания, эмоции и гнев", "feeling and desire, emotion and anger"),
-        "harmony": ("эмоциональная энергия, страстность и умение защищать своих", "emotional energy, passion and the ability to protect your own"),
-        "tension": ("вспыльчивость, обидчивость, перепады настроения и импульсивные реакции", "a quick temper, touchiness, mood swings and impulsive reactions"),
+        "theme": (_editorial_text('interpretations.682984401fcb5d63e8a2a709fa58b28bedc905a45206bcc5b82e68bc99e5b215'), _editorial_text('interpretations.b359bec4e912202e9e2c57893afabcbadb52401e5f5fd5582d680db110f2d4f6')),
+        "harmony": (_editorial_text('interpretations.126cca8f5495c854322048c0b8fbc07c86f17c4edbbe90fddc70694bc9a6b558'), _editorial_text('interpretations.5237ebc6af268c8105c690165ed04ca57d293e9e035eb5b276cc0348b842bb17')),
+        "tension": (_editorial_text('interpretations.69d1cc6c66ca9bece7a255d6b96b8f4d2185e876e398bd660bbf5d09538d59a5'), _editorial_text('interpretations.5a1bda206d35b123540797872c8620c5d23df666376dbab4a3673f96c79ba28c')),
     },
     ("Moon", "Jupiter"): {
-        "theme": ("чувства и вера, эмоциональное изобилие", "feeling and faith, emotional abundance"),
-        "harmony": ("душевная щедрость, оптимизм и тёплая заботливость", "generosity of soul, optimism and warm caring"),
-        "tension": ("эмоциональные преувеличения, потворство себе и беспечность", "emotional exaggeration, self-indulgence and carelessness"),
+        "theme": (_editorial_text('interpretations.9ee3d65d3145d7107e92ad7c214ea68a3e73e42983be1df46e4115bd172cbc48'), _editorial_text('interpretations.308737e786dfa5e1864a9a83e5e963b2315ffd583795066052b3154690963984')),
+        "harmony": (_editorial_text('interpretations.5a3208bc805651a60ca21d9005f766e48625f5d6e133b8b83314e3c53d9f1b58'), _editorial_text('interpretations.263f73abbe8c2338fe31c56c4530024184302f3b7ae95f5720752ce652c3eb3d')),
+        "tension": (_editorial_text('interpretations.18a90b0c9ab1658df192d7e2e55985fc79e9243777296e2b7ef5b85d5783bef2'), _editorial_text('interpretations.bd72a6d78ab1132fdc8888c8ee0e8e1b0005eec3b925e4c1be0f313befb2e8f8')),
     },
     ("Moon", "Saturn"): {
-        "theme": ("потребность в безопасности и ограничения, чувства и долг", "the need for safety and limitation, feeling and duty"),
-        "harmony": ("эмоциональная зрелость, надёжность, верность и выдержка", "emotional maturity, reliability, loyalty and self-control"),
-        "tension": ("эмоциональная зажатость, чувство недолюбленности и страх отвержения", "emotional reserve, a sense of being unloved and the fear of rejection"),
+        "theme": (_editorial_text('interpretations.481d96d8c8751eb26ea05fd65b8a7f6a20f2951b8c7095d42987ca4ee6214ee7'), _editorial_text('interpretations.c739908281fa860c28a6d15e6b83daa51fa560a983bc8848ef857a33087eb025')),
+        "harmony": (_editorial_text('interpretations.f2209120616d94c1aef7f5bc1eb10fd292a3b36658c91154e91a558b7fc3c51e'), _editorial_text('interpretations.e2f2d5af84646bee9e03e7f5c4df49345a57855e4831faeab9fb2b193ba3be76')),
+        "tension": (_editorial_text('interpretations.9e2723a6ad0e82a862f18e306cfb7d0eb27a696d3932d65cf3421f642a3e0c5a'), _editorial_text('interpretations.3d94b1778dea192f6e55ae5d1a5e650eac2454785b215df32c1b778823c0b0bc')),
     },
     ("Mercury", "Venus"): {
-        "theme": ("ум и вкус, мышление и чувство гармонии", "mind and taste, thinking and the sense of harmony"),
-        "harmony": ("обаятельная речь, чувство стиля, дипломатичность и артистизм", "charming speech, a sense of style, diplomacy and artistry"),
-        "tension": ("склонность приукрашивать и нерешительность в словах и выборе", "a tendency to embellish and indecision in words and choices"),
+        "theme": (_editorial_text('interpretations.9beb11dcf63ed9b105fafe048b7c19ad8896af5740ccae017343ea544499a5df'), _editorial_text('interpretations.07c7db1f4d94b392fc7e8a1296fe02280bacb27584262e3b192194ba6fcd46db')),
+        "harmony": (_editorial_text('interpretations.78d128535fb415f9868162d89874d43f5d249ef490179fb93ff6c25f5278091b'), _editorial_text('interpretations.27d837024388816163ade3c867e9961433fd3452047dfd5c58317d9feb867f69')),
+        "tension": (_editorial_text('interpretations.fe27f6c427bf1e56737c0c07bb6577d49eb88943758e523492249b16a5e63732'), _editorial_text('interpretations.870748cbf78a21ee4d57a015f425f505ca714f051b6aaaf942526cc81a2f21c9')),
     },
     ("Mercury", "Mars"): {
-        "theme": ("ум и действие, мысль и напор", "mind and action, thought and drive"),
-        "harmony": ("острый ум, быстрые решения, находчивость и убедительность", "a sharp mind, quick decisions, resourcefulness and persuasiveness"),
-        "tension": ("резкость в словах, споры, поспешные суждения и раздражительность", "sharpness in words, arguments, hasty judgements and irritability"),
+        "theme": (_editorial_text('interpretations.567ce1453018c462f5af8b7c1f3138fe25fff7aad12df4646b69c68e16f18b6b'), _editorial_text('interpretations.d86744a36744d0a3d0e591f52a3f26d1d3dc567fd4a26b36281e3012f3f4f34d')),
+        "harmony": (_editorial_text('interpretations.4573cb183d824c2542797c444f0f52c89efe22b1bb455dd84902847cd1c2f7e3'), _editorial_text('interpretations.c05fde60b6e30924c0c79efc1992ea2dd6aba69219dc99d7296db8027e5f8cc3')),
+        "tension": (_editorial_text('interpretations.3a9472208542f209188017b6e70d659e082fcb83f44e39cb82c55ba1957a864f'), _editorial_text('interpretations.9e43b0c08bb3a07c6d0d22e823c544c6d3a524bcce27a53824eecb8753f494cf')),
     },
     ("Mercury", "Jupiter"): {
-        "theme": ("ум и кругозор, детали и общая картина", "mind and horizon, detail and the big picture"),
-        "harmony": ("широта мышления, тяга к знаниям и дар учить и убеждать", "breadth of mind, a thirst for knowledge and a gift for teaching and persuading"),
-        "tension": ("разбросанность, обещания сверх меры и пренебрежение деталями", "scatteredness, over-promising and neglect of details"),
+        "theme": (_editorial_text('interpretations.1d7c4ecee53c6344e619314098b63f63495c7e7b2adf059db3adde05e2100e25'), _editorial_text('interpretations.f4dc9a663e4fa88374224d0dc9857e3193a8102652372524b80fd26c1568a345')),
+        "harmony": (_editorial_text('interpretations.4d2a93c5dc2f5afdd1fb40ceff11a060bdf4f4ded8423db0ead94b9d5561b859'), _editorial_text('interpretations.7951009392c21c14f79057026c603b41dac433dacb288b6ededcfa362da9993c')),
+        "tension": (_editorial_text('interpretations.8a542bedd42a4ced485d6047a80baa9b9aa3384559994aa55e51bf2dc6f8b1ef'), _editorial_text('interpretations.067ad8966da8181580736352f817a79f2ec759b87ce1993bdc9d474626ef6d03')),
     },
     ("Mercury", "Saturn"): {
-        "theme": ("ум и структура, мышление и дисциплина", "mind and structure, thinking and discipline"),
-        "harmony": ("глубокое, методичное и серьёзное мышление, концентрация и память", "deep, methodical and serious thinking, concentration and memory"),
-        "tension": ("пессимизм, медлительность, страх ошибиться и скованность в речи", "pessimism, slowness, fear of error and constraint in speech"),
+        "theme": (_editorial_text('interpretations.a5c2bad8b76566bea943726e8240c87ac5e10fb941f488cf68ebedeaacff9906'), _editorial_text('interpretations.5a889e1aa443ed95c28789ef672650f4c0e931a0e2e4504dcf15f0d7ae42a27b')),
+        "harmony": (_editorial_text('interpretations.9c67bc82aca2b063972266d125f8fd4aa4a4112aca4f3567cee9003ec8043658'), _editorial_text('interpretations.313ed574da7bbac8f395d15dc8325df1e1be62a1eb57a5a8ff75fb23b2750fdc')),
+        "tension": (_editorial_text('interpretations.5c86fb8560c0302dc705e525cb9d155877fee2be936339c3532101f4f0a0be7b'), _editorial_text('interpretations.046f0f6eaa6f4251bb47bd0f6d2106caa0af3c330d35ff03894bd608f9f27e87')),
     },
     ("Venus", "Mars"): {
-        "theme": ("любовь и страсть, нежность и влечение", "love and passion, tenderness and attraction"),
-        "harmony": ("гармония нежности и страсти, обаяние и сильная творческая энергия", "a harmony of tenderness and passion, charm and strong creative energy"),
-        "tension": ("конфликт между нежностью и желанием, бурные отношения и ревность", "a conflict between tenderness and desire, stormy relationships and jealousy"),
+        "theme": (_editorial_text('interpretations.0fffb0b7d779c59c685ff74f50ef90f1203fcdbef7b1a8e4b3c6f4d36c827198'), _editorial_text('interpretations.e17013179b0aeda2262b413661e1a53df21674c04ad6c6e84c2304bc716969a6')),
+        "harmony": (_editorial_text('interpretations.2bf156bf1b629b92d277bf4259a687a1d85a2504f66f4b2ee9580923888bc09d'), _editorial_text('interpretations.56dbfe6dce381a88d771e0f053a5acf4fb1e119b5d238b7895febebfc3dd4e86')),
+        "tension": (_editorial_text('interpretations.6bb21bda44b054f71545bed95616f25ace828f17ba814d3a8896f2e9c9c08c1c'), _editorial_text('interpretations.c32d4d60f278c0666014715e2cec93a0edfde1744bc0b09798515762b49cfcfa')),
     },
     ("Venus", "Jupiter"): {
-        "theme": ("любовь и изобилие, ценности и щедрость", "love and abundance, values and generosity"),
-        "harmony": ("щедрость в любви, удача в деньгах и отношениях, любовь к радости жизни", "generosity in love, luck in money and relationships, a love of life's joys"),
-        "tension": ("потакание себе, расточительность и склонность к излишествам", "self-indulgence, extravagance and a leaning toward excess"),
+        "theme": (_editorial_text('interpretations.482b9043b2bbe5a52830a0862bc9f235ba4f48b137be8b8e197eff7b873278a4'), _editorial_text('interpretations.66a4f5a448da53897cb4d98c9a0c7ebd40303e1eec4206abfabe2131c2546aef')),
+        "harmony": (_editorial_text('interpretations.172aa6d379786214c0e923b64ca811b9c1f38ab3aeedad94f498d05aed4690b3'), _editorial_text('interpretations.3add3b3ef25f0b4efff6a11f40b0876b82f667cb8cc6b659bc2ad5ab72f66ea3')),
+        "tension": (_editorial_text('interpretations.9207b8e2ddf1c14e9caeb12951b42ea5fac63c004584ab192b8b965019a816f1'), _editorial_text('interpretations.0238a26e8965efe8eb79c115392c93aea28884f32efd14cfe10bd58cd4004583')),
     },
     ("Venus", "Saturn"): {
-        "theme": ("любовь и обязательства, чувства и зрелость", "love and commitment, feeling and maturity"),
-        "harmony": ("верность, серьёзные отношения, надёжность и чувство меры", "loyalty, serious relationships, reliability and a sense of measure"),
-        "tension": ("страх отвержения, холодность или скупость в чувствах, ощущение недостойности любви", "fear of rejection, coldness or stinginess in feeling, a sense of being unworthy of love"),
+        "theme": (_editorial_text('interpretations.be8560fc07de2cfb0685fbf8834f997999dc493aafc6d618cfcd75cbcfc7fc82'), _editorial_text('interpretations.c83469c2865ed9218c5f91bd49596bb5585774fb6e6fc1a620cccf0568f4fb97')),
+        "harmony": (_editorial_text('interpretations.deff0479e20e4689d1c70907d56b0bcae520d54b41a71e09ca3f7e4bca4d773d'), _editorial_text('interpretations.f33ad7d2581ea9f2cb34e3ec43dbf8aa82e6f9a9dcf69558eeb591d8820b6d0b')),
+        "tension": (_editorial_text('interpretations.a159f4043399c0da23a3b78858b529e30fd011b71c8066b8b06ddbd150e7669d'), _editorial_text('interpretations.d50c3431ef5c81bb94aa4e75630c7556a74fb2926d99a3540f5b6c9468f3e615')),
     },
     ("Mars", "Jupiter"): {
-        "theme": ("действие и масштаб, энергия и размах", "action and scale, energy and scope"),
-        "harmony": ("энергия плюс размах, предприимчивость, азарт и удача в начинаниях", "energy plus scope, enterprise, drive and luck in undertakings"),
-        "tension": ("авантюризм, перерасход сил, рискованность и самоуверенность в действиях", "recklessness, burning out, risk-taking and overconfidence in action"),
+        "theme": (_editorial_text('interpretations.11373bd43ddabf68d5839b98f1db39e3370fcec5c5965e298e5fdf1516e58ed8'), _editorial_text('interpretations.ee40e68685ab01d6a44d7fea0f5b19f43ae6523d8548c8c0209d556f28960b62')),
+        "harmony": (_editorial_text('interpretations.5b6914f054d3026cc655dc549b4191e5214038337e78dffb0fdf77bf88f81eff'), _editorial_text('interpretations.bbebeef45a47ea23f66a4878e9630097662ab5ac5edb89465e8d3f5b7b88809c')),
+        "tension": (_editorial_text('interpretations.c015c9a2c3f2f880396fcbb9a6f81314e2bddadddb46cb96ce1823cf5bde5a6a'), _editorial_text('interpretations.a624fc19c29856ed58f4710155093bb1b7c9f48dabf6800c06457aef2c81e947')),
     },
     ("Mars", "Saturn"): {
-        "theme": ("действие и контроль, напор и дисциплина", "action and control, drive and discipline"),
-        "harmony": ("дисциплинированная воля, выносливость и способность к долгому упорному труду", "disciplined will, endurance and the capacity for long, persistent effort"),
-        "tension": ("подавленный гнев, фрустрация и действие через силу; то блок энергии, то срыв", "suppressed anger, frustration and forced action; now a block of energy, now an outburst"),
+        "theme": (_editorial_text('interpretations.fe84be6bcbd6685b754eb661ca3b6711ff4ef3818899208bad47812c211740af'), _editorial_text('interpretations.abc7ee79d0b9b5bd9b0a6a4cb94325b02a10590192ce8965b13b0777f1f7bbc9')),
+        "harmony": (_editorial_text('interpretations.b974a54c176a2c07268ae851cf22789577ad8e25c6b0f5053162eb212707aadf'), _editorial_text('interpretations.d108808a29b9b3165ea5108544fa3e160a7ed2ff0b46b4c38a5cff9e52e0b989')),
+        "tension": (_editorial_text('interpretations.0db22ef16ed60e2d987d9d8e51bc609d02fc66896fbbc49f3431556000c8b224'), _editorial_text('interpretations.c253b552cf02ed07cad6f7ca31f6bf53a643fd68a6fdcc82a340e5714f8fc6b5')),
     },
     ("Jupiter", "Saturn"): {
-        "theme": ("рост и ограничение, оптимизм и реализм", "growth and limitation, optimism and realism"),
-        "harmony": ("баланс веры и расчёта: умение мечтать и строить долгосрочно и реалистично", "a balance of faith and calculation: the ability to dream and to build for the long term, realistically"),
-        "tension": ("качели между «расширить» и «сжать», между риском и осторожностью — то избыток, то нехватка", "a swing between “expand” and “contract”, between risk and caution — now excess, now lack"),
+        "theme": (_editorial_text('interpretations.da782a1f39e0997e9c6b8fa615df7d80df61b00ea37f5502b5bd29d4c86f370d'), _editorial_text('interpretations.c22001d587fd71c0dfe334cb2dd24d715edc8f8f7c734139b41c9d84d14351e6')),
+        "harmony": (_editorial_text('interpretations.31c98b2705a5a4a3117436466cd44d4e7eca2468ce5058d494a8455996f5df35'), _editorial_text('interpretations.d72cc8b3aed414559b972808563c4edac03b8eb35ed152bd3a61d27fea651024')),
+        "tension": (_editorial_text('interpretations.629b1fdf0523b736cbf99309a878c58e3fdc2809366aaa3ca040a5b9aafcc5ee'), _editorial_text('interpretations.e40a8ee07653cd6224f261d2ff68e77dd1eae7895475ee02bf7cd8809f1a05fd')),
     },
 }
 
@@ -662,23 +642,17 @@ def synastry_weight(p1: str, p2: str, orbit: float) -> float:
 def synastry_verdict(n_strength: int, n_challenge: int, score_desc: str, lang: str = "ru") -> str:
     """Вердикт по паре простым языком — из баланса сильных сторон и зон роста."""
     if n_strength >= 2 * max(1, n_challenge):
-        tone = ("Между вами много естественного тепла и притяжения — это сильная, "
-                "поддерживающая связь, где легко быть собой.",
-                "There is a lot of natural warmth and attraction between you — a strong, "
-                "supportive bond where it is easy to be yourselves.")
+        tone = (_editorial_text('interpretations.c25aeb3f7be5406e421ec15ac84c17df0819a91909f8f6d181ca1477d64e3fa4'),
+                _editorial_text('interpretations.ba00ae1b87a08b2da6ce7db8054fcb67cdf1bd35b2310065a73130624a5febdc'))
     elif n_challenge > n_strength:
-        tone = ("Ваша пара — непростая, но живая и развивающая: сильное притяжение здесь "
-                "соседствует с зонами напряжения, которые требуют внимания и работы.",
-                "Yours is a challenging but alive and growth-oriented pair: strong attraction "
-                "here sits next to zones of tension that need attention and work.")
+        tone = (_editorial_text('interpretations.e8288355464b76971c0a3acee698d2a51e92bcaed3ab2297f8ac40afcbcc5731'),
+                _editorial_text('interpretations.df903e96079c3ca3be02aaece09319875139a0272390b71facc7d0afd421dc58'))
     else:
-        tone = ("У вас сбалансированная связь: есть и крепкие опоры, и точки роста — "
-                "многое зависит от того, как вы оба готовы слышать друг друга.",
-                "You have a balanced connection: both solid foundations and growth points — "
-                "much depends on how willing you both are to hear each other.")
-    tail = ("Ниже — на чём держится ваша близость и над чем стоит поработать.",
-            "Below are what your closeness rests on and what is worth working on.")
-    return f"{g(tone, lang)} {g(tail, lang)}"
+        tone = (_editorial_text('interpretations.3dd5ed850009366b12ccf47d4c726b71ec82da5cb2204673455afd92549f701a'),
+                _editorial_text('interpretations.9285771371f3ee690700a8ed851a571459fac92d3bead77507258a22217ddd21'))
+    tail = (_editorial_text('interpretations.65895da731133f6d52a07c550ff5baeaa3a81e5acba1a11f2be798fc60b10aa6'),
+            _editorial_text('interpretations.8171302f1c289e7009a774e5f37d1121d46a959117995bbb7783543c033c59d1'))
+    return f'{g(tone, lang)} {g(tail, lang)}'
 
 
 # --- Разбор по сферам отношений ---
@@ -701,51 +675,51 @@ def synastry_sphere_of(p1: str, p2: str):
 
 
 SYN_SPHERE_LABEL = {
-    "passion": ("Притяжение и страсть", "Attraction and passion"),
-    "emotional": ("Эмоциональная близость", "Emotional closeness"),
-    "communication": ("Общение и понимание", "Communication and understanding"),
-    "stability": ("Доверие и долгосрочность", "Trust and the long term"),
+    "passion": (_editorial_text('interpretations.d33adf593aa49ec5dadc258a30b3dc46fc226b64fbe79bde508ab3dad3b542b0'), _editorial_text('interpretations.b600909075845792ae19b29f1a6fdc6a0c719fabb3584cfe07c60eb30aaf9f9f')),
+    "emotional": (_editorial_text('interpretations.7982e71e5d895222c03e35745f0c3dd7858844bf33cc7cc9e29b80bd181082d2'), _editorial_text('interpretations.f2bd214e6225a6f017d3d94b21066ff78defa21cb7726db7a21c7e3c7fc72e3a')),
+    "communication": (_editorial_text('interpretations.5edf9da8f29d643cac639863772ca8d51204a45c540b9572f09a042562f51f02'), _editorial_text('interpretations.e0a269286deb56083a5ddc6ab67e69780ed337d7159b96e99ce3a8244b809ac5')),
+    "stability": (_editorial_text('interpretations.c5e8e4962e4714a58eac752ca6b1e01be66db51aa33431d386ffc415fc7e37ff'), _editorial_text('interpretations.f046e4cda02227abb829a1221e4d915997226442da41ace7a5186f82440c8de2')),
 }
 SYN_SPHERE_TEXT = {
     "passion": {
-        "good": ("Между вами сильное взаимное притяжение — есть «химия», страсть и желание быть ближе.",
-                 "There is strong mutual attraction between you — chemistry, passion and the wish to be closer."),
-        "mixed": ("Притяжение есть, но переменчивое: страсть то вспыхивает, то наталкивается на разногласия и ревность.",
-                  "There is attraction, but it fluctuates: passion flares up and then meets disagreements and jealousy."),
-        "challenging": ("В сфере страсти есть трение: влечение неустойчиво и легко переходит в борьбу — над близостью стоит работать.",
-                        "There is friction in the realm of passion: desire is unstable and easily turns into struggle — closeness needs work."),
-        "quiet": ("Ярких контактов Венеры и Марса немного — страсть здесь спокойная, держится скорее на других опорах.",
-                  "There are few strong Venus–Mars contacts — passion here is calm and rests more on other foundations."),
+        "good": (_editorial_text('interpretations.84f5ea042fb037813e02df918bca978b9c55031615b1f6850d95d0b58d69de8f'),
+                 _editorial_text('interpretations.38353a5db5d4a3005b15f98a8607ca73e5d8358f0eff9c80cad685fbe9da6644')),
+        "mixed": (_editorial_text('interpretations.eef001d057b1a4d59b670798a269e9a3780e4281d53d111e383ea757956ecb23'),
+                  _editorial_text('interpretations.efb93169bdd327cac7e9a48470f2b70acd625438cf7066089bade41c52b0ec87')),
+        "challenging": (_editorial_text('interpretations.9f02a5bb693c88878186bacbc55e6b6e504b54bdc0fa5e064c4cf4717124cdc8'),
+                        _editorial_text('interpretations.72f4c35d2f67f4f35ee7085824bf337e1972ca00a683697df54c59643a99b4a1')),
+        "quiet": (_editorial_text('interpretations.b4fdd2acd81cee4c4d5131313b73bd3fd093e63cc9f41dd8aa8ac5f9c05db013'),
+                  _editorial_text('interpretations.d76d5b1e0e424622cda4900ce58b8313de11eb5b6f2c0f0b4201c8ee8d9d63f3')),
     },
     "emotional": {
-        "good": ("Вы эмоционально настроены друг на друга: чувствуете настроение партнёра и легко создаёте ощущение дома.",
-                 "You are emotionally attuned: you sense each other's moods and easily create a feeling of home."),
-        "mixed": ("Эмоциональная связь живая, но требует внимания — вы по-разному переживаете и порой задеваете чувства друг друга.",
-                  "The emotional bond is alive but needs attention — you feel things differently and sometimes hurt each other."),
-        "challenging": ("В эмоциях есть дистанция или трение: бывает трудно почувствовать поддержку и безопасность рядом.",
-                        "There is distance or friction in the emotional sphere: it can be hard to feel support and safety together."),
-        "quiet": ("Сильных лунных контактов мало — эмоциональный фон ровный, без ярко выраженной взаимной чувствительности.",
-                  "There are few strong Moon contacts — the emotional background is even, without pronounced mutual sensitivity."),
+        "good": (_editorial_text('interpretations.af5616418adbbfec1155761ddd5c137e4f346beac652cbc438441d28315b6554'),
+                 _editorial_text('interpretations.962b558f17562c2322666ec23201ba34d491eb1eb9b53aafffd84cea597586ae')),
+        "mixed": (_editorial_text('interpretations.35dbecc44dcca8f5b017a8e7a9ee9c717faf67db5175303f4a5dec21388f77fd'),
+                  _editorial_text('interpretations.eddf01991f2c007bd40d5e0a3f3620db365343e20fb193bf64d895697add56c6')),
+        "challenging": (_editorial_text('interpretations.ea095eadc5869365b10ddf6a0e8a6270517302c7847ddf63bd5dea63209ca132'),
+                        _editorial_text('interpretations.c43cd67d32f9522733a23a87a209cf7f4b2006ff5a88c8e80c4f47b7f3fd9279')),
+        "quiet": (_editorial_text('interpretations.b20164a5be80c10157583f94d2d682126c44047af04a6fcb895038495e5b2f62'),
+                  _editorial_text('interpretations.9ca67d2b1a0ea9bf93baf07ca9e72c82036f6cf5f3186ee8cbefc7f4c438d622')),
     },
     "communication": {
-        "good": ("Вам легко общаться и понимать друг друга — разговоры даются естественно, есть общий язык.",
-                 "You communicate and understand each other easily — conversation flows and you share a common language."),
-        "mixed": ("Общение рабочее, но местами вы говорите на разных языках — важно уточнять и переспрашивать.",
-                  "Communication works, but at times you speak different languages — it helps to clarify and ask again."),
-        "challenging": ("В общении бывают сбои и споры: легко не понять друг друга, поэтому важно учиться договариваться.",
-                        "There are glitches and arguments in communication: it is easy to misunderstand, so learning to negotiate matters."),
-        "quiet": ("Контактов Меркурия немного — интеллектуальная связь нейтральна и не выходит на первый план.",
-                  "There are few Mercury contacts — the intellectual link is neutral and not in the foreground."),
+        "good": (_editorial_text('interpretations.171df32e3fccbf48482850875c51ddb1799aa9afc6249bcf2ee5441b690a34b2'),
+                 _editorial_text('interpretations.ccc80ebea278ed2d0a26fe5d8aff2f219974ac8a6d1edd787888d33023debbaa')),
+        "mixed": (_editorial_text('interpretations.f8ebfba641527d94270c59599c1bfa2ec49185ecf1ee5dbb58cfc21a277606f8'),
+                  _editorial_text('interpretations.8dd2b543e38443e57b76b7e0a22b1b4e69f853fb489a93beef29bab31796fd0c')),
+        "challenging": (_editorial_text('interpretations.295c0884cb88ab74c90266184021ea492b04d4f60cf009a7a4b329c4d3a6d243'),
+                        _editorial_text('interpretations.a65804c539337860547c2ceede28e7b8ac1044bd6cf86fecf6e8ddb82f56ea13')),
+        "quiet": (_editorial_text('interpretations.8bf0a19f72694b97701a25603a25eca9e34f10515dafb92ec4651899f8ec3904'),
+                  _editorial_text('interpretations.18363be79b76c0cd96b587a88311b531512e055d8b4515b4d8017afcd20f1882')),
     },
     "stability": {
-        "good": ("У пары крепкая основа для долгого союза: есть зрелость, надёжность и готовность к обязательствам.",
-                 "The couple has a solid basis for a lasting union: maturity, reliability and readiness to commit."),
-        "mixed": ("Долгосрочность реальна, но требует усилий: вопросы ответственности и свободы нужно согласовывать.",
-                  "A long-term bond is realistic but takes effort: questions of responsibility and freedom need to be agreed."),
-        "challenging": ("Для устойчивости связи нужна работа: возможны ограничения, контроль или прохлада, которые стоит смягчать.",
-                        "Stability needs work: there may be limitation, control or coolness that are worth softening."),
-        "quiet": ("Контактов Сатурна немного — союз гибкий и лёгкий, но опору на долгий срок придётся выстраивать сознательно.",
-                  "There are few Saturn contacts — the union is flexible and light, but a long-term foundation must be built consciously."),
+        "good": (_editorial_text('interpretations.33122c0f1b4d68ad5309f01fa6110ad71163e5dcc3189c969186766e0534311e'),
+                 _editorial_text('interpretations.93a81229107ff25f4f0026a8236417e546f5f616f3725291b432c9d0622901b4')),
+        "mixed": (_editorial_text('interpretations.c0e66ebb0740d3269d9007f55aace28a71b445027e9911ebc175611382e6172f'),
+                  _editorial_text('interpretations.6d62c40742df3b3ba52336926ef9ff1500117a0cba7f72c161992f01726c9a41')),
+        "challenging": (_editorial_text('interpretations.45d484c214ff9f9a87b5e668d2136c167fbcac70d9e886e7e74788d2b010e778'),
+                        _editorial_text('interpretations.62305e3a972dbc872d83694b9825300d6192b12ca16e8e11a307ff702590923c')),
+        "quiet": (_editorial_text('interpretations.ffbd867e1545a17a6878ff224582f048ff3985ea784be276fd874a5356000804'),
+                  _editorial_text('interpretations.f1edcbaa4cec3f9dfd3b99c9b107b8c3fdc6ccc5c5bf8a166885726a0462a8fd')),
     },
 }
 
@@ -760,14 +734,14 @@ def synastry_sphere_label(sphere: str, lang: str = "ru") -> str:
 
 # --- Советы паре по сферам (для зон роста) ---
 SYN_SPHERE_ADVICE = {
-    "passion": ("Поддерживайте новизну и телесную близость, не давайте страсти раствориться в быту; прямо и без стеснения говорите о желаниях.",
-                "Keep novelty and physical closeness alive, don't let passion dissolve into routine; talk about desires openly and without embarrassment."),
-    "emotional": ("Находите время на простое тепло и разговоры о чувствах; учитесь замечать и называть эмоции друг друга, а не догадываться.",
-                  "Make time for simple warmth and talks about feelings; learn to notice and name each other's emotions instead of guessing."),
-    "communication": ("Проговаривайте важное прямо и переспрашивайте, не додумывая за партнёра; договоритесь, как вести спор, не раня друг друга.",
-                      "Say important things directly and check understanding instead of assuming; agree on how to argue without hurting each other."),
-    "stability": ("Согласуйте ожидания об обязательствах и свободе; стройте общее будущее маленькими реальными шагами, а не обещаниями.",
-                  "Align your expectations about commitment and freedom; build a shared future in small real steps rather than promises."),
+    "passion": (_editorial_text('interpretations.41873625f76d260d7c0065b7afceece2552154f6955ebe43fc162ed35be1abe7'),
+                _editorial_text('interpretations.36de79cad47691c37afd3031368c6e0c9d0baa315fb719acc7b0b5ff52d87b95')),
+    "emotional": (_editorial_text('interpretations.d6d4808ae20614f250eee3ad5d8d6086193387c152db33cdf0feb5ad0a20e74d'),
+                  _editorial_text('interpretations.3b1aa557c72b8ab1539542c952281009551c2107cc832225a5d3fe83b5d4a9ed')),
+    "communication": (_editorial_text('interpretations.0221e6db8da5b03b75a707406e9d9d890997c935d695efba7f96d5d8c854400f'),
+                      _editorial_text('interpretations.7f8629bfb0e6fb67d51d564952909296568f5d1212eca67d1fd7e0590a1f2cce')),
+    "stability": (_editorial_text('interpretations.51a53657f6f7b9b68ba685b943bc8f019549905ab2690e81fea5a7d907ef470d'),
+                  _editorial_text('interpretations.90022a91addc1a35f4bb3ab9e563e0aed8e677326ed1e134a7fe0bd481e61ee5')),
 }
 
 
@@ -779,27 +753,27 @@ def synastry_sphere_advice(sphere: str, lang: str = "ru") -> str:
 #  Накладки домов: чья планета в каком доме партнёра
 # --------------------------------------------------------------------------- #
 _OVERLAY_PLANET = {
-    "Sun": ("тепло, личность и жизненную силу", "warmth, identity and vitality"),
-    "Moon": ("чувства, заботу и эмоциональную близость", "feelings, care and emotional closeness"),
-    "Mercury": ("общение, идеи и обмен мыслями", "communication, ideas and an exchange of thoughts"),
-    "Venus": ("нежность, любовь и удовольствие", "tenderness, love and pleasure"),
-    "Mars": ("страсть, энергию и инициативу", "passion, energy and initiative"),
-    "Jupiter": ("щедрость, оптимизм и рост", "generosity, optimism and growth"),
-    "Saturn": ("серьёзность, опору и чувство долга", "seriousness, support and a sense of duty"),
+    "Sun": (_editorial_text('interpretations.99fdd05a15093051eb4567a0d375beef8db7746425654c8ed22c9b4e45cfcfca'), _editorial_text('interpretations.e094cdc66a9539803d116370cb2d288c5d9bec15081f5ca37d755f71bc11c2b4')),
+    "Moon": (_editorial_text('interpretations.6e49abf065a20c1c71d1f9b2750f731662ce561055d63fdff5d2ff88aa44bea0'), _editorial_text('interpretations.19c16e588d23162783b18cea98979384b0ea6fe90700702356f58bfd8c7488d8')),
+    "Mercury": (_editorial_text('interpretations.4fc45b6806cd96890187aa090783254a7dc9c4c3287516f362d264eb874107de'), _editorial_text('interpretations.dd8796a0bf3af672f703e99b01638049854927ea114ff95f08fe5c9dabef8b72')),
+    "Venus": (_editorial_text('interpretations.1ff5487bcfac66cd1dc671b67ce259915ae84391ba440fcee86fcfe3e28fdbf3'), _editorial_text('interpretations.96ee3475bfb6a940d403927d877fa94ee76e74d86f7fa99026f1113246e07134')),
+    "Mars": (_editorial_text('interpretations.c174a8a5843a982bbb9840870fe3a22113e982b1e8c5934435046c236b9265e1'), _editorial_text('interpretations.014c655c778bb0eef0605d6c9b6dc63a7e4738a67403003551b389f89f720969')),
+    "Jupiter": (_editorial_text('interpretations.4357ebb603cd46cbdc7047b35054fdd6dfc60808bf4ed162f926221279515cec'), _editorial_text('interpretations.db9d624a6517530ee9c5433c8a5810be523ac68c73b81255bef03530867e4817')),
+    "Saturn": (_editorial_text('interpretations.4ca43c06cb64bcb432aa6c8524a92675b76a57e8b9afc64e266bf58e527e5621'), _editorial_text('interpretations.b86da650c1e90090eba7752aa9535685a79bdd897cb83281b8b6df12d0cf8c41')),
 }
 _OVERLAY_HOUSE = {
-    1: ("личность и самоощущение", "personality and sense of self"),
-    2: ("деньги, ценности и чувство стабильности", "money, values and the sense of stability"),
-    3: ("повседневное общение и быт", "everyday communication and routine"),
-    4: ("дом, семью и корни", "home, family and roots"),
-    5: ("романтику, флирт и творчество", "romance, flirtation and creativity"),
-    6: ("быт, заботу и повседневный порядок", "daily life, care and everyday order"),
-    7: ("партнёрство и брак", "partnership and marriage"),
-    8: ("близость, страсть и общие ресурсы", "intimacy, passion and shared resources"),
-    9: ("взгляды, путешествия и развитие", "worldview, travel and growth"),
-    10: ("статус, цели и репутацию", "status, goals and reputation"),
-    11: ("дружбу, планы и общее будущее", "friendship, plans and a shared future"),
-    12: ("тайны, подсознание и уединение", "secrets, the unconscious and solitude"),
+    1: (_editorial_text('interpretations.e60ac4d3e070f84605651a9c4fbd88328b988b8a62f0bb810aa7d7e52203b347'), _editorial_text('interpretations.04ec4befc12ea8dffc00e8aa8150a337af21416ae477edf033a87dd667f43f3c')),
+    2: (_editorial_text('interpretations.998efc5f24189a1beafe453240ad49f72a2d2f5c83bfb79b1857db64ff5c0626'), _editorial_text('interpretations.654149ecd79a5b154c6d719367993eaa514204a683e101ee46d2294240a50e9a')),
+    3: (_editorial_text('interpretations.6936a78d0d006b093b9e610106d2ce113b4245c9667a6cb0a8198e386f8dee1f'), _editorial_text('interpretations.403271623a8b0205d54689c7b6b46b94c91aa330e1dffe8365d5395a8493a1b4')),
+    4: (_editorial_text('interpretations.2af033efb890f598afe739b28ba025de15ac9599d6c95f9b151871d866d8c365'), _editorial_text('interpretations.79f71c548d12dc0f74e853d9fb5546551ddd62cd4abf1bceac86efe9004c3b7a')),
+    5: (_editorial_text('interpretations.b255693b21af010613a654d5e8ad6678d39f5eaa694731d8e22498f5532c7fec'), _editorial_text('interpretations.9b2e0a617492112154d81ed6c3aaf1e7be84b772d4d378bc4d4eadeb3dd4f7b0')),
+    6: (_editorial_text('interpretations.179e73b6768b67d3825b3590f1de833148eae3a93027540604fe91c94b036e95'), _editorial_text('interpretations.1b59bc28a714b93c8179e795957a42cce9764714f39cde5c4e5ae348c2cca134')),
+    7: (_editorial_text('interpretations.03b2dbd92b4ab2a87676bf21f79430b4d73cbdddf0914658dd5e451d876666d3'), _editorial_text('interpretations.595c47297ba764735433244acffc4ace0399ae0d4e639f386d5a8d547f9cd8f7')),
+    8: (_editorial_text('interpretations.990de18701fabf6cd00363e75fbb59ac948a4f42ccaf4ff93f2cad5cc3442733'), _editorial_text('interpretations.3cbe756bfeb9e26af4780528378904ae49ce38b7037accd85bf05b67ec2be1f1')),
+    9: (_editorial_text('interpretations.ed551f1a714d170ae0855d35312dd6ca295058e4da85c354d0f18c42c2af83d3'), _editorial_text('interpretations.dcc69123c2c3692ca51df32d2de5b4de3419475b0ffa84c0efbc2d33cf1d007b')),
+    10: (_editorial_text('interpretations.f196ac3235ee2a51295b7e5919b4795e42cf5153e5f7dbf13285c1ff4a1ed61c'), _editorial_text('interpretations.6f3c984634615f210be0623c281ca73eea7ce2e5034f5183508576cca6ca7404')),
+    11: (_editorial_text('interpretations.a8f902044e6abe7f83c97231fcede8fb0571c11b402c42744a76a5c35adb5ad3'), _editorial_text('interpretations.ce10bc24ac226acc4408a6a16423e973173bb8c1dd3a008b2267890852015692')),
+    12: (_editorial_text('interpretations.7f58ac1782bd4ba372b9d79a8035389400cf0172d5e084863adf2b081b4eb33e'), _editorial_text('interpretations.96b2b24ebf17c66bbc34e6da5948639bcc114172b24824214af8937921c2026d')),
 }
 
 
@@ -809,21 +783,21 @@ def synastry_overlay_text(planet_name: str, house_num: int, who: str, partner: s
     if not pl or not ho:
         return None
     if lang == "en":
-        return f"{who} brings {g(pl, lang)} into {partner}'s area of {g(ho, lang)}."
-    return f"{who} привносит {g(pl, lang)} в сферу «{g(ho, lang)}» партнёра ({partner})."
+        return f"{who}{_editorial_text('interpretations.1540d5aaddea1514fdc2bdf63715c201cbc1aadd650a0e5c849a28c975d49285')}{g(pl, lang)}{_editorial_text('interpretations.3a68c5d43f6a077dbe61a2d9ea891e37f2cf2a83ca08bfc3240dea3ddbe5540c')}{partner}{_editorial_text('interpretations.39b0cfddc07ce575c98361b005c509fdfbe626e69f02a7516e545bb9b9624aa7')}{g(ho, lang)}."
+    return f"{who}{_editorial_text('interpretations.a68e3b8aecd4a4bf9f35db4ff64b8a8321bd3c9ee4b0dbdf916e35c5538df4ec')}{g(pl, lang)}{_editorial_text('interpretations.cb96cc9ff049214642cfe5b37e4aa6faf411d4559af3a6e80b0bcedc20825c8f')}{g(ho, lang)}{_editorial_text('interpretations.cd4b31250ae03dd9947ea38ab356d1de1763fd1add7837a6616a9c7aeadd76b4')}{partner})."
 
 
 # --------------------------------------------------------------------------- #
 #  Композитная карта (карта самих отношений)
 # --------------------------------------------------------------------------- #
 _COMPOSITE_INTRO = {
-    "Sun": ("Суть и цель ваших отношений", "The essence and purpose of your relationship"),
-    "Moon": ("Эмоциональная атмосфера пары", "The emotional atmosphere of the couple"),
-    "Mercury": ("Как вы общаетесь как пара", "How you communicate as a couple"),
-    "Venus": ("Как вы любите и наслаждаетесь вместе", "How you love and enjoy life together"),
-    "Mars": ("Как вы действуете и спорите вместе", "How you act and argue together"),
-    "Ascendant": ("Образ вашей пары со стороны", "How your couple appears to others"),
-    "Medium_Coeli": ("Общие цели и место пары в мире", "Shared goals and the couple's place in the world"),
+    "Sun": (_editorial_text('interpretations.6a7f559f7bec6c4b55cd0738870d4b98653ec4018c8da0020b1ecff665a44532'), _editorial_text('interpretations.80eb05787e2607211108ea505c088bef86187a510d2cd5e63982c4b7e39cfd3f')),
+    "Moon": (_editorial_text('interpretations.025aa88b70491e74f4354d7dd3c7d02bc08fbeb0991aa17bd122beba859d3a26'), _editorial_text('interpretations.a7bfe99c41e15fbf61fe1b037ec858b0e4bfedcb71ce5d803aa8ae9105d0ca8d')),
+    "Mercury": (_editorial_text('interpretations.5835e067f67f1c9db960f11e8488df583011e1f3972ac596ee9185c54e39d186'), _editorial_text('interpretations.050e6a64d38dfd4c8ffb95f869b30ee0908794e49202c00497065b810075e1ab')),
+    "Venus": (_editorial_text('interpretations.852492e0168d233435aec6213f6f5825d12f58d6f105e858cc199d722abd0922'), _editorial_text('interpretations.5b5ff417d7815e4f9167c24e74e6e1b6c08751814d7cc588c621521c94e15b32')),
+    "Mars": (_editorial_text('interpretations.00c663026950a52be66cada90886f95fb6524f9f1bbb94599ea25c55b48252a7'), _editorial_text('interpretations.f6c4da27f320da10ce6522414979df2c981d5c2dfcf442b2cf22525daf6f05b0')),
+    "Ascendant": (_editorial_text('interpretations.59d3b526d41d3a0b80940d99028d2bb434bbc312050ecea47e59af78401e3408'), _editorial_text('interpretations.83f10a947a3d737aa7042be0cc18d2cc8d1cef19ad1b40c22e455977502ce231')),
+    "Medium_Coeli": (_editorial_text('interpretations.3f5eb04e4596ca64425d0d2339d59ea60bec169d67933d4ea72d748d538221bf'), _editorial_text('interpretations.9a41c349123db2ca19a9f4db213bd2984df2c1a5e32eed87f61f5c6ac8bcf5ec')),
 }
 
 
@@ -834,8 +808,8 @@ def synastry_composite_text(point_name: str, sign: str, lang: str = "ru") -> Opt
         return None
     sign_ru = C.sign_name(sign, lang)
     if lang == "en":
-        return f"{g(intro, lang)} — in {sign_ru}: {g(arch['essence'], lang)}. At its best — {g(arch['light'], lang)}."
-    return f"{g(intro, lang)} — в знаке {sign_ru}: {g(arch['essence'], lang)}. В лучшем — {g(arch['light'], lang)}."
+        return f"{g(intro, lang)}{_editorial_text('interpretations.96821d81d32b58a4a8ff88e8cf932047f0fa3ed1eb6a800bd7beb000dba12c83')}{sign_ru}: {g(arch['essence'], lang)}{_editorial_text('interpretations.a062fad248bb4ed0380c3de23ef2483968eeead1186c1ca5a61a8325315cdf39')}{g(arch['light'], lang)}."
+    return f"{g(intro, lang)}{_editorial_text('interpretations.6733601440fd0f91a9a3028b70bd066e559bf20b7716502a0d7ae252bbfb5a73')}{sign_ru}: {g(arch['essence'], lang)}{_editorial_text('interpretations.a34a90db39337ac63587f7ee814198c71bccde13915d5529092351eb5f53c4bb')}{g(arch['light'], lang)}."
 
 
 # --------------------------------------------------------------------------- #
@@ -857,10 +831,10 @@ DIGNITY_LABEL = {
     "fall": ("падение", "fall"),
 }
 DIGNITY_NOTE = {
-    "domicile": ("планета в своём знаке — сильна и действует свободно, в естественной среде", "the planet is in its own sign — strong and acting freely, in its natural environment"),
-    "exaltation": ("планета возвышена — её лучшие качества выражены особенно ярко", "the planet is exalted — its best qualities are expressed especially vividly"),
-    "detriment": ("планете здесь некомфортно — функция работает с усилием и через компенсации", "the planet is uncomfortable here — the function works with effort and through compensation"),
-    "fall": ("функция ослаблена и требует осознанной проработки", "the function is weakened and requires conscious work"),
+    "domicile": (_editorial_text('interpretations.274f55195dcfb97009a91d4c1ff2233adc508e128115b0e37134770d6f276492'), _editorial_text('interpretations.0fd1e7259e0e45d5912c5e99e1fba6bd5c14cd8fb518ac18517377c33c43c514')),
+    "exaltation": (_editorial_text('interpretations.44856280c8ee24a8d64a3db484c65ca074012ae3d85f1e37e4206c90bf63b00f'), _editorial_text('interpretations.abfdc86a4e54ba333523b9d1513c08a88cae76596ab9bcfe2444bf200897bed4')),
+    "detriment": (_editorial_text('interpretations.678b039f754ec68bc2ee57a796c2fc23513567314f3e57f25749a6ea0d30d03f'), _editorial_text('interpretations.6ab1f123c587e2dabf07187e99a938d8d3d42300f78496ade045a7074fb99930')),
+    "fall": (_editorial_text('interpretations.5bf9fe49d554ebd1f0c0ab89f071e528d1ba8c2228f941d4c3d517e73df98719'), _editorial_text('interpretations.01b41947dd0d848eed297fb22191824314df966d411ccf75ffcd12268eaeca13')),
 }
 
 
@@ -895,20 +869,16 @@ def interpret_sign(planet_name: str, sign: str, lang: str = "ru") -> str:
     code = dignity_code(planet_name, sign)
     if lang == "en":
         text = (
-            f"{planet_ru} is {g(role, lang)}. In {sign_ru} this function expresses itself "
-            f"{g(facets['manner'], lang)}. The main motive is {g(facets['motive'], lang)}. "
-            f"The growth area is {g(facets['shadow'], lang)}."
+            f"{planet_ru}{_editorial_text('interpretations.81afb10b461acd8f2b7eee698fb0c314c454f7acb574a34baded7f6912fc7a0f')}{g(role, lang)}{_editorial_text('interpretations.121ac3350c135750b0c3ab8781c34339733a114e577512e5baa69fd9a943c6ba')}{sign_ru}{_editorial_text('interpretations.fc86572ca1a963c1596c7a3951f21ae90b0800cb036d33dcb237d137b6571676')}{g(facets['manner'], lang)}{_editorial_text('interpretations.091cf0cfe44b31e3cea85ff3ade6dfb39bebad295f598172fdd79c51872b3d47')}{g(facets['motive'], lang)}{_editorial_text('interpretations.b054607285846570bb2654d59a6c639c021db4bc7205ab9b299f2641c1d264d3')}{g(facets['shadow'], lang)}."
         )
         if code:
-            text += f" Here {planet_ru} is in “{g(DIGNITY_LABEL[code], lang)}”: {g(DIGNITY_NOTE[code], lang)}."
+            text += f"{_editorial_text('interpretations.ea2ee124a015f0dea8c5e0d18e88d203ed2b1320393afcb1ca9adc6768138507')}{planet_ru}{_editorial_text('interpretations.14ec1066438a3b790bf5561e326bfd0bfb438db34eeca204011a12a0c30fcdb6')}{g(DIGNITY_LABEL[code], lang)}”: {g(DIGNITY_NOTE[code], lang)}."
     else:
         text = (
-            f"{planet_ru} — это {g(role, lang)}. В знаке {sign_ru} эта функция проявляется "
-            f"{g(facets['manner'], lang)}. Главный мотив — {g(facets['motive'], lang)}. "
-            f"Точка роста — {g(facets['shadow'], lang)}."
+            f"{planet_ru}{_editorial_text('interpretations.a5ec731571763469aa79db0adcea886fa305d7e4ade107971c9a4bd3d3d46430')}{g(role, lang)}{_editorial_text('interpretations.48305c03bf12c56cf16d139639bd879adb2aa447fef27cba74e6069f8965f8e4')}{sign_ru}{_editorial_text('interpretations.973f65d29b20d9d71421770420e34f7d3870dc4faf01ce243052a6f0652640f3')}{g(facets['manner'], lang)}{_editorial_text('interpretations.bd05ef0d1966d4c512508988b3bef2b0960863c18277da00c3420c909622b739')}{g(facets['motive'], lang)}{_editorial_text('interpretations.96d4d88f412dbad97be1c2b83bfbaf7cfce22ada117d413efb5ea961a50b8d79')}{g(facets['shadow'], lang)}."
         )
         if code:
-            text += f" Здесь {planet_ru} в состоянии «{g(DIGNITY_LABEL[code], lang)}»: {g(DIGNITY_NOTE[code], lang)}."
+            text += f"{_editorial_text('interpretations.e739704cdd28e3d322cc98ad396cd5b5f485bad219a6f01a42c5ba9f16a84fba')}{planet_ru}{_editorial_text('interpretations.a8e2d0828a7cb6689d6bdecb6c7f243de7de700f685f269dd346d60dd0b8e95b')}{g(DIGNITY_LABEL[code], lang)}»: {g(DIGNITY_NOTE[code], lang)}."
     return text
 
 
@@ -926,154 +896,154 @@ MODALITY_NAME = {
     "mutable": ("мутабельный", "mutable"),
 }
 ELEMENT_FLAVOR = {
-    "fire": ("Стихия Огня придаёт этому импульсивность, азарт и прямоту — всё вспыхивает ярко и быстро, от души и на подъёме вдохновения.",
-             "The element of Fire lends this impulsiveness, enthusiasm and directness — everything happens vividly, quickly and wholeheartedly, on a wave of inspiration."),
-    "earth": ("Стихия Земли делает это практичным, основательным и нацеленным на результат — важны польза, надёжность и осязаемый итог, а не отвлечённые идеи.",
-              "The element of Earth makes this practical, grounded and result-oriented — usefulness, reliability and a tangible outcome matter more than abstract ideas."),
-    "air": ("Стихия Воздуха придаёт лёгкость, ум и общительность — всё проходит через мысль, слово и живой обмен с людьми.",
-            "The element of Air lends lightness, intellect and sociability — everything goes through thought, word and exchange with others."),
-    "water": ("Стихия Воды добавляет чувствительность, интуицию и глубину — всё пропускается через эмоции, переживания и тонкое внутреннее чутьё.",
-              "The element of Water adds sensitivity, intuition and depth — everything is filtered through emotions, experiences and subtle inner perception."),
+    "fire": (_editorial_text('interpretations.7e860666c24e9a920487ace45b712df65ff2b2bf91e708c29e19197b06219cf4'),
+             _editorial_text('interpretations.a0b98049fd9bf9045f1aac2b7d8ad81a6fef7189dc81e9593599181538096a45')),
+    "earth": (_editorial_text('interpretations.c0119a977ecbe62ca4241b824183aba49c74b165dc635a23608cffd56c650308'),
+              _editorial_text('interpretations.18e31eaca607532488d4bc7ace002cc57ca3d435f8a048c2253327f2696f9cfb')),
+    "air": (_editorial_text('interpretations.43b1ca5b20933ea0ce1fb8556442148c399c52d73686bb4e6c9aa97cbb6ad8df'),
+            _editorial_text('interpretations.2e16f0f10fcaa3c0bd79cd1fd712f4755cd08f8152aa80aee8282103eb8f316f')),
+    "water": (_editorial_text('interpretations.105a80dea4ed536d1d9b2b9e50b51fdd135017d3fde0ab0ea3d3fdb70581810b'),
+              _editorial_text('interpretations.99216213252a571e53fe83d20cd32a8b911a266414f485e38058d1c4a67d084e')),
 }
 MODALITY_FLAVOR = {
-    "cardinal": ("Кардинальное качество знака побуждает действовать, начинать и брать инициативу — человек стремится влиять на события, а не ждать у моря погоды.",
-                 "The cardinal quality of the sign urges one to act, to start and to take initiative — the person seeks to influence events rather than wait."),
-    "fixed": ("Фиксированное качество даёт устойчивость, верность и умение доводить начатое до конца — но и упрямство, сопротивление любым переменам.",
-              "The fixed quality gives steadiness, loyalty and follow-through, but also resistance to change and stubbornness."),
-    "mutable": ("Мутабельное качество делает проявление гибким, изменчивым и приспособляемым — легко перестраиваться, но труднее держать одну линию.",
-                "The mutable quality makes the expression flexible, changeable and adaptable — easy to adjust, but harder to hold one line."),
+    "cardinal": (_editorial_text('interpretations.a0f8152ed0249e307ec21b1dfc4bd15a88bfe4dac70d7f730581c3ce4ced7941'),
+                 _editorial_text('interpretations.fe25a68dd6e11fb1fdb2f1916f18f71292d1994e811c9b1c13ec9f49f93114d2')),
+    "fixed": (_editorial_text('interpretations.9f25cd9c6c458d6468ad7a0c5664b5a70d50f66301283ceaa3b873fc3e5eca9c'),
+              _editorial_text('interpretations.52fa226dfcbfdc5866766cecd50022b7dbc708f6b657e8a3eb6c76f815f5b637')),
+    "mutable": (_editorial_text('interpretations.0079f34e2ffb2111ca2f23537c4047f87a3ad50d085ca4c0422ebf120656bdbc'),
+                _editorial_text('interpretations.4249a9836d7169d1f9d9d2a20ca4a9764ec40567d44ee05f6894db195d408a3d')),
 }
 ADVICE_BY_SIGN = {
-    "Ari": ("Учитесь терпению и доводите начатое до конца, считаясь с интересами других.",
-            "Learn patience and to finish what you start, taking others' interests into account."),
-    "Tau": ("Позволяйте себе перемены и не цепляйтесь за привычное лишь из страха потерять устойчивость.",
-            "Allow yourself change, and don't cling to the familiar merely out of fear of losing stability."),
-    "Gem": ("Углубляйтесь в выбранное и доводите дела до конца, не распыляясь на всё сразу.",
-            "Go deeper into what you choose and finish things, without scattering yourself across everything at once."),
-    "Can": ("Учитесь отпускать прошлое и не уходить в обиду; берегите личные границы.",
-            "Learn to let go of the past and not retreat into hurt; protect your personal boundaries."),
-    "Leo": ("Цените себя независимо от чужого признания и умейте делить внимание с другими.",
-            "Value yourself regardless of outside recognition, and learn to share the spotlight."),
-    "Vir": ("Смягчайте самокритику и принимайте несовершенство — и своё, и чужое.",
-            "Ease the self-criticism and accept imperfection — both your own and others'."),
-    "Lib": ("Учитесь принимать решения и отстаивать своё мнение, не боясь конфликта.",
-            "Learn to make decisions and stand by your opinion without fearing conflict."),
-    "Sco": ("Отпускайте контроль и учитесь доверять; направляйте свою силу в созидание, а не в борьбу.",
-            "Release control and learn to trust; channel intensity into creation rather than struggle."),
-    "Sag": ("Будьте внимательнее к деталям и обязательствам; меньше поучайте, больше слушайте.",
-            "Pay closer attention to details and commitments; preach less, listen more."),
-    "Cap": ("Позволяйте себе чувства и отдых — не всё в жизни измеряется результатом и статусом.",
-            "Allow yourself feelings and rest — not everything in life is measured by results and status."),
-    "Aqu": ("Не отгораживайтесь от близких; соединяйте оригинальные идеи с теплом и участием.",
-            "Don't wall yourself off from loved ones; combine original ideas with warmth and involvement."),
-    "Pis": ("Укрепляйте границы и опору в реальности; помогая другим, не растворяйтесь в них.",
-            "Strengthen your boundaries and footing in reality; in helping others, don't dissolve into them."),
+    "Ari": (_editorial_text('interpretations.4aa9ca8e746c45ed7ed1791b3a3774c5e19f9872965ba820ee3c92b3c1313b3e'),
+            _editorial_text('interpretations.090bd47225bafadacb7ee15f0dcb3c3a09a8902eae132318677771e33d5e205d')),
+    "Tau": (_editorial_text('interpretations.f2c47181845bdd36cc8a15c18de21d991ae0e723b49d1f5634c77245b173c0ca'),
+            _editorial_text('interpretations.591a8303446ff79528b9a0a83102dbc876395a1f516eae5eb2177a70fbcc5995')),
+    "Gem": (_editorial_text('interpretations.1cb63d5c4c187d3fe29c1bb60b34a0b73dd1883a19d7b100d7878d7ff95d3860'),
+            _editorial_text('interpretations.c1d8b09466244b3576ea9378122be476c6ccf6af6748e3c86d182647075eb62b')),
+    "Can": (_editorial_text('interpretations.ffefcded6087bfacdbb78241c9d867a7a32d525a02376af5221b755248db3b37'),
+            _editorial_text('interpretations.46550198dd4b814977d6f224072c039514199ec5492caeaa5fd689fca175bf46')),
+    "Leo": (_editorial_text('interpretations.bdc5b20bfa890a60bb27b15d59d8ba9d1cb6a298f958fde008f649828a81cb8f'),
+            _editorial_text('interpretations.a85b8370f945c180f78221ad3203e781ccd6180f69e69210f8c40091fc958c47')),
+    "Vir": (_editorial_text('interpretations.ba0d54e224a1f4c715c1be0cbba7fefce0d4f87727bc3f202ec01d4f0535e89c'),
+            _editorial_text('interpretations.79a72bf2963fb1eb31560f56cb0380b0015c65dab6380335bf9597fab41d12fa')),
+    "Lib": (_editorial_text('interpretations.9c0900233b0e248eb0801d764107f4ea92281a1aa4d481a6107c639cb6ee412b'),
+            _editorial_text('interpretations.24874aa9ac8dd17157e1e2a1b01c6a62d18488011efc706e60d9d21f9dc2289a')),
+    "Sco": (_editorial_text('interpretations.ca263c7af17ac6eab0ea4a37324e28e627f844ab3d41263484fcc4b6eca12682'),
+            _editorial_text('interpretations.03fe2263c1eb13f9e30dd2d95b4844ec848aacf783234d0a386ca2f97f74d0f3')),
+    "Sag": (_editorial_text('interpretations.33ac3c4b59cd467211817a4a1c164cc33952a64af1e885e4c1e368d0838834c5'),
+            _editorial_text('interpretations.b46f7d56371c1f576a293eafc9a687b62b4fd839516ab0e914e53cf84289ea9f')),
+    "Cap": (_editorial_text('interpretations.21025473e82724515a732d869382189af2fa653c00b40f59e5e9d54a9a1c8b4e'),
+            _editorial_text('interpretations.3bd3402e82bd1c6ad461560f87612df90f28611dc096104a4ad9aded5df28b63')),
+    "Aqu": (_editorial_text('interpretations.d2913c42fcdb3132a0e8bdf685289659ba9e251ac52305ac77f8e8a1b0c7b6cf'),
+            _editorial_text('interpretations.21dd68221787339cbc43d58ea0f315fffda047ce67364dd1c3675007653a2a3c')),
+    "Pis": (_editorial_text('interpretations.cae4ce4f7179a1c711a31279b5bfa8c2b6e17c82d16d7e563ba513ea2c7262da'),
+            _editorial_text('interpretations.dc39024dbdc7a6e0129c3c0583baa66c564820cdd94fa67488d810284a92abd6')),
 }
 
 # Доменная модель планеты: что именно она «делает», и как проявляется в любви и в деле.
 # Используется, чтобы развёрнутая трактовка раскрывала сферы жизни (как у авторских статей).
 PLANET_SPHERES = {
     "Sun": {
-        "function": ("как вы проявляете своё «я», чего по-настоящему хотите и как утверждаете волю и достоинство",
-                     "how you express your “self”, what you truly want and how you assert your will and dignity"),
-        "love": ("В любви Солнце показывает, как вы дарите тепло и щедрость, гордитесь избранником и хотите чувствовать себя для него особенным",
-                 "In love the Sun shows how you give warmth and generosity, take pride in your partner and want to feel special to them"),
-        "work": ("В деле Солнце отвечает за стремление к признанию, творческой самореализации и роли, которой можно гордиться",
-                 "In work the Sun governs the drive for recognition, creative self-realization and a role to be proud of"),
+        "function": (_editorial_text('interpretations.0ace14d4a75a735562ce5f85876324b2b6093824074dc696c1f8bbe6103d456a'),
+                     _editorial_text('interpretations.02c4c544d1973fcc6263ff914fbdbb38dff40cd5d7a77be77cb530551d5777ba')),
+        "love": (_editorial_text('interpretations.fa720ab639f83d7cae0b2ee78d5b6caafbc86eb4ea7656aa3cdf4fe4ecaf0cf3'),
+                 _editorial_text('interpretations.5ab954af3e0ff1807d6031ce874cb5c9084ba3f68c54a4cc748e31c8502081b9')),
+        "work": (_editorial_text('interpretations.f1f9daddf9b4d1edeb1d50d46e2b0bc01d12591e56cf2de8cfd6d83b580e270d'),
+                 _editorial_text('interpretations.2efbc3a032c49edc785dd39e5909bb4354fd5b06d3944529460f4174625c1cd4')),
     },
     "Moon": {
-        "function": ("как вы чувствуете, реагируете, заботитесь и что вам нужно для душевного покоя",
-                     "how you feel, react, care and what you need for inner peace"),
-        "love": ("В любви Луна показывает потребность в эмоциональной близости, заботе и ощущении дома рядом с партнёром",
-                 "In love the Moon shows the need for emotional closeness, care and a sense of home beside your partner"),
-        "work": ("В деле Луна тянет к занятиям, где есть забота о людях, уют, дом, питание, публика или работа с настроением и памятью",
-                 "In work the Moon draws you to caring for people, comfort, home, food, the public, or work with mood and memory"),
+        "function": (_editorial_text('interpretations.8554e6df20ec9d014f459bff74c313ccae36027d2b4b28c27fc778688715a79f'),
+                     _editorial_text('interpretations.64694d3333a362679c251be1912becba1d6654094d20badb3753cb4a8ddeb6e8')),
+        "love": (_editorial_text('interpretations.270bca123fd8348fa363df7155f3365ff799fbcb9594787b4644a91e377197b4'),
+                 _editorial_text('interpretations.70b7ede7d61fec46c320be70eec31cd19f558db02ec219e67366d7f1491ca5ca')),
+        "work": (_editorial_text('interpretations.c88130760ae59218c7923cff5f586c23cf858c503467227cb7a4a970227289ff'),
+                 _editorial_text('interpretations.2bb5e1eb2208065126548e427a59d9c7f9f646b205106337775ffea0eaa52c54')),
     },
     "Mercury": {
-        "function": ("как вы думаете, учитесь, запоминаете, принимаете решения и говорите",
-                     "how you think, learn, remember, make decisions and speak"),
-        "love": ("В отношениях Меркурий показывает, что близость рождается через общение: вам важно, чтобы партнёра было интересно слушать и чтобы вас понимали с полуслова",
-                 "In relationships Mercury shows that closeness is born through communication: it matters that your partner is interesting to listen to and that you are understood at half a word"),
-        "work": ("В деле Меркурий благоприятствует занятиям со словом, информацией, анализом, обучением, торговлей и контактами",
-                 "In work Mercury favours occupations with words, information, analysis, teaching, trade and contacts"),
+        "function": (_editorial_text('interpretations.a85b21724b502c6b904b028a78e25d2621b95852320c9878244bfb48f8c8423e'),
+                     _editorial_text('interpretations.1a79aed20f9dd58446ca660813a35dfe0553da18dcf4ffb2c780fcb32e7f6742')),
+        "love": (_editorial_text('interpretations.dfcf0187627beb9112532c71aee74824cfa27a7c91b49a72f360e04eab979dfa'),
+                 _editorial_text('interpretations.9edcb31dd0d73548b15e7d9ac6ca41f4be4c1046cea72c7ddf996df73d39391e')),
+        "work": (_editorial_text('interpretations.95673802e6b3d7dca45c5a7f0b3aaf0216a7552f491b400e651985218730c650'),
+                 _editorial_text('interpretations.f18b3d1792e7f120f4647810ced47bc97e14d72d16b2f254d31210245194d056')),
     },
     "Venus": {
-        "function": ("как вы любите, что цените, что считаете красивым и как притягиваете к себе",
-                     "how you love, what you value, what you find beautiful and how you attract"),
-        "love": ("Венера — сама способность любить и наслаждаться: она показывает ваш стиль ухаживания, что вас очаровывает и как вы дарите нежность",
-                 "Venus is the very capacity to love and enjoy: it shows your style of courtship, what charms you and how you give tenderness"),
-        "work": ("В деле Венера тянет к красоте, искусству, моде, дипломатии, деньгам и всему, что связано с гармонией и людьми",
-                 "In work Venus draws you to beauty, art, fashion, diplomacy, money and all that involves harmony and people"),
+        "function": (_editorial_text('interpretations.22ce5fef6d2a0478ee50c6ea54a6ae8ae225f64eddf8ce717104c03e3e1b9bf9'),
+                     _editorial_text('interpretations.21d2e072ac181e45aa9852088c41d2a0c7c304eddf3ce765c265bed20a6df0e5')),
+        "love": (_editorial_text('interpretations.4ffc5e36fce82099a4500d825d270f94a5ade179c5b1e16a11282831e6ad5510'),
+                 _editorial_text('interpretations.2ab31b201824ffc1fe61ec593dba0bf54218d1a16da334caac614727b95b28d1')),
+        "work": (_editorial_text('interpretations.035105327ac4fd7a9880d8ed336ec3f596397e4f5d8fa9d0fa760ad1fe584973'),
+                 _editorial_text('interpretations.57af2829f588badd4e5b72e00552d674c4d4d6f0c2e55ea4258785861e0e31db')),
     },
     "Mars": {
-        "function": ("как вы действуете, желаете, злитесь и отстаиваете себя",
-                     "how you act, desire, get angry and assert yourself"),
-        "love": ("В любви Марс отвечает за страсть, влечение и инициативу: как вы добиваетесь желаемого и проявляете пыл",
-                 "In love Mars governs passion, attraction and initiative: how you pursue what you want and show ardour"),
-        "work": ("В деле Марс даёт энергию, напор и дух соперничества; вам подходят занятия, требующие воли, смелости и быстрого действия",
-                 "In work Mars gives energy, drive and a competitive spirit; you suit work demanding will, courage and quick action"),
+        "function": (_editorial_text('interpretations.e6bf78d06880ac6dfe9e38090584089b2397ee4e9d2d1c8f616c7e90a8493065'),
+                     _editorial_text('interpretations.3ad041f713d26cbce17d1f5087d3ae5886336d36f7640d6dbdd7199b8c296887')),
+        "love": (_editorial_text('interpretations.8c88d10c0a7a4657acd906d45767116f41582ee65726c85bd4649e04083baf69'),
+                 _editorial_text('interpretations.ef9d8f106d6e24b7f5fa2b9b3e7e4cd8fa61f1dc4048f357569f19b53be68349')),
+        "work": (_editorial_text('interpretations.78f3dde5adaae63bdafe43f160c9ab824673ef50920729bb9c0945ef8dbd7aba'),
+                 _editorial_text('interpretations.b6156ad889e7345e4c381cb5bbb0bde6b6f7be8503e703653fe97d423a1a2448')),
     },
     "Jupiter": {
-        "function": ("во что вы верите, как растёте, рискуете и расширяете горизонты",
-                     "what you believe in, how you grow, take risks and expand horizons"),
-        "love": ("В отношениях Юпитер приносит щедрость, оптимизм и совместные горизонты; вам важны общий рост и вера в партнёра",
-                 "In relationships Jupiter brings generosity, optimism and shared horizons; common growth and faith in your partner matter"),
-        "work": ("В деле Юпитер благоприятствует обучению, праву, путешествиям, издательству и всему, где есть масштаб, смысл и развитие",
-                 "In work Jupiter favours teaching, law, travel, publishing and anything with scale, meaning and growth"),
+        "function": (_editorial_text('interpretations.5c949a75c5afd6d10192bcd6b099c37a54beb22d0332922975eb1b622923e1d0'),
+                     _editorial_text('interpretations.d80c26bc3164365180cf5745ce61ad048fde566c208bd8ba2bfb3681d6adfd9d')),
+        "love": (_editorial_text('interpretations.11ce0ec25803846f1287efb6f89615985d5be8e4ea0666032003473b9a05af0d'),
+                 _editorial_text('interpretations.e4efa30741b72071ce6742c2dd14636d39beeddc22f5f0579d4a71d1dee970f1')),
+        "work": (_editorial_text('interpretations.52e5b8b81daba3cef99928692f37be9757f46b9e2e2833d9e4a242dbb5e296a4'),
+                 _editorial_text('interpretations.6a9dc5fa0be1472927b5a569e1f99279c9949935d5df8b9975b5de1c8df366e2')),
     },
     "Saturn": {
-        "function": ("как вы выстраиваете опору, держите дисциплину и принимаете ответственность",
-                     "how you build a foundation, keep discipline and take responsibility"),
-        "love": ("В любви Сатурн означает верность, серьёзность и зрелость: чувства проверяются временем, а отношения — это обязательство",
-                 "In love Saturn means loyalty, seriousness and maturity: feelings are tested by time and a relationship is a commitment"),
-        "work": ("В деле Сатурн даёт дисциплину, выносливость и умение строить надолго; успех приходит через упорство, опыт и ответственность",
-                 "In work Saturn gives discipline, endurance and the ability to build for the long term; success comes through persistence and experience"),
+        "function": (_editorial_text('interpretations.743a018cff9ad85f2c86230fae5c818b099ee556c6eb8e490fcb30bc59a8daa8'),
+                     _editorial_text('interpretations.bbc44b4d025241fbaf7bc48244c6e5f81e889712c3e4d3c9b96402687b77c7b2')),
+        "love": (_editorial_text('interpretations.718d7266091283e4843c800436faaaf6b23c846f0b21216275e76e5ea5cf9d01'),
+                 _editorial_text('interpretations.877252a782d793c44116da151d8ebae9f9e35547adce9123a48d7fd29ee63258')),
+        "work": (_editorial_text('interpretations.648b4f490ff40d9fb5fdd02fe4937a4408658ad294cb95ab38b4d6f9ce2df8a6'),
+                 _editorial_text('interpretations.4ac8ce065b5c2b3a8d9c274fdeb18a72429439941cea216f831cba5d306575aa')),
     },
     "Uranus": {
-        "function": ("где вам нужна свобода, что вы хотите изменить и в чём проявляете оригинальность",
-                     "where you need freedom, what you want to change and how you show originality"),
-        "love": ("В отношениях Уран ценит свободу, равенство и нестандартность; ему тесно в рамках и шаблонах",
-                 "In relationships Uranus values freedom, equality and unconventionality; it feels cramped by frames and templates"),
-        "work": ("В деле Уран тянет к технологиям, науке, реформам и всему новаторскому, где можно ломать шаблоны",
-                 "In work Uranus draws you to technology, science, reform and everything innovative where templates can be broken"),
+        "function": (_editorial_text('interpretations.77d3a9cb344e3823945449b46090c213d2dbec745c894baaad26d36e1694ded4'),
+                     _editorial_text('interpretations.b0c7ae8ae0983caf6d70ddf5e7705f14bcf3163ccc5ec04d3bf30769c10f6fb3')),
+        "love": (_editorial_text('interpretations.a79dbedb4e6b15a0fb05b9563092576c7d8b32d468231b1cc6305b63b41cc992'),
+                 _editorial_text('interpretations.7076acaf2568ef195f76624ed915678c85b50032376aadc985af3562a44a2c81')),
+        "work": (_editorial_text('interpretations.9bf668080423a734acff627ca814d0a3e08321fba1c4be917aee35dc8a2e1eed'),
+                 _editorial_text('interpretations.9414264649fb80679965c8e48a3e44c35c4354c2d2b1445a5b697665b03f2ec6')),
     },
     "Neptune": {
-        "function": ("как вы мечтаете, сострадаете, вдохновляетесь и где растворяете границы",
-                     "how you dream, feel compassion, get inspired and where you dissolve boundaries"),
-        "love": ("В любви Нептун несёт идеализацию, романтику и слияние душ; есть риск принять мечту за реальность",
-                 "In love Neptune brings idealization, romance and a merging of souls; there is a risk of mistaking the dream for reality"),
-        "work": ("В деле Нептун благоприятствует искусству, музыке, кино, помощи, духовным и целительским практикам",
-                 "In work Neptune favours art, music, film, helping, spiritual and healing practices"),
+        "function": (_editorial_text('interpretations.e860b80c8a44dd0cd12b8804d52271559a570ba0bd30809e58242d2f861701a2'),
+                     _editorial_text('interpretations.2e8a4353c09fb2c0f755200a1d28b3c9fb6993908d82d7879eaf25f6b1f5f7e9')),
+        "love": (_editorial_text('interpretations.9c7b78e1ba12c22c9fe14532954d7c55476205a52cecf11838709c60638e9923'),
+                 _editorial_text('interpretations.30cdeb01c42dfb371594b3b7eb7631a2d226a5c61110a9554988dbcd54d74dbf')),
+        "work": (_editorial_text('interpretations.66551284e20b2d0e0bf902b8aba0f732d85db6ddf500abf7aff57d648aee4b5a'),
+                 _editorial_text('interpretations.3c65d37b587e4001ea631b84205d8fa5ba0dee5e448e71dbf892155087589f1d')),
     },
     "Pluto": {
-        "function": ("как вы трансформируетесь, что переживаете глубоко и где ищете власть и контроль",
-                     "how you transform, what you experience deeply and where you seek power and control"),
-        "love": ("В любви Плутон несёт глубину, страсть и преображение; чувства всепоглощающи, а близость — на грани слияния и власти",
-                 "In love Pluto brings depth, passion and transformation; feelings are all-consuming and closeness borders on merging and power"),
-        "work": ("В деле Плутон тянет к исследованию, психологии, кризис-менеджменту, финансам и всему, что связано с глубинными процессами",
-                 "In work Pluto draws you to research, psychology, crisis management, finance and all that involves deep processes"),
+        "function": (_editorial_text('interpretations.e0f4b3cc535ec61b160d3f54465ed415207866c92edfa2d6ecc791ff9070fad0'),
+                     _editorial_text('interpretations.bf99cb9b0a15ab2dd4198536849552e8d2e3b1eb0fdfe653ef2feb2ac9252c96')),
+        "love": (_editorial_text('interpretations.2216978a71687413b82d5243c31ff600935226583bee65fd8090171a310a8f67'),
+                 _editorial_text('interpretations.2454bb8ddc23b5dd1ff402dc82a79f5c7f912c622579907c1ab8526623d1a54d')),
+        "work": (_editorial_text('interpretations.20aea0441d01ce8ca3f8d8d455072a515bfe6099c1090a067bb005393a145c04'),
+                 _editorial_text('interpretations.78648a27d7d15e093a6173ae4305450c430ba6fcb774bf847a5b92c7173d6dfe')),
     },
 }
 # Тон любви и работы по стихии знака — чтобы сферы окрашивались знаком, а не повторяли общее.
 EL_LOVE_TONE = {
-    "fire": ("Любит ярко, страстно и порывисто — быстро загорается и нуждается в свободе, азарте и восхищении.",
-             "Loves brightly, passionately and proactively — ignites quickly and needs freedom, excitement and admiration."),
-    "earth": ("Любит надёжно, телесно и верно — ценит стабильность, заботу делом и осязаемые знаки внимания.",
-              "Loves reliably, physically and faithfully — values stability, care through deeds and tangible signs of affection."),
-    "air": ("Любит через общение, лёгкость и общие интересы — нуждается в диалоге, свободе и личном пространстве.",
-            "Loves through communication, lightness and shared interests — needs dialogue, freedom and personal space."),
-    "water": ("Любит глубоко, чутко и преданно — нуждается в эмоциональной близости, заботе и душевном слиянии.",
-              "Loves deeply, sensitively and devotedly — needs emotional closeness, care and a soulful merging."),
+    "fire": (_editorial_text('interpretations.3148148d69f12688a93b572064f4dc713a2f8862d35f30c1dd4d24d661224ac5'),
+             _editorial_text('interpretations.3c93dfbc0727465e313b08d61626642e98bca8a3ae7219acade1b63019f9f62e')),
+    "earth": (_editorial_text('interpretations.75c70d53769a859bfcdafc1c5520aa1462707fb1d93b38dcd47f48a20a1ced03'),
+              _editorial_text('interpretations.ddd8d94b0f86c2e32cdaecdbb53457340148b1f082cb5c7e1278bce4021b6584')),
+    "air": (_editorial_text('interpretations.6bdf381f0bfa264171114f6bf6a17d71152638c35fc1326f694dabe19abb5489'),
+            _editorial_text('interpretations.faf647a92f8d3229425108c88b2d5f747c977cdd0ab907b3cfdedf650f9fadc0')),
+    "water": (_editorial_text('interpretations.0f02c4c5177511a915402e158b06669b2d00230df764889710f7d045d05b85a5'),
+              _editorial_text('interpretations.468cb81ddbc6f050343f41508b35f31894573517f296cfa0482ba0c94b033056')),
 }
 EL_WORK_TONE = {
-    "fire": ("В работе нужны азарт, инициатива и быстрый результат — рутина гасит интерес.",
-             "At work needs drive, initiative and quick results; routine dims the interest."),
-    "earth": ("В работе ценит порядок, надёжность и осязаемую пользу, готов к долгому методичному труду.",
-              "At work values order, reliability and tangible benefit, ready for long methodical effort."),
-    "air": ("В работе важны общение, идеи и разнообразие задач; ценит интеллектуальную свободу.",
-            "At work communication, ideas and variety matter; values intellectual freedom."),
-    "water": ("В работе важны атмосфера, доверие и смысл; лучше всего работает там, где можно опереться на интуицию и чувства.",
-              "At work atmosphere, trust and meaning matter; works well where intuition and feeling can be trusted."),
+    "fire": (_editorial_text('interpretations.8e0c562d70f80fcb996cc27ca5549f6815b92aca39c40d2b2e2ef522e1772759'),
+             _editorial_text('interpretations.595ececacda53e63426f200f8e13e681e9d0fcd7a6702443887e130f8ec59880')),
+    "earth": (_editorial_text('interpretations.de5b479739d442e0eb9630e4f6cc77b0004ebb1c2d40703ee8fc3654ca5e0a8e'),
+              _editorial_text('interpretations.6de1751d956f3488e73001a02a3ee6dd250207c37706da5a3192e77861474777')),
+    "air": (_editorial_text('interpretations.d9c5b3318027fd65a582f7a384a87cd6709bf249c1e6238d75abb4238a516edb'),
+            _editorial_text('interpretations.c1648567ae310de94eafb1f1485412dcb615b349b0e62d9b6841e43e4f12d949')),
+    "water": (_editorial_text('interpretations.5ffc8b6f21b7559adf5131986792c28f8cc5279025ac38a752ed60e92a9d5b41'),
+              _editorial_text('interpretations.c978d9cafa16115c0fdef12b3c51c9900537790fbccc9783ec07b9e62bca2236')),
 }
 
 
@@ -1185,42 +1155,40 @@ def interpret_sign_full(planet_name: str, sign: str, lang: str = "ru", retro: bo
 
     if lang == "en":
         blocks.append({"label": "Essence", "text":
-            f"{planet_ru} stands for {g(role, lang)}. In {sign_ru} — an {el_name}, {mod_name} sign with the archetype "
-            f"“{g(arch['archetype'], lang)}” ({g(arch['essence'], lang)}) — this function takes on its colours."})
+            f"{planet_ru}{_editorial_text('interpretations.df4e46e0af2c28a1df0c12440b6fd37e06ca86ce3a747313c7b710561d7f4467')}{g(role, lang)}{_editorial_text('interpretations.121ac3350c135750b0c3ab8781c34339733a114e577512e5baa69fd9a943c6ba')}{sign_ru}{_editorial_text('interpretations.20413f2a58be1ef16d8b15441691a6fd44af333490fa90b635427a44b6e2a526')}{el_name}, {mod_name}{_editorial_text('interpretations.95aabbb2ef0f445816a2b2a506a3bf380d7d6493e6ca9fa044e82324a86e6f80')}{g(arch['archetype'], lang)}” ({g(arch['essence'], lang)}{_editorial_text('interpretations.e3ad22739bd32295c5dec52052b7639f6e7fdb9e162e2fd33d3f27566f2cd7fc')}"})
         if spheres:
-            blocks.append({"label": f"How {planet_ru} works", "text":
-                f"{planet_ru} here defines {g(spheres['function'], lang)}. {el_flavor} In practice it acts {manner}."})
-        blocks.append({"label": "Character and motivation", "text":
-            f"The main inner driver is {motive}. {mod_flavor}"})
+            blocks.append({"label": f"{_editorial_text('interpretations.08418a26fc1a5e8e8ea1ec3e2fcf88b2c00d73fc490fcedaafa7086e975ae101')}{planet_ru}{_editorial_text('interpretations.93952640c625a77aaf336ff3e037eae668f1ff2d2a2fba00f55e5f9712732777')}", "text":
+                f"{planet_ru}{_editorial_text('interpretations.6cfee5520584da2d790d51c9d894b5b7d0207cc380a4448291dbc28976c91910')}{g(spheres['function'], lang)}. {el_flavor}{_editorial_text('interpretations.62d80c3aa7730f4def214831c99c6ea06072b16ccafb7aa7a368f6000df6bd74')}{manner}."})
+        blocks.append({"label": _editorial_text('interpretations.3ce74aff6da32c44c160458e0a21818978a7ff6337cabeb7b45113a352800591'), "text":
+            f"{_editorial_text('interpretations.0aa8924691f970404bf4fceddde533b221522cba189b03e8845d1e936393fd50')}{motive}. {mod_flavor}"})
         blocks.append({"label": "Strengths", "text":
-            f"At its best this gives {light} — these are the natural strengths of the placement."})
-        blocks.append({"label": "Weaknesses and shadow", "text":
-            f"The vulnerable side is {sh_facet}; in the shadow it can deepen into {sh_arch}. This is the growth zone."})
+            f"{_editorial_text('interpretations.eaa701c9301c41d4c6c69d2cac4ca4aa12995d147571b571fdf6959fcf7ca427')}{light}{_editorial_text('interpretations.0073871bfba505cd649120196ae179a3919bd87c87e0384cc7634740fe482685')}"})
+        blocks.append({"label": _editorial_text('interpretations.659d6bd96c3606696d10de7e60708e03ff4d72ec4d00b11f0b2ecbef048d732a'), "text":
+            f"{_editorial_text('interpretations.58a64a41c585c1cd1003d960ee5d7ed9d9a2e0a0112f254e247e002f595ee3d2')}{sh_facet}{_editorial_text('interpretations.87b5b67daebdd2223fc97b79ebe288a0d806998921307fad6dc37627e44619c6')}{sh_arch}{_editorial_text('interpretations.d7114a8a9ba51a3ed5b050f4df94a5226a18ed00ce1dd23616c580ca147c2546')}"})
         if spheres:
-            blocks.append({"label": "Love and closeness", "text": f"{g(spheres['love'], lang)}. {el_love}"})
-            blocks.append({"label": "Work and vocation", "text": f"{g(spheres['work'], lang)}. {el_work}"})
+            blocks.append({"label": _editorial_text('interpretations.417560d54742d102ab5c58190923ffd2c2e46beed04ea48c74e067f81d3946a9'), "text": f"{g(spheres['love'], lang)}. {el_love}"})
+            blocks.append({"label": _editorial_text('interpretations.24bd6257a280ca5ca1130a444415e18455ef6c8dd9d2a0dcd7479c2a3be6886a'), "text": f"{g(spheres['work'], lang)}. {el_work}"})
         if retro and planet_name in RETROGRADE_NOTE:
             blocks.append({"label": "Retrograde", "text": retrograde_note(planet_name, lang)})
-        blocks.append({"label": "Advice", "text": f"{dig_note + '. ' if dig_note else ''}{advice}"})
+        blocks.append({"label": "Advice", "text": f"{(dig_note + '. ' if dig_note else '')}{advice}"})
     else:
         blocks.append({"label": "Суть", "text":
-            f"{planet_ru} символизирует {g(role, lang)}. В знаке {sign_ru} — это {el_name.lower()}, {mod_name} знак с архетипом "
-            f"«{g(arch['archetype'], lang)}» ({g(arch['essence'], lang)}) — и эта функция окрашивается соответствующим образом."})
+            f"{planet_ru}{_editorial_text('interpretations.17f3db2f2b8d1b85a76f0afee3604ef5157f071543121307f9d25ef52e0aea9f')}{g(role, lang)}{_editorial_text('interpretations.48305c03bf12c56cf16d139639bd879adb2aa447fef27cba74e6069f8965f8e4')}{sign_ru}{_editorial_text('interpretations.a5ec731571763469aa79db0adcea886fa305d7e4ade107971c9a4bd3d3d46430')}{el_name.lower()}, {mod_name}{_editorial_text('interpretations.fcea9f861904c842fa13768c466ad747ab4e958169d86a9066ca55f034704f0c')}{g(arch['archetype'], lang)}» ({g(arch['essence'], lang)}{_editorial_text('interpretations.fcea05fca1163f4f8f2e6f5ec00a3220ce97fd7b4a967cda5670070720afad48')}"})
         if spheres:
-            blocks.append({"label": f"Как работает {planet_ru}", "text":
-                f"{planet_ru} здесь определяет то, {g(spheres['function'], lang)}. {el_flavor} На практике это происходит {manner}."})
-        blocks.append({"label": "Характер и мотивация", "text":
-            f"Главный внутренний двигатель — {motive}. {mod_flavor}"})
-        blocks.append({"label": "Сильные стороны", "text":
-            f"В лучших проявлениях это даёт {light} — таковы природные сильные стороны положения."})
-        blocks.append({"label": "Слабые стороны и тень", "text":
-            f"Уязвимая сторона — {sh_facet}; в тени это углубляется до состояния «{sh_arch}». Это и есть зона роста."})
+            blocks.append({"label": f"{_editorial_text('interpretations.cca0f31818f2cb76814e8e1a5a66f3cae94ebeb1d095b9ada53b32abc05916f6')}{planet_ru}", "text":
+                f"{planet_ru}{_editorial_text('interpretations.7a47d356079bd6bd18914a6b21804613ca2825564f5861bed55e17da92691851')}{g(spheres['function'], lang)}. {el_flavor}{_editorial_text('interpretations.83752c08af039cf65bab6a8f050ef2d6891979dc839ab81d8cf2e4b37dd420e3')}{manner}."})
+        blocks.append({"label": _editorial_text('interpretations.887aa0b5189d7dec7df8330dbf8322097253413f441c384b51ff71d1d2872cee'), "text":
+            f"{_editorial_text('interpretations.b351e3a5c2b20ae4bd980895ecdae6ae9cb05858236ee9b7d59498cd7da8d21f')}{motive}. {mod_flavor}"})
+        blocks.append({"label": _editorial_text('interpretations.3fce75e382b2883d8e75182eaf71ca308e8d4e051bef52fd2f2b5711d318f61a'), "text":
+            f"{_editorial_text('interpretations.126ebc3919bc08e3c7c9573132baa3b3d74e6b4807c8ed3cc4c9dfd3350e926a')}{light}{_editorial_text('interpretations.cedbe7d1ac3f8fcaea4c90c1641d04ea3cef786da81fe141f1034ecc508fc2dc')}"})
+        blocks.append({"label": _editorial_text('interpretations.baf341e90e12e33c6196e3c1f20daa83a830e42b10093ffef66a2fcd6303cd93'), "text":
+            f"{_editorial_text('interpretations.9c906b90ead991ab67ab4986e67bd1b56c7d6d79355118c5ee0eeac57c7f4bf9')}{sh_facet}{_editorial_text('interpretations.b562a986a18c199b59e84ac321f68e74aa5e06cf63f64ce757f3cf0925994f31')}{sh_arch}{_editorial_text('interpretations.ca8a8c34a7f29c60cdfdbac524b4e4ea80c602c602cb6011d8f9f25000d46736')}"})
         if spheres:
-            blocks.append({"label": "Любовь и близость", "text": f"{g(spheres['love'], lang)}. {el_love}"})
-            blocks.append({"label": "Работа и призвание", "text": f"{g(spheres['work'], lang)}. {el_work}"})
+            blocks.append({"label": _editorial_text('interpretations.7fe15602ea6285fe16da448408ae2a6a1959d22a28f26feff4ba412393959ff7'), "text": f"{g(spheres['love'], lang)}. {el_love}"})
+            blocks.append({"label": _editorial_text('interpretations.aaa67b30e8b81a045a47bcbaff5a8317decec3b69d92ac478e6939b6ab8d4fe5'), "text": f"{g(spheres['work'], lang)}. {el_work}"})
         if retro and planet_name in RETROGRADE_NOTE:
             blocks.append({"label": "Ретроградность", "text": retrograde_note(planet_name, lang)})
-        blocks.append({"label": "Совет", "text": f"{dig_note + '. ' if dig_note else ''}{advice}"})
+        blocks.append({"label": "Совет", "text": f"{(dig_note + '. ' if dig_note else '')}{advice}"})
 
     # Авторский разбор (если написан для этой комбинации) — ведущим блоком,
     # композиционные разделы остаются ниже как структурированная детализация.
@@ -1231,30 +1199,30 @@ def interpret_sign_full(planet_name: str, sign: str, lang: str = "ru", retro: bo
 
 # Опыт дома — что значит, когда планета делает эту область жизни важной (натальная рамка).
 HOUSE_EXP = {
-    1: ("Эта сфера всегда «на виду»: она окрашивает ваш характер, манеру держаться и первое впечатление о вас.",
-        "This area is always on display: it colours your character, bearing and the first impression you make."),
-    2: ("Здесь решаются вопросы денег, имущества, талантов и того, что даёт чувство устойчивости и собственной ценности.",
-        "Here lie money, possessions, talents and whatever gives a sense of stability and self-worth."),
-    3: ("Это территория повседневности: общение, учёба, короткие поездки, контакты с роднёй, соседями и ближним кругом.",
-        "This is the realm of the everyday: communication, learning, short trips, contact with relatives, neighbours and the close circle."),
-    4: ("Корни всего — дом, семья, родители и прошлое; здесь вы ищете опору и ощущение «своего места».",
-        "The roots of everything — home, family, parents and the past; here you seek support and a sense of belonging."),
-    5: ("Это территория радости и самопроявления: творчество, влюблённости, удовольствия, дети и игра.",
-        "This is the ground of joy and self-expression: creativity, romance, pleasures, children and play."),
-    6: ("Будни и порядок: работа, режим, повседневные обязанности и привычка приносить пользу.",
-        "Daily life and order: work, routine, everyday duties and the habit of being useful."),
-    7: ("Всё разворачивается через других: партнёрство, брак и близкие отношения «один на один».",
-        "Everything unfolds through others: partnership, marriage and close one-to-one relationships."),
-    8: ("Глубокие и сильные темы: близость, кризисы, чужие ресурсы, трансформация и то, что обычно скрыто.",
-        "Deep and powerful themes: intimacy, crises, shared resources, transformation and what is usually hidden."),
-    9: ("Тяга к большему: смысл, путешествия, обучение, мировоззрение и расширение горизонтов.",
-        "A pull toward the larger: meaning, travel, learning, worldview and the broadening of horizons."),
-    10: ("Вершина карты, видимая обществу: карьера, статус, призвание и репутация.",
-         "The peak of the chart, visible to society: career, status, vocation and reputation."),
-    11: ("Будущее и связи: друзья, единомышленники, цели, мечты и причастность к сообществам.",
-         "The future and connections: friends, like-minded people, goals, dreams and belonging to communities."),
-    12: ("Закулисье жизни: подсознание, уединение, тайны, сны и тема служения и отпускания.",
-         "Life behind the scenes: the subconscious, solitude, secrets, dreams and the themes of service and letting go."),
+    1: (_editorial_text('interpretations.5e15cb237d5982df83811f105fc7afcab8ae6bb5cb198f8cc174423c803e3f6c'),
+        _editorial_text('interpretations.a29fee604500a6c5e68860426b7038a55c62a68d917a73cee944e9665e054bfd')),
+    2: (_editorial_text('interpretations.089f4d77dc68b12a73fcfe436b52327d64dedd0cb523fc301e6462bc15e41626'),
+        _editorial_text('interpretations.ecb2e1f8b155f49704ddfd6960ed35759ced3a365f7d38b9ea9f0e8b65be645a')),
+    3: (_editorial_text('interpretations.48ac3e02b97b260f6048240c34490834cc4d4ac615a2f0e82f4d266d492495cf'),
+        _editorial_text('interpretations.66027eebc75514c964fbb3399fc9aa7af1fb029a9142de1e3ba685a469a86877')),
+    4: (_editorial_text('interpretations.4efe897b21562a396b17a9f92d77d795eddf25a95a87537d0fc8883beade7401'),
+        _editorial_text('interpretations.e0a5316a934da045f76f72a8638ee75d35ba8698eeeafb42c3f156b9e4e1ab45')),
+    5: (_editorial_text('interpretations.6f6dbb1dfb9121e96dbe2386921ef29aac1a438b99409d4e3a9b0a3e535d9224'),
+        _editorial_text('interpretations.659af3681bf76c149d896470c0bfc936121505296eaea6d4360756e7106719f2')),
+    6: (_editorial_text('interpretations.5fc1eb24b3fe7df6b9d694591448d308250158f3924367996e01f192fb54c5a4'),
+        _editorial_text('interpretations.34753578b589dc0af737cc0a994f413462ec6e3668cc700b5debe3dc3192d4b2')),
+    7: (_editorial_text('interpretations.42b6b6eb9d7b63df57fbc9b0a6930ac056c4cf129f025ce44ddcc5867eb75d3b'),
+        _editorial_text('interpretations.32847c47d44b2652eac4cc2b06f769b4d9fca7a1a495cbe60c0778f899aa8868')),
+    8: (_editorial_text('interpretations.86b8a60f4602b998d9be2c724eee4551f106efff436cd332aa8f7f0ee6854f87'),
+        _editorial_text('interpretations.c7533e1c2ae9db6ce081ec3105763a88ad425bf4cb69b09f54b7a1741aa01792')),
+    9: (_editorial_text('interpretations.cbbf55d65e2bf0707f81b0e2bf91c3be3acb8526e9eb68a253281a33e249f5c5'),
+        _editorial_text('interpretations.f94f8b2688820e5632420604fa7c72387c1fb50ff05865a737c46e0f90a19297')),
+    10: (_editorial_text('interpretations.04d387711af1c78fc2f1398b0cb2d89089fbaf1f3b49d20d91986e4e8836ecb3'),
+         _editorial_text('interpretations.6f7d646a205fa6a7f88aa8e9ec57784b7229996b192ae1fad64deb38262294a3')),
+    11: (_editorial_text('interpretations.48d7f673063dfcee12a68f47d2d0facc2ca039a42bce5cbd226eb3120051834c'),
+         _editorial_text('interpretations.d788d46a396b49dbe9c5a8eea5889342234cf7641db7f2694a216fffe2029544')),
+    12: (_editorial_text('interpretations.211bfef12df23461404dd6f2747c70b4c75b3375e59fc3dd96316e3eab44a583'),
+         _editorial_text('interpretations.31f533345327d0b7f39177d35fa2b094039c9531666e52402871407ed6b43323')),
 }
 
 
@@ -1263,48 +1231,48 @@ def _ord_en(n: int) -> str:
         suf = "th"
     else:
         suf = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
-    return f"{n}{suf}"
+    return f'{n}{suf}'
 
 
 # --------------------------------------------------------------------------- #
 #  Простой режим: дома как сферы жизни + трактовки без терминов
 # --------------------------------------------------------------------------- #
 HOUSE_SPHERE = {
-    1: ("личность и характер", "personality and character"),
-    2: ("деньги и ценности", "money and values"),
-    3: ("общение и учёба", "communication and learning"),
-    4: ("дом и семья", "home and family"),
-    5: ("творчество, любовь и дети", "creativity, romance and children"),
-    6: ("работа и повседневный режим", "work and daily routine"),
-    7: ("партнёрство и брак", "partnership and marriage"),
-    8: ("кризисы, близость и общие финансы", "crises, intimacy and shared finances"),
-    9: ("кругозор, учёба и путешествия", "outlook, study and travel"),
-    10: ("карьера и положение в обществе", "career and social standing"),
-    11: ("друзья, цели и мечты", "friends, goals and dreams"),
-    12: ("внутренний мир, уединение и тайны", "inner world, solitude and secrets"),
+    1: (_editorial_text('interpretations.c551bd77c369391c8c95a0696d245b831016fa7b05dae75820f074356c2e73d3'), _editorial_text('interpretations.acc9d02a59344ff9434d2ae97b4d924cfa564f78e8f250478626159d6fb77d72')),
+    2: (_editorial_text('interpretations.ee8008ba6e2d05335c456631bb22d0b610ec3f7d9bdb346f1b1a179ad340d2af'), _editorial_text('interpretations.28bd20e420f3bc601d1dfe7c9da883910dda5e6d2bc28441f96373fee0a19035')),
+    3: (_editorial_text('interpretations.cf8d7285d69f25822a9e9884973a41363440d7bd2d892d888ada69ceffbc3106'), _editorial_text('interpretations.9e179ee19f2147be1dacd8d0f9fbb1aa0fd2784339ba029c257a513d9ef3df85')),
+    4: (_editorial_text('interpretations.96dbd0a219caea92fb83ac7046b82161afce462846e65f91f674cf9fc3ecffaf'), _editorial_text('interpretations.7e199a422e933598b5a40241a8ab3fde17e3c136c81befe824898f97ed250ea6')),
+    5: (_editorial_text('interpretations.822f298574c21796e9c9bea4c424bb77e17b0e1f54018125679ada050b809dea'), _editorial_text('interpretations.57ca384f3e74bbc3980a5b720df6a70b0b1e4633f33b7747c30d33b95578c46e')),
+    6: (_editorial_text('interpretations.ec468e9d3122b3c9bbb2563236ea9597a519ce57b187950c32eacd98d9c8a2ae'), _editorial_text('interpretations.994e0c2ce2696aad83df07d2b992a2f598ffca3a09e67f9e67b7148e5aaa101b')),
+    7: (_editorial_text('interpretations.03b2dbd92b4ab2a87676bf21f79430b4d73cbdddf0914658dd5e451d876666d3'), _editorial_text('interpretations.595c47297ba764735433244acffc4ace0399ae0d4e639f386d5a8d547f9cd8f7')),
+    8: (_editorial_text('interpretations.f70dfaf91c54fa1410d5fb2aa37e274b0bc264f7861b2df32be7efdbfdd64d16'), _editorial_text('interpretations.b5072160cd17ceffa524ae16dbed9dc55fb3fb22b91a6dae6d2dd5584b3c5db6')),
+    9: (_editorial_text('interpretations.4034062b837ddfd618c5d101d97189e81008c2ce04829b940ebbd2bbda5d307b'), _editorial_text('interpretations.2aee9834782a2761f1ac8b8e59cbecc0126ec274d13aad24c992b8f133538795')),
+    10: (_editorial_text('interpretations.262206deff6ca5a730df857d0b56e71e08e650fe58dd9b7db50d3272adefdfe1'), _editorial_text('interpretations.2b38efa1550e8efc935f779574116f71901aed467a13fa308fc39f06872e86a5')),
+    11: (_editorial_text('interpretations.d09a9d9c11d471c5958893adeaa4c262143cf91201487da8eb430ce07726334a'), _editorial_text('interpretations.4dbd4160e905baef239971fc18e0134505ab5d574af2c76f9d844a935154d8c5')),
+    12: (_editorial_text('interpretations.0d770866269ffa668adab965d4171371e682f0d237a919954eb1e14c89d3bfab'), _editorial_text('interpretations.60e3f2696ead51f268d45edb54512717dd2ce8ae29017d14145a4d53ae9fb03e')),
 }
 # Что планета «делает» — повседневным языком, без терминов.
 PLAIN_PLANET = {
-    "Sun": ("Солнце — это ваша личность, воля и то, чего вы по-настоящему хотите от жизни",
-            "The Sun is your personality, will and what you truly want from life"),
-    "Moon": ("Луна — это ваши чувства, привычки и потребность в тепле и заботе",
-             "The Moon is your feelings, habits and need for warmth and care"),
-    "Mercury": ("Меркурий — это то, как вы думаете, говорите и учитесь",
-                "Mercury is how you think, speak and learn"),
-    "Venus": ("Венера — это как вы любите, что вам нравится и что вы цените",
-              "Venus is how you love, what you enjoy and what you value"),
-    "Mars": ("Марс — это ваша энергия, желания и то, как вы добиваетесь своего",
-             "Mars is your energy, desires and how you go after what you want"),
-    "Jupiter": ("Юпитер — это ваш оптимизм, стремление расти и везение",
-                "Jupiter is your optimism, drive to grow and luck"),
-    "Saturn": ("Сатурн — это ваша дисциплина, ответственность и страхи",
-               "Saturn is your discipline, responsibility and fears"),
-    "Uranus": ("Уран — это ваша тяга к свободе, переменам и всему необычному",
-               "Uranus is your urge for freedom, change and the unusual"),
-    "Neptune": ("Нептун — это ваши мечты, интуиция и творческое воображение",
-                "Neptune is your dreams, intuition and creative imagination"),
-    "Pluto": ("Плутон — это ваша внутренняя сила и способность глубоко меняться",
-              "Pluto is your inner strength and ability to deeply transform"),
+    "Sun": (_editorial_text('interpretations.553d53bdc4126ac6334e3ffc7a3b1ea22e5de5a16fc522ae3d421cdc2a3b8253'),
+            _editorial_text('interpretations.6be371aaa1e78681a977291f72ba4b579ce1bb9dfa7effe5a456035a4b326a3e')),
+    "Moon": (_editorial_text('interpretations.e71025bad41e0049953eb71a6a817cf66b8b603ddede1d1dade871c0193ceed4'),
+             _editorial_text('interpretations.4f563c7cc169b58bdf2f85632f67f617f6073b124e62c2a4a6a605ad015ea25b')),
+    "Mercury": (_editorial_text('interpretations.08535861a103f795936a241a950ee1d10e3c22686e38a403bc94d01bf15c6f52'),
+                _editorial_text('interpretations.937564822fb6b47c1b1169d69aee72b24b4ece83f15d93d56686993cba7a0cb0')),
+    "Venus": (_editorial_text('interpretations.b9bf53ff388ccb080e0a00986fbb117277fc73418c8c06cfda64c043f7e00a11'),
+              _editorial_text('interpretations.c3d453c52558b33437e8799ea625307e963ff6ea781ee980bfc786fe6f9a739f')),
+    "Mars": (_editorial_text('interpretations.a716a19a067db0e896235cd0037cc615dea7e96704b3c000f9373c4d15484b0c'),
+             _editorial_text('interpretations.9b018daf55e7d44acf8c158bbdd322343d6d1d10653810b5226dad2f7cb35f58')),
+    "Jupiter": (_editorial_text('interpretations.622cd7149510d8578dd3884e6a1fc652ff2f49096039b442963daa0cc906b51c'),
+                _editorial_text('interpretations.8717782fddf8a0c03f7ec21b75289a1d4c4f3b031372279b35fa82593044ea63')),
+    "Saturn": (_editorial_text('interpretations.18d453ad32a207e8db76fed065b646c039b0df72caa1187bf3a6f4ea91ccbe40'),
+               _editorial_text('interpretations.71d9f1a27f19b143e8c22c9b917b5de28d5f8d560dd9255188a2a48a4329fda3')),
+    "Uranus": (_editorial_text('interpretations.67e36cf9166fd107de350a11301250ce01a4670481dd3c278633e28457b5c866'),
+               _editorial_text('interpretations.610465c63f793a0d84518204588aa473d6f17896986bb7d92d9385ca0c0c866b')),
+    "Neptune": (_editorial_text('interpretations.47307c81bce4e195d77b69bb07558287caf46800c7478654b9f629e2da64ad8c'),
+                _editorial_text('interpretations.b13ab7c53669287758dab61f863a1f04886e2bcfc4607bb8ebe757aade17016e')),
+    "Pluto": (_editorial_text('interpretations.407e91a3be7981cca032a44c7196d818ed02b147b2f167ff06d9914bbf881593'),
+              _editorial_text('interpretations.3c531fb619249e13b77d8bd33eccaec3786af96d30a05257f1aa9b82afbd1af1')),
 }
 
 
@@ -1321,34 +1289,34 @@ def interpret_plain(planet_name: str, sign: str, house_num=None, lang: str = "ru
     manner = g(facets["manner"], lang)
     sphere = house_sphere(house_num, lang)
     if lang == "en":
-        s = f"{g(plain, lang)}. Here it shows up {manner}."
+        s = f"{g(plain, lang)}{_editorial_text('interpretations.3765d63c44e7eb446c44cdd7763b472e51c5114e9b7b2e88ff7548d5a3cb4c36')}{manner}."
         if sphere:
-            s += f" This is most noticeable in the area of life: {sphere}."
+            s += f"{_editorial_text('interpretations.bc16ebafa403093e5f93621de045752465eee926e84fa8fba7a9da7d3396cd34')}{sphere}."
         return s
-    s = f"{g(plain, lang)}. Здесь это проявляется {manner}."
+    s = f"{g(plain, lang)}{_editorial_text('interpretations.d2fe83f246a0c411fe2160e1a22ba5ab0a048babedb885b9da92978864d77313')}{manner}."
     if sphere:
-        s += f" Сильнее всего это заметно в сфере жизни «{sphere}»."
+        s += f"{_editorial_text('interpretations.84a39805f3b3c9152206949a401526600270ea9631ba30dee492bef1516bcfc1')}{sphere}»."
     return s
 
 
 # Описания стихий/крестов без терминов (для простого режима).
 EL_PLAIN = {
-    "fire": ("Здесь много энергии, азарта и прямоты — всё происходит ярко, быстро и от души.",
-             "There is plenty of energy, drive and directness — everything happens vividly, quickly and wholeheartedly."),
-    "earth": ("Этому свойственны практичность, надёжность и опора на результат, а не на отвлечённые идеи.",
-              "This brings practicality, reliability and a focus on results rather than abstract ideas."),
-    "air": ("Этому свойственны лёгкость, ум и общительность — всё проходит через мысль, слово и общение.",
-            "This brings lightness, intellect and sociability — everything goes through thought, word and contact."),
-    "water": ("Этому свойственны чувствительность, интуиция и глубина — всё пропускается через чувства.",
-              "This brings sensitivity, intuition and depth — everything is filtered through feeling."),
+    "fire": (_editorial_text('interpretations.144d370e2a5f4566a0fdaa46d390080d87278813817f286e39be1428b436ca08'),
+             _editorial_text('interpretations.3b71f462b1720fc03c3d01c281bddda3fa891c91bc7c2b141ed2523fd311d79d')),
+    "earth": (_editorial_text('interpretations.febf1310b80f470cfff170834e2dfff367cdfa736de416533d153eabce9bb7a0'),
+              _editorial_text('interpretations.0aa455216c92c7e873405fd681582f11e5fa5bd2fb8b3914eeb60514265d39e6')),
+    "air": (_editorial_text('interpretations.4b86237bd4ef2bf55d3f2c238d9bfb5c8cf8dd3b974d84e95757cd7b73c92597'),
+            _editorial_text('interpretations.dccec7bfce8de5e5fccf97eceef7f5ff2d57e10b3c82bcf9a7752e3f227d2e51')),
+    "water": (_editorial_text('interpretations.3446059aab44e46193f5305db215b952fef5c72079b1ab6400f0190b83e646b1'),
+              _editorial_text('interpretations.004e76828509318c4b885e95f9a00e9c072567804f3477a9baead1905d70de11')),
 }
 MOD_PLAIN = {
-    "cardinal": ("Есть тяга начинать, действовать первым и влиять на события.",
-                 "There is a pull to start, to act first and to influence events."),
-    "fixed": ("Есть устойчивость и упорство, но и сопротивление переменам.",
-              "There is steadiness and persistence, but also resistance to change."),
-    "mutable": ("Есть гибкость и умение приспосабливаться, но труднее держать одну линию.",
-                "There is flexibility and adaptability, but it is harder to hold one line."),
+    "cardinal": (_editorial_text('interpretations.9f0bbd8824efb0bb56ed71624e2a311cfc40373ddd81451f058f1b94e4acd892'),
+                 _editorial_text('interpretations.7a318578806292fc30689f76d53d18915ba72f0bc613116fbce324549435bd96')),
+    "fixed": (_editorial_text('interpretations.3542e2cfc45bb348553bc60d2b5ccb084c9155e383ba1054684a9bb3465c8c10'),
+              _editorial_text('interpretations.62d5124e58a5108a5e27e0821004f4043e87233629cb80de91e280e4002135a6')),
+    "mutable": (_editorial_text('interpretations.2b91cd7369f60ec9007dd2140180df38f102624436a744013ff5a856720fac94'),
+                _editorial_text('interpretations.8090cfb64f40238663ad47efd820782096601203bd5d7c91be44c837fe0203ec')),
 }
 
 
@@ -1378,33 +1346,33 @@ def interpret_sign_full_plain(planet_name: str, sign: str, house_num=None,
     L = (lambda ru, en: en if lang == "en" else ru)
     blocks = []
     if lang == "en":
-        ess = f"{g(plain, lang)}. In {sign_ru} it shows up {manner}."
+        ess = f"{g(plain, lang)}{_editorial_text('interpretations.121ac3350c135750b0c3ab8781c34339733a114e577512e5baa69fd9a943c6ba')}{sign_ru}{_editorial_text('interpretations.b9393026c01be325371db9c7fa0a2f97660d17ea3bae0b1bbd89660031dbd138')}{manner}."
         if sphere:
-            ess += f" It is most noticeable in the area of life: {sphere}."
+            ess += f"{_editorial_text('interpretations.b309aa22aa40fcf449f5ab59f06636e9c231aa156b199fc13bf5a11f05199914')}{sphere}."
         blocks.append({"label": "Essence", "text": ess})
-        blocks.append({"label": "What drives it", "text": f"The main driver is {motive}. {el_p} {mod_p}"})
-        blocks.append({"label": "Strengths", "text": f"At its best this gives {light}."})
-        blocks.append({"label": "What to work on", "text": f"Harder areas: {sh_facet}; under stress it can show up as {sh_arch}."})
+        blocks.append({"label": _editorial_text('interpretations.02d9813f8f2f1bdd81a897fd0afc6bb1c3e4642fd054159ff0040e472fb85cdd'), "text": f"{_editorial_text('interpretations.58f3901ee53669b65f3102923d4e3fb531cfed01ac9aefc60de465bd08b74c89')}{motive}. {el_p} {mod_p}"})
+        blocks.append({"label": "Strengths", "text": f"{_editorial_text('interpretations.eaa701c9301c41d4c6c69d2cac4ca4aa12995d147571b571fdf6959fcf7ca427')}{light}."})
+        blocks.append({"label": _editorial_text('interpretations.395eee39028a3c9b32a87d9a114ec8dd252b9165882e25560d6b90b21c5de03f'), "text": f"{_editorial_text('interpretations.fd3b51a9e0ae2df721f5f3d48baa11331d1ffb94573a760a1e20d28fd080f1aa')}{sh_facet}{_editorial_text('interpretations.a1062ade526999684d36d59f2fe309abd1f25d6b48c1eb92a7461f33f3af4a75')}{sh_arch}."})
         if spheres:
-            blocks.append({"label": "Love and closeness", "text": f"{g(spheres['love'], lang)}. {el_love}"})
-            blocks.append({"label": "Work and vocation", "text": f"{g(spheres['work'], lang)}. {el_work}"})
+            blocks.append({"label": _editorial_text('interpretations.417560d54742d102ab5c58190923ffd2c2e46beed04ea48c74e067f81d3946a9'), "text": f"{g(spheres['love'], lang)}. {el_love}"})
+            blocks.append({"label": _editorial_text('interpretations.24bd6257a280ca5ca1130a444415e18455ef6c8dd9d2a0dcd7479c2a3be6886a'), "text": f"{g(spheres['work'], lang)}. {el_work}"})
         if retro:
-            blocks.append({"label": "Unfolding over time", "text": "At birth this planet appeared to move “backward” — its force is turned more inward, toward rethinking, and unfolds gradually."})
+            blocks.append({"label": _editorial_text('interpretations.39f5818835d35b12d29e93a72da2f50e0da0884e294832bfe28b0cc09d48fd58'), "text": _editorial_text('interpretations.bb9bae7b598c4cd149ce127e635ab779c353d2362f0bf7496412ba651b598c2a')})
         if advice:
             blocks.append({"label": "Advice", "text": advice})
         return blocks
-    ess = f"{g(plain, lang)}. В знаке {sign_ru} это проявляется {manner}."
+    ess = f"{g(plain, lang)}{_editorial_text('interpretations.48305c03bf12c56cf16d139639bd879adb2aa447fef27cba74e6069f8965f8e4')}{sign_ru}{_editorial_text('interpretations.f10f4b6bd9244da5b6b2248b4212c68458c4ff0702e0d03bbc89efe41285166b')}{manner}."
     if sphere:
-        ess += f" Сильнее всего это заметно в сфере жизни «{sphere}»."
+        ess += f"{_editorial_text('interpretations.84a39805f3b3c9152206949a401526600270ea9631ba30dee492bef1516bcfc1')}{sphere}»."
     blocks.append({"label": "Суть", "text": ess})
-    blocks.append({"label": "Что движет", "text": f"Главное, что движет, — {motive}. {el_p} {mod_p}"})
-    blocks.append({"label": "Сильные стороны", "text": f"В лучшем проявлении это даёт {light}."})
-    blocks.append({"label": "Над чем поработать", "text": f"Труднее даётся {sh_facet}; в напряжении может проявляться как {sh_arch}."})
+    blocks.append({"label": _editorial_text('interpretations.7eb46c7f7d1ec0a440161497257c336388618bf496475259f96df7c6fc30dcbf'), "text": f"{_editorial_text('interpretations.1a6036bb419d43b309e967134fcde37d9590886e70c67a104b2b3017f6a10c74')}{motive}. {el_p} {mod_p}"})
+    blocks.append({"label": _editorial_text('interpretations.3fce75e382b2883d8e75182eaf71ca308e8d4e051bef52fd2f2b5711d318f61a'), "text": f"{_editorial_text('interpretations.c63758a649e7caeeadf7550a74611c3f4ce6cd430ce1a3f9eb9a09014bb08e13')}{light}."})
+    blocks.append({"label": _editorial_text('interpretations.f99a61f9c50407f0012fa3d490836e6947ee3a0920974b2fc713d5200e123d5d'), "text": f"{_editorial_text('interpretations.dc587f549a69b9d2473105001010e56d3999228e2ce6dd887de39714234c9ece')}{sh_facet}{_editorial_text('interpretations.0a2aa4f427fd7ce100ddb76eb86f3a9592ede999967c6d03bdfca923b23be903')}{sh_arch}."})
     if spheres:
-        blocks.append({"label": "Любовь и близость", "text": f"{g(spheres['love'], lang)}. {el_love}"})
-        blocks.append({"label": "Работа и призвание", "text": f"{g(spheres['work'], lang)}. {el_work}"})
+        blocks.append({"label": _editorial_text('interpretations.7fe15602ea6285fe16da448408ae2a6a1959d22a28f26feff4ba412393959ff7'), "text": f"{g(spheres['love'], lang)}. {el_love}"})
+        blocks.append({"label": _editorial_text('interpretations.aaa67b30e8b81a045a47bcbaff5a8317decec3b69d92ac478e6939b6ab8d4fe5'), "text": f"{g(spheres['work'], lang)}. {el_work}"})
     if retro:
-        blocks.append({"label": "Развитие во времени", "text": "Эта планета при рождении двигалась как бы «вспять» — её сила направлена скорее внутрь, на переосмысление, и раскрывается не сразу."})
+        blocks.append({"label": _editorial_text('interpretations.643884f5b829befb37f1a2cbe823d293f061e504ed36265c2911711595e06b2e'), "text": _editorial_text('interpretations.df9ad5555d3e823ad59112f4b0a7cfe07548f11c140413359c3529bd91222502')})
     if advice:
         blocks.append({"label": "Совет", "text": advice})
     return blocks
@@ -1412,30 +1380,30 @@ def interpret_sign_full_plain(planet_name: str, sign: str, house_num=None,
 
 # Личностные черты по знаку обычными словами (для рассказа «Просто о себе»).
 PLAIN_SIGN_TRAITS = {
-    "Ari": ("энергичный, смелый, прямой и нетерпеливый", "energetic, bold, direct and impatient"),
-    "Tau": ("спокойный, надёжный, практичный и любящий комфорт", "calm, reliable, practical and comfort-loving"),
-    "Gem": ("любознательный, общительный, гибкий и непоседливый", "curious, sociable, flexible and restless"),
-    "Can": ("чуткий, заботливый, привязчивый и ранимый", "sensitive, caring, attached and easily hurt"),
-    "Leo": ("яркий, щедрый, гордый и любящий внимание", "bright, generous, proud and attention-loving"),
-    "Vir": ("внимательный, аккуратный, практичный и самокритичный", "attentive, neat, practical and self-critical"),
-    "Lib": ("обаятельный, дипломатичный, тянущийся к гармонии и нерешительный", "charming, diplomatic, harmony-seeking and indecisive"),
-    "Sco": ("глубокий, страстный, проницательный и скрытный", "deep, passionate, perceptive and private"),
-    "Sag": ("оптимистичный, свободолюбивый, искренний и любящий простор", "optimistic, freedom-loving, sincere and craving space"),
-    "Cap": ("ответственный, целеустремлённый, сдержанный и упорный", "responsible, goal-driven, reserved and persistent"),
-    "Aqu": ("независимый, оригинальный, дружелюбный и непредсказуемый", "independent, original, friendly and unpredictable"),
-    "Pis": ("мечтательный, чуткий, сострадательный и творческий", "dreamy, sensitive, compassionate and creative"),
+    "Ari": (_editorial_text('interpretations.aa1a542c0550db858559a2aaad4e1a33310037e4e784cd83e6cdaa0e40d0e1cc'), _editorial_text('interpretations.413881bbe3ade34285d434ea867daa278b626d8cfde1c961b19e6586d8592c18')),
+    "Tau": (_editorial_text('interpretations.b16b96bd8e1cf71f85aad7e47e1182e0543d90b5671e8b1bee508deac58d5a04'), _editorial_text('interpretations.6429729600fc492ce0c43dc085598246a3a341a0a1881721262df82e0733a699')),
+    "Gem": (_editorial_text('interpretations.8d604f5c460b28b8b9a9f7fad53234eb697e92d1925a1ddf2c4317e9010124b0'), _editorial_text('interpretations.7df8fede04be8e3498f14eea2d41f948e08587dac22643f3e76242264d27ce00')),
+    "Can": (_editorial_text('interpretations.b19aa8210c2d5aff5779ea921be457d60fee4599d64d2c590d13513ec3ada7b4'), _editorial_text('interpretations.e92d1555da70c41009086c2d040bebd9967c18983cfa3bdd4100f4fbf2536518')),
+    "Leo": (_editorial_text('interpretations.f9a556dad6d9eaa50641cf2781b01648a69cc2fc03e8f4fa3cca663408d622d2'), _editorial_text('interpretations.25fab26cd5df3c8af0e7246c0bc514e4322801ffa616a8de3239184dd2e44373')),
+    "Vir": (_editorial_text('interpretations.3778823b25495bb1853cfaa2f4838a0ddf012eb9b8f054fe782022e5999d1dd7'), _editorial_text('interpretations.deb1614435a1cdbc4e2a8a7b151fd4567c11e7fd41b89e5b67da2c2143466d90')),
+    "Lib": (_editorial_text('interpretations.7be44bf67fdc6ac03be13a32f75e7dd3b464a827a1d89b2528235a68ecc8af89'), _editorial_text('interpretations.11981fa4bf62ad8b64ec22d9ca984c0dbb94a63eb0f16acc709a9adcc55c71d3')),
+    "Sco": (_editorial_text('interpretations.3306e2fd6daee1fd147aba6de4fa5b7f132909b09235659a7ae0619ea7ce85e9'), _editorial_text('interpretations.f9e7df12b4d37c1c6e74f6e45bb8aa16e0757afd5e684013a29b581a1b68093a')),
+    "Sag": (_editorial_text('interpretations.4e8028077d0bdcfaa88b58fd8148b56357f024b79325d1aa056f0bf802839483'), _editorial_text('interpretations.78b18d7bc908883ca85a2b362fdaffc9e252ca52363fc7f6a9620bae99e8b230')),
+    "Cap": (_editorial_text('interpretations.fde4fd6fc5d63526eba4b20d4cd75f1c9bd618cc54e2af1111b3464712d9cfd8'), _editorial_text('interpretations.e06b166fd684192d4a6465807408d3f829f967eb6e07bfedf778a25f362824c6')),
+    "Aqu": (_editorial_text('interpretations.a13478234371cc8a4bcf56cc8b11a77ad3704b6bdd4bbbdb2c1e6eb30f59fd10'), _editorial_text('interpretations.1150c0eafb5bb5d45157bc478a4f8a0369ea2ee9d8901d4c7236b413bcc4319c')),
+    "Pis": (_editorial_text('interpretations.6b22e24e2f1ef0f5e9362ddb137cc9b009ceeacf715d5278ccc72b922ab73467'), _editorial_text('interpretations.c97157b86edbe4cc97f676b753ace87735e3e8441b9ba110fcacd0d7150f73b9')),
 }
 # Сфера жизни планеты обычными словами (для «противоречий и созвучий»).
 PLANET_AREA = {
-    "Sun": ("ваша воля и характер", "your will and character"),
-    "Moon": ("ваши чувства и настроение", "your feelings and mood"),
-    "Mercury": ("ваши мысли и слова", "your thoughts and words"),
-    "Venus": ("любовь и то, что вам нравится", "love and what you enjoy"),
-    "Mars": ("энергия и желания", "energy and desire"),
-    "Jupiter": ("оптимизм и стремление расти", "optimism and the drive to grow"),
-    "Saturn": ("дисциплина и страхи", "discipline and fears"),
-    "Ascendant": ("то, как вы себя подаёте", "the way you present yourself"),
-    "Medium_Coeli": ("карьера и цели", "career and goals"),
+    "Sun": (_editorial_text('interpretations.c2d88943f205f6877a29f3a465f0cac33830e9197c0425cf8b385776bee922ed'), _editorial_text('interpretations.25dc431fcecca3b8f5c75cb048cf1f1402bb9a8da24f277f70dd579b10b13b3a')),
+    "Moon": (_editorial_text('interpretations.ac57dc503ef918eac00e86bc8139b9f8cfdcd0e2459d25464243fbb8a7a1de8e'), _editorial_text('interpretations.3eb40666c54b5ac5f6a32ae9fd13d79ffd1b7111b7f4df296fd3c945e72954b3')),
+    "Mercury": (_editorial_text('interpretations.becb3709faca5468308363c6eba5217f1dd59e0188bd71cb6590c690d5a09513'), _editorial_text('interpretations.ce6bf03228cfce1f6f403c259e57775ee0553212f49e01108071b749c4f188ce')),
+    "Venus": (_editorial_text('interpretations.537f092d7f4f32c9b9f0993d0b4b110a847f1dc50e5ccd6a7048d6af8acc95ee'), _editorial_text('interpretations.2d995f63ed3f0a54c062a821ce2dfb788533b06ae87709aedc5a01f419bdbd60')),
+    "Mars": (_editorial_text('interpretations.12d1aed4e4728aa3d44cecfc79fc46881ac3ac01077670834c484009ecbf1259'), _editorial_text('interpretations.40681ad072bb593066e458aa3d94227a5be707fd4030be924b11a6ac5381cf65')),
+    "Jupiter": (_editorial_text('interpretations.b7f523213725a01d932c78774e89971edb3bf37e68a98aa4a5455aac1220740c'), _editorial_text('interpretations.e100307b4340ff639e4ce8059f6bd79b6262e47220c3ac95e4ecd8af7ce20648')),
+    "Saturn": (_editorial_text('interpretations.956c420be6a4eb56e7e119322e50d4f4fb7e8cb016e00e10c7d6af750a413214'), _editorial_text('interpretations.36d220a5e78af2b9eb086cb32e608300b76b9ca7963f3e51f762c9cc4b67d703')),
+    "Ascendant": (_editorial_text('interpretations.8de2ba37197a197e3afb4cc20e14cb829d0034a6b36deecf47efa1ff9115dbdf'), _editorial_text('interpretations.096e71cbe5e167968cc5074e533b8cc5e71c90b3fb99f0ba1635d63ff0b06c45')),
+    "Medium_Coeli": (_editorial_text('interpretations.2bc9d74b1511d4ef338051ae58703ac0190bc35297f16e841159df6dff876b7f'), _editorial_text('interpretations.8e09a7bcafefb07a0c9528b2b8bd4a53d7f7683852c48de68650b0cbb0b7d8ce')),
 }
 
 
@@ -1444,7 +1412,7 @@ def _split_traits(text: str) -> list:
     if not text:
         return []
     t = text
-    for sep in (" и ", " and ", "; "):
+    for sep in (_editorial_text('interpretations.21db14e45f667f8eb8a632218a3a46c70ebe651777d91c1a2d2e18dd8c6e22e8'), _editorial_text('interpretations.e3ee915a8e8c7aa02d2fced443314522b20824abd2535d5959c41dc8ab8a09e4'), "; "):
         t = t.replace(sep, ", ")
     out = []
     for part in t.split(","):
@@ -1478,48 +1446,34 @@ def plain_story(signs: dict, aspects: list, lang: str = "ru") -> dict:
 
     if lang == "en":
         add("Character", "Character",
-            f"By nature you are {tr(sun)}. Deep down you are driven by {fc(sun,'motive')}. "
-            f"At first meeting you come across as {tr(asc)} — that is your “calling card”.")
+            f"{_editorial_text('interpretations.f71fb89a67f60b44dbb0d9d8bda139bb4ecf19e48e188088e7d6d8e38dcbf19c')}{tr(sun)}{_editorial_text('interpretations.f2c888d523e5ff1c05ed2ba54b8971a134668fbcf2f64c6fdec7957bc9e7a491')}{fc(sun, 'motive')}{_editorial_text('interpretations.11121aab2eec0b211c65a7eff390487f0fd5b49014cec44576517a00ca40ddfd')}{tr(asc)}{_editorial_text('interpretations.4d64d62733668ce1885dfb45c448b33dbbbf2603ceb42039991befddd6007f13')}")
         add("Feelings", "Feelings",
-            f"Your emotional style: {tr(moon)}. What supports a sense of calm and security: {fc(moon,'motive')}. "
-            f"In difficult moments, these tendencies may become more visible: {fc(moon,'shadow')}.")
+            f"{_editorial_text('interpretations.952b4444cd747723ee9545b47c105678cf08fb06672c08db985cbc0dd5b8abf9')}{tr(moon)}{_editorial_text('interpretations.bc5717011f9f46f5aafc88406b286d55bb29183846d6f86a59b7369ccec51b08')}{fc(moon, 'motive')}{_editorial_text('interpretations.44efbddc7816d063f17424ca9777e1fb9051a7a4d193569e030e9884a9e00b17')}{fc(moon, 'shadow')}.")
         add("Mind", "Mind",
-            f"You think, learn and communicate {fc(me,'manner')}. At best this gives {ar(me,'light')}, "
-            f"but sometimes — {fc(me,'shadow')}.")
-        add("Love", "Love and relationships",
-            f"Your main relationship needs: {fc(ve,'motive')}. Your way of showing tenderness: {fc(ve,'manner')}. "
-            f"The style of attraction and passion: {fc(ma,'manner')}. Qualities you notice in a partner: {tr(h7)}.")
-        add("Energy", "Energy and drive",
-            f"Your way of taking action and pursuing a goal: {fc(ma,'manner')}. "
-            f"At its best, this brings out {ar(ma,'light')}; under pressure, the following may become more visible: {fc(ma,'shadow')}.")
-        add("Money", "Money and values",
-            f"Your approach to material matters and stability: {fc(h2,'manner')}. "
-            f"Your main reference points in this area: {fc(h2,'motive')}.")
-        add("Work", "Work and vocation",
-            f"Your preferred approach to work and vocation: {fc(mc,'manner')}. Strengths that support your work: {ar(mc,'light')}. "
-            f"Your style of focus and discipline: {fc(sat,'manner')}.")
+            f"{_editorial_text('interpretations.b225cfa94a139eb17b6666be65fbdf64792d9e702c162d52c12560e4b76ec83d')}{fc(me, 'manner')}{_editorial_text('interpretations.666e8d9a54de103e8ed3cc6804750edfa40ecca4481d8f3ece1e0b8d48ba6994')}{ar(me, 'light')}{_editorial_text('interpretations.a43885a8c10214d825cad5422e570a635db720ac89df105dd95b9cb4f4420541')}{fc(me, 'shadow')}.")
+        add("Love", _editorial_text('interpretations.20910475e4c530848339e1f34c7a1885b4ea3c95248076336715a940694646e9'),
+            f"{_editorial_text('interpretations.2530699386e5476253772489a5412bff4235168d75e84c20027ea2b1c0d03fb3')}{fc(ve, 'motive')}{_editorial_text('interpretations.4a5b950256f4dde1194e54aaa1d07deadf8c831aedb94a86f1205c221bdcc193')}{fc(ve, 'manner')}{_editorial_text('interpretations.9bd4da90584c73cfa4a5ed6be199028e01623b107cd6acbf9c760f9faaee2fde')}{fc(ma, 'manner')}{_editorial_text('interpretations.bb0a10980154429f8b8e6c9d98055e731e97e108943b9afd23e993169150e26a')}{tr(h7)}.")
+        add("Energy", _editorial_text('interpretations.8f9ca2d8e0a2ec4c4acd335ff765b8cba56d8befb5142067e645370efd39e661'),
+            f"{_editorial_text('interpretations.8a5b69236ec2835b3b0eb060096fd96304aaf80a656e9727f298aff432c8f9dd')}{fc(ma, 'manner')}{_editorial_text('interpretations.a311136737520b88d607873bbc3029892b6eaecee97fa5aff70057fe74d28978')}{ar(ma, 'light')}{_editorial_text('interpretations.242bde007fbcc0d8f02003565347311d1868a0d4479d2e8ed50735ee0aa64849')}{fc(ma, 'shadow')}.")
+        add("Money", _editorial_text('interpretations.01f61380228f397399529f2711b3fc2162c1fef055a2ee5415d9f769a1ed815c'),
+            f"{_editorial_text('interpretations.59d8b32b7ce021f34f7383645b41c1bf45e42b0e191f697289cd5fb0c33ac642')}{fc(h2, 'manner')}{_editorial_text('interpretations.76940f6f6b7013b07bf121af38a94920a74e17e6b6a9dfea1cc39e71772c5460')}{fc(h2, 'motive')}.")
+        add("Work", _editorial_text('interpretations.24bd6257a280ca5ca1130a444415e18455ef6c8dd9d2a0dcd7479c2a3be6886a'),
+            f"{_editorial_text('interpretations.6fb1094f79131a0211815c687748dc78efa6f4e9f8f9c3765ad153de6b54b370')}{fc(mc, 'manner')}{_editorial_text('interpretations.96711c6e0980339b1de7285b3f1085616a07b7b345c2bfd64253ede108d4e7ad')}{ar(mc, 'light')}{_editorial_text('interpretations.7ae602d8319b59884241e67726d6e0c4c1c04bc701ef7b097018eb22c95b6185')}{fc(sat, 'manner')}.")
     else:
         add("Характер", "Character",
-            f"По характеру вы {tr(sun)}. В глубине вами движет {fc(sun,'motive')}. "
-            f"Первое впечатление, которое вы производите на людей: {tr(asc)} — это ваша «визитная карточка».")
-        add("Эмоции и внутренний мир", "Feelings",
-            f"Ваш эмоциональный стиль: {tr(moon)}. То, что поддерживает ощущение спокойствия и безопасности: {fc(moon,'motive')}. "
-            f"В трудные моменты могут ярче проявляться следующие тенденции: {fc(moon,'shadow')}.")
-        add("Ум и общение", "Mind",
-            f"Думаете, учитесь и общаетесь вы {fc(me,'manner')}. Это даёт {ar(me,'light')}, "
-            f"но иногда — {fc(me,'shadow')}.")
-        add("Любовь и отношения", "Love",
-            f"Основные потребности в отношениях: {fc(ve,'motive')}. Способ проявлять нежность: {fc(ve,'manner')}. "
-            f"Стиль влечения и страсти: {fc(ma,'manner')}. Черты, которые вы замечаете в партнёре: {tr(h7)}.")
-        add("Энергия и действие", "Energy",
-            f"Ваш способ действовать и добиваться цели: {fc(ma,'manner')}. "
-            f"В сильном проявлении заметны {ar(ma,'light')}; в напряжённых обстоятельствах могут ярче проявляться: {fc(ma,'shadow')}.")
-        add("Деньги и ценности", "Money",
-            f"Ваш подход к материальной сфере и стабильности: {fc(h2,'manner')}. "
-            f"Основные ориентиры в этой области: {fc(h2,'motive')}.")
-        add("Работа и призвание", "Work",
-            f"Предпочтительный подход к работе и призванию: {fc(mc,'manner')}. Сильные стороны, поддерживающие вас в деле: {ar(mc,'light')}. "
-            f"Стиль собранности и дисциплины: {fc(sat,'manner')}.")
+            f"{_editorial_text('interpretations.73ea3e619b9e3a0f668e7b5b09878092f98dafbe916387dea283fc6686a7709a')}{tr(sun)}{_editorial_text('interpretations.ad2b04bebb5b328712fa3cb13fc9aa24e0ae3a9c7d2e3fe882f460fd04e11d07')}{fc(sun, 'motive')}{_editorial_text('interpretations.075ce65be079b99cb9b9845c21c4ddb611fb5af6d95cbb3919cbbdd8732a3788')}{tr(asc)}{_editorial_text('interpretations.d2fd78d228ff8096bda2a9db277fccb33f50edc26c0d2d7aed10968ffe64042b')}")
+        add(_editorial_text('interpretations.ad3b690a981918a8c361a222619e5bb3e5cdf8b620cdc9521424708ef4b7c9ec'), "Feelings",
+            f"{_editorial_text('interpretations.0ef416d3682a63cc26b798cfb8edeffa17aac638b106f3dbfff6aed2649c35da')}{tr(moon)}{_editorial_text('interpretations.09fb3aa60aef8df130d7cd87962bb34f91bf9bfd57ceb074d215f55f0484faeb')}{fc(moon, 'motive')}{_editorial_text('interpretations.81dc12a8e2b0198766d49458ce89f9895c684982e186320888e3951e7eca73ac')}{fc(moon, 'shadow')}.")
+        add(_editorial_text('interpretations.5b21a3fbb5a359dffe27cf3936aea1a2545547b5bf0d4d78faa09a96222722f5'), "Mind",
+            f"{_editorial_text('interpretations.01211c7cc8155e7a22631fb66d44aa3ac9696ad2b24055f03e0228b38c2612ad')}{fc(me, 'manner')}{_editorial_text('interpretations.90625b3fd9eece4ae605139782c0986398fd8cff0c4dd2026d92e124a556a802')}{ar(me, 'light')}{_editorial_text('interpretations.cdf8bdc40331022d7275c958ef50740446bfe5bd82be34cff8540f6ad465a576')}{fc(me, 'shadow')}.")
+        add(_editorial_text('interpretations.097ad7b8e0a6fb3ed83342d1091ffe5b61eb051a1e680b3b08189b060ac646b8'), "Love",
+            f"{_editorial_text('interpretations.072aeafb9f32c77b66d4293b77c082fd332c337b5fe15c8a7eda2fe610c32e33')}{fc(ve, 'motive')}{_editorial_text('interpretations.805290186d74ae72f9a44a54cd65c0c26a5cb036efeae141a73cbd4c71b055cb')}{fc(ve, 'manner')}{_editorial_text('interpretations.c8fbf8d9511c7f7a07f1c4c89df572677e5bedd94cf61cc52cd49077c9daeabd')}{fc(ma, 'manner')}{_editorial_text('interpretations.6f043ce91d825952406ae176d41a4459249782029b8509c34e2166a0bfb3db74')}{tr(h7)}.")
+        add(_editorial_text('interpretations.8178c4a409ab74877fd1d60296860da4521bb53532575c03bd4bfc6d83006b15'), "Energy",
+            f"{_editorial_text('interpretations.ba09943f11ebc0368d8ddd2a5b5aca888e991fbed3ca56d2f8936fe1ac22e189')}{fc(ma, 'manner')}{_editorial_text('interpretations.47e970d1c541c0bb8ea8a8b1596e471ac1e159c3a63fbc834b4f72cd40c6cac4')}{ar(ma, 'light')}{_editorial_text('interpretations.e6a49582903ec8f8835c93117e1e98e6312b12013cbe94d1481490c0bf54b7aa')}{fc(ma, 'shadow')}.")
+        add(_editorial_text('interpretations.dd601c0149a4be164b17efbd940853819526be09d9663fd6d6e2747c9ffb5ba9'), "Money",
+            f"{_editorial_text('interpretations.c8e7be62854043b3e03fd16257bd22eeb1ef0194ddc45cb110764e237ac9d182')}{fc(h2, 'manner')}{_editorial_text('interpretations.52398a791ce73ebe14dfe2a51593a89ce366a41333a26744072b1db25fc553f6')}{fc(h2, 'motive')}.")
+        add(_editorial_text('interpretations.aaa67b30e8b81a045a47bcbaff5a8317decec3b69d92ac478e6939b6ab8d4fe5'), "Work",
+            f"{_editorial_text('interpretations.9cd1954f3014a3752cb0a288d029998740dff68ae056e4426a4c7e7858eef94a')}{fc(mc, 'manner')}{_editorial_text('interpretations.2912e46601b1ac3e2d970756492476e54c2fabcc5163a626edcb9e44d25ef3ab')}{ar(mc, 'light')}{_editorial_text('interpretations.d6a46a1c91724a2c186e21165d41e9fecbf333642a9c5dd38ce297f92e5b33a8')}{fc(sat, 'manner')}.")
 
     # Плюсы и минусы личности — наглядные списки черт (из ключевых точек карты).
     def collect(key):
@@ -1548,14 +1502,14 @@ def plain_story(signs: dict, aspects: list, lang: str = "ru") -> dict:
         seen.add(key)
         a1, a2 = g(PLANET_AREA[p1], lang), g(PLANET_AREA[p2], lang)
         if nat == "tense":
-            txt = (f"Бывает внутреннее напряжение между сферами «{a1}» и «{a2}»: {g(pair['tension'], lang)}."
+            txt = (f"{_editorial_text('interpretations.b7d6289d3fbf2f0469df7b97e6bb57442093ed15ef5d7eccde970e6eb5cb69d0')}{a1}{_editorial_text('interpretations.2edd77204de1c9a083b6cc0d8b345df99264a3da75e06cb90f8514586198a0cf')}{a2}»: {g(pair['tension'], lang)}."
                    if lang != "en" else
-                   f"There can be inner tension between {a1} and {a2}: {g(pair['tension'], lang)}.")
+                   f"{_editorial_text('interpretations.558296b2ce363e6c11cd3a8452ad4f7c8cf25626644001ec2f98f18be2cf4b4c')}{a1}{_editorial_text('interpretations.e3ee915a8e8c7aa02d2fced443314522b20824abd2535d5959c41dc8ab8a09e4')}{a2}: {g(pair['tension'], lang)}.")
             tone = "tense"
         else:
-            txt = (f"Хорошо сочетаются «{a1}» и «{a2}»: {g(pair['harmony'], lang)}."
+            txt = (f"{_editorial_text('interpretations.6780a01df25812e60c5bb17388c8123689355e384d78248965d9a433e20a082d')}{a1}{_editorial_text('interpretations.2edd77204de1c9a083b6cc0d8b345df99264a3da75e06cb90f8514586198a0cf')}{a2}»: {g(pair['harmony'], lang)}."
                    if lang != "en" else
-                   f"{a1.capitalize()} and {a2} go well together: {g(pair['harmony'], lang)}.")
+                   f"{a1.capitalize()}{_editorial_text('interpretations.e3ee915a8e8c7aa02d2fced443314522b20824abd2535d5959c41dc8ab8a09e4')}{a2}{_editorial_text('interpretations.02b86d3eb0a79367ad1db2add83bbff28ee3ad596a44b8d03c60378c38505fe2')}{g(pair['harmony'], lang)}.")
             tone = "good"
         links.append({"tone": tone, "text": txt})
         if len(links) >= 6:
@@ -1575,13 +1529,13 @@ def interpret_house(planet_name: str, house_num: Optional[int], lang: str = "ru"
     exp = g(HOUSE_EXP.get(house_num, ("", "")), lang)
     overlay = _OVERLAY_PLANET.get(planet_name)
     if lang == "en":
-        s = f"{planet_ru} in the {_ord_en(house_num)} house directs “{g(role, lang)}” {g(focus, lang)}. {exp}"
+        s = f"{planet_ru}{_editorial_text('interpretations.2ac51b0d4b90df90db54fdeeb86e4b8598befc4db2e4064ddd32479510e6d202')}{_ord_en(house_num)}{_editorial_text('interpretations.202972f311384f6f518427d262bf16fe393fe135ef33b854f8acb5fff8c26b4e')}{g(role, lang)}” {g(focus, lang)}. {exp}"
         if overlay:
-            s += f" {planet_ru} brings {g(overlay, lang)} here — these qualities are most noticeable in this area of life."
+            s += f" {planet_ru}{_editorial_text('interpretations.1540d5aaddea1514fdc2bdf63715c201cbc1aadd650a0e5c849a28c975d49285')}{g(overlay, lang)}{_editorial_text('interpretations.8cb440e5c11ba3e50f6dacd4760e51cfbb3f1528c0b8274dce6723b2b65d16ad')}"
         return s
-    s = f"{planet_ru} в {house_num}-м доме направляет «{g(role, lang)}» {g(focus, lang)}. {exp}"
+    s = f"{planet_ru}{_editorial_text('interpretations.71bff885aea101349a1d1df5f84d122c226c858876d333bedd3259a914588423')}{house_num}{_editorial_text('interpretations.7ec41a8a8ad2e68bbbe3b24cb86fd22e82d3baddea1955ae33301cc95cdc5618')}{g(role, lang)}» {g(focus, lang)}. {exp}"
     if overlay:
-        s += f" {planet_ru} привносит сюда {g(overlay, lang)} — именно в этой сфере эти качества проявляются заметнее всего."
+        s += f" {planet_ru}{_editorial_text('interpretations.c24a323391c493bbe847bc067520b0c481d4ed28ebf05178f0eaf7abc5fcb0f9')}{g(overlay, lang)}{_editorial_text('interpretations.247d8c925001afee14d08878cd0678181d06a438e682b1d1ec8cfa3c89ee6382')}"
     return s
 
 
@@ -1603,10 +1557,10 @@ def authored_angle(planet_name: str, angle: str, aspect: str, lang: str = "ru") 
 
 
 _ANGLE_AREA = {
-    "Ascendant": ("вашу личность, облик и манеру входить в мир", "your personality, image and way of entering the world"),
-    "Medium_Coeli": ("вашу карьеру, статус и публичную роль", "your career, status and public role"),
-    "Descendant": ("ваши партнёрства и значимые отношения", "your partnerships and significant relationships"),
-    "Imum_Coeli": ("ваш дом, семью и внутренние корни", "your home, family and inner roots"),
+    "Ascendant": (_editorial_text('interpretations.0354237903fc91f445bc2bd818c47f370721f271e9f6b04d3082b0845452aa3e'), _editorial_text('interpretations.0ee9cfc516be95ffe4015e8baa7431d29e4ebe61bd20dc7aece66e605b7ed08b')),
+    "Medium_Coeli": (_editorial_text('interpretations.e5b7aa48874996c01c7aa0998ecf09a70418400459da79066cba925bbde38ff7'), _editorial_text('interpretations.d12566d9f71bfadc1b6032a6aebc7f82d951a10a2aaa375e3298064077c98cf1')),
+    "Descendant": (_editorial_text('interpretations.85d010cc13bd13633704d530a899f07ca76281f55977219c55068187b2067851'), _editorial_text('interpretations.efabc2e22c6ee71a4f4bd8e80c9beaffe7d81912b53e1fc58ffbba31da1c37ad')),
+    "Imum_Coeli": (_editorial_text('interpretations.c9fc1187b97d8c9cc342a905c3e00e99784f5ff5d90c3d98b7d1f3b8beab1672'), _editorial_text('interpretations.452d17216e3dc83b1d78754452d1fc0521f52ce0010ebcc33779e2239c9ba723')),
 }
 
 
@@ -1619,7 +1573,7 @@ def interpret_aspect(p1_name: str, aspect: str, p2_name: str, lang: str = "ru") 
     # Авторский текст под конкретную пару И тип аспекта (приоритетнее композиции).
     au = authored_aspect(p1_name, p2_name, aspect, lang)
     if au:
-        return f"{p1_ru} {aspect_ru} {p2_ru} — {au}"
+        return f'{p1_ru} {aspect_ru} {p2_ru} — {au}'
 
     # Авторская трактовка конкретной пары планет (если есть в ASPECT_PAIR).
     pair = _aspect_pair(p1_name, p2_name)
@@ -1629,22 +1583,22 @@ def interpret_aspect(p1_name: str, aspect: str, p2_name: str, lang: str = "ru") 
         tension = g(pair["tension"], lang)
         if nature == "harmonious":
             if lang == "en":
-                detail = f"This is a flowing aspect — the two energies support each other and give {harmony}. The gift works best when used consciously, otherwise it stays dormant."
+                detail = f"{_editorial_text('interpretations.c6b789f6fbf74d9951ba5fe1d09f9dda31cecc56d549c23387d0e9f5c2b5683e')}{harmony}{_editorial_text('interpretations.6715f348fccd1493d5df7a81af5f663c8c249efa4e1d400fb69915f48e4917db')}"
             else:
-                detail = f"Аспект гармоничный — энергии поддерживают друг друга и дают {harmony}. Дар работает, когда им пользуешься осознанно, иначе остаётся в потенциале."
+                detail = f"{_editorial_text('interpretations.8bc0aca1a8e54bedf9018a56f381cdaab220ed536627d2194457837b6920f016')}{harmony}{_editorial_text('interpretations.804b30718e81f2e83ac1a058532b8cd21065b9eb903d7b35f823b4655423c2e0')}"
         elif nature == "tense":
             if lang == "en":
-                detail = f"This is a tense aspect — here lies inner conflict and a growth zone: {tension}. Worked through, the same tension becomes a source of strength."
+                detail = f"{_editorial_text('interpretations.d03194c47df3c640944fa3fbaa6b375e532bbbef9224688e70db7b9890a7f6c4')}{tension}{_editorial_text('interpretations.8dcd13c3e960d5b1052fc32802bc16c7254b6f7ab95f8ed5f15dbb60fcbf5cc9')}"
             else:
-                detail = f"Аспект напряжённый — здесь внутренний конфликт и зона роста: {tension}. Проработанное, это же напряжение становится источником силы."
+                detail = f"{_editorial_text('interpretations.a98e6aaabb1e53644976e82f54b4907d0165810268c995fa5afd5976ae179912')}{tension}{_editorial_text('interpretations.a1d01f2123f249f2de5c3c5f3cc6379f7779f52c6112c2eea3d154dcb371085f')}"
         else:  # соединение / нейтральный — сплав, может пойти в обе стороны
             if lang == "en":
-                detail = f"The functions fuse into one: in accord this gives {harmony}; when out of balance — {tension}."
+                detail = f"{_editorial_text('interpretations.bf6523aa48b141527aab28a667bcb9f6a9d0d25fb5ed5be9c21bf2045e83be18')}{harmony}{_editorial_text('interpretations.5b6da95fc159a7f30cf06526d437275c8459969468cfa38f84f05ebff2d0d4da')}{tension}."
             else:
-                detail = f"Функции сплавляются воедино: в согласии это даёт {harmony}; при перекосе — {tension}."
+                detail = f"{_editorial_text('interpretations.d54f429492cf540bcf5ac134d9c760e95ebf708d39ab6367938bd0e480b4311f')}{harmony}{_editorial_text('interpretations.e0496fdbe99ff74166b2672fedbbcf5afa98167b15bea879d017f29ab58126c4')}{tension}."
         if lang == "en":
-            return f"{p1_ru} {aspect_ru} {p2_ru} — {theme}. {detail}"
-        return f"{p1_ru} {aspect_ru} {p2_ru} — {theme}. {detail}"
+            return f'{p1_ru} {aspect_ru} {p2_ru} — {theme}. {detail}'
+        return f'{p1_ru} {aspect_ru} {p2_ru} — {theme}. {detail}'
 
     # Аспект к углу карты (ASC/MC/DSC/IC) — планета окрашивает тему этого угла.
     angle = p1_name if p1_name in _ANGLE_AREA else (p2_name if p2_name in _ANGLE_AREA else None)
@@ -1652,7 +1606,7 @@ def interpret_aspect(p1_name: str, aspect: str, p2_name: str, lang: str = "ru") 
         planet = p2_name if angle == p1_name else p1_name
         au = authored_angle(planet, angle, aspect, lang)
         if au:
-            return f"{C.point_name(planet, lang)} {aspect_ru} {C.point_name(angle, lang)} — {au}"
+            return f'{C.point_name(planet, lang)} {aspect_ru} {C.point_name(angle, lang)} — {au}'
         area = g(_ANGLE_AREA[angle], lang)
         bring = _OVERLAY_PLANET.get(planet) or PLANET_ROLE.get(planet)
         if bring:
@@ -1661,15 +1615,15 @@ def interpret_aspect(p1_name: str, aspect: str, p2_name: str, lang: str = "ru") 
             planet_ru2 = C.point_name(planet, lang)
             if lang == "en":
                 clause = {
-                    "harmonious": "It is a harmonious aspect — this area is supported easily and naturally",
-                    "tense": "It is a tense aspect — this theme calls for conscious work",
-                }.get(nature, "A conjunction — this theme is coloured vividly and at full strength")
-                return f"{planet_ru2} {aspect_ru} {angle_ru} touches {area}. {clause}, bringing in {bring_t}."
+                    "harmonious": _editorial_text('interpretations.7b1bbf87adbcb0b1028a6a9d2107b2d35c417220b3be5b662370113af28f1e48'),
+                    "tense": _editorial_text('interpretations.89679368af58e3ad02e9cf7f34e887234ef6181d47f65679fa0077f15731cb06'),
+                }.get(nature, _editorial_text('interpretations.e03a67d7bccedacbe56038d5954c1a1c73dec2b1d8da7e54304cb90a1c200f77'))
+                return f"{planet_ru2} {aspect_ru} {angle_ru}{_editorial_text('interpretations.c652cfed6276ac2df0edb887c0d93621133b93120f1fa52361e63a79eaa63640')}{area}. {clause}{_editorial_text('interpretations.60ea5f7eb3af3a99955d720da33530d412301fe66fe9c1e3802e227c5a137dc0')}{bring_t}."
             clause = {
-                "harmonious": "Аспект гармоничный — эта сфера поддерживается легко и естественно",
-                "tense": "Аспект напряжённый — здесь нужно осознанно работать с этой темой",
-            }.get(nature, "Соединение — эта тема окрашивается ярко и в полную силу")
-            return f"{planet_ru2} {aspect_ru} {angle_ru} затрагивает {area}. {clause}, привнося {bring_t}."
+                "harmonious": _editorial_text('interpretations.9bd367961e6549dc41ef9be505d0d32f179b6115323bfdefb3cf48da7ad1349e'),
+                "tense": _editorial_text('interpretations.786064bedeec3bd35b56aed030c0dce6d9596f8e8e730990bd2d234d56bda6bd'),
+            }.get(nature, _editorial_text('interpretations.389c5e42383a358aa867bf861f893f6515c00415e71991edc975c144c19081db'))
+            return f"{planet_ru2} {aspect_ru} {angle_ru}{_editorial_text('interpretations.6e25990034482485de2aa6437b2521e0a7ceb425d58d7455b08ae0dc289bdc9e')}{area}. {clause}{_editorial_text('interpretations.5c4cfd49fe5f263c964b32b3a47e99fe27860222cc7eb7839cae778ba7e1a430')}{bring_t}."
 
     # Запасная (общая) трактовка по типу аспекта — для пар с дальними планетами/узлами.
     interp = ASPECT_INTERP.get(aspect)
@@ -1678,46 +1632,46 @@ def interpret_aspect(p1_name: str, aspect: str, p2_name: str, lang: str = "ru") 
     role1 = PLANET_ROLE.get(p1_name)
     role2 = PLANET_ROLE.get(p2_name)
     if role1 and role2:
-        lead1 = f"{p1_ru} ({g(role1, lang)})"
-        lead2 = f"{p2_ru} ({g(role2, lang)})"
+        lead1 = f'{p1_ru} ({g(role1, lang)})'
+        lead2 = f'{p2_ru} ({g(role2, lang)})'
     else:
         lead1, lead2 = p1_ru, p2_ru
     if lang == "en":
-        return f"{lead1} and {lead2} in a “{aspect_ru}” aspect {g(interp, lang)}."
-    return f"{lead1} и {lead2} в аспекте «{aspect_ru}» {g(interp, lang)}."
+        return f"{lead1}{_editorial_text('interpretations.e3ee915a8e8c7aa02d2fced443314522b20824abd2535d5959c41dc8ab8a09e4')}{lead2}{_editorial_text('interpretations.36649b175a3174fc623a54956376925cd16344dc897ad575bb628ceff3f74f9e')}{aspect_ru}{_editorial_text('interpretations.b4c305130a87a1e97c68abad934f761a7e9aa1afe75ac381d5118a5c6a611253')}{g(interp, lang)}."
+    return f"{lead1}{_editorial_text('interpretations.21db14e45f667f8eb8a632218a3a46c70ebe651777d91c1a2d2e18dd8c6e22e8')}{lead2}{_editorial_text('interpretations.984305bec032b9c3aa264d94d6e1399f4ce30fbf81db05f5389ecca6d929f4b4')}{aspect_ru}» {g(interp, lang)}."
 
 
 # --------------------------------------------------------------------------- #
 #  Психологический профиль: баланс стихий и крестов
 # --------------------------------------------------------------------------- #
 ELEMENT_PROFILE = {
-    "fire": ("Преобладает Огонь — вами движут энтузиазм, инициатива и вера в себя. Вы действуете порывом, зажигаете других и плохо переносите застой.", "Fire predominates — you are driven by enthusiasm, initiative and self-belief. You act on impulse, inspire others and tolerate stagnation poorly."),
-    "earth": ("Преобладает Земля — вы практичны, надёжны и связаны с материальным миром. Цените результат и стабильность, доверяете опыту больше, чем теориям.", "Earth predominates — you are practical, reliable and connected to the material world. You value results and stability, and trust experience more than theories."),
-    "air": ("Преобладает Воздух — вы интеллектуальны, общительны и живёте обменом идеями. Мир осмысляете через слово, контакты и анализ.", "Air predominates — you are intellectual, sociable and need an exchange of ideas. You make sense of life through words, contacts and analysis."),
-    "water": ("Преобладает Вода — вы чувствительны, интуитивны и эмоционально глубоки. Мир воспринимаете через переживания и тонко улавливаете настроения.", "Water predominates — you are sensitive, intuitive and emotionally deep. You perceive the world through feeling and subtly catch moods."),
+    "fire": (_editorial_text('interpretations.2d7deef9bba9444bf1dfffae018b64c095ef60c935376c68f8e53b452914efe5'), _editorial_text('interpretations.5cfdf05305d5d9b1c999fa6c0995bd80305edc1faf7bb475ad7809e79b4a7e29')),
+    "earth": (_editorial_text('interpretations.1d936e82b149a78c12bed90aab4ded8b866a903898f9be47bd5989931dc50309'), _editorial_text('interpretations.efb22d73b24185e3a9d3d2d3596feeac3338b88bf8506a8dbcf813c1814fac3b')),
+    "air": (_editorial_text('interpretations.378f04542e4ee1d75659db532b03ea7ec86ab48a95e10a9f9b6b9c68e686ddcc'), _editorial_text('interpretations.072fa81881632ce4e64433e5e382a8fa16542ec0b99ff4f0d1ee41326caab331')),
+    "water": (_editorial_text('interpretations.9f9fd5c9faedd07ca7b6bfffbf169348b8de482fbb2c2bf533d7f0e1d75dc506'), _editorial_text('interpretations.25aae09407ec782df8911139247263b1ec25d4a145abf66730b0c35bffb7e455')),
 }
 ELEMENT_LACK = {
-    "fire": ("Огня мало — может недоставать спонтанности, азарта и веры в собственные силы.", "Little Fire — you may lack spontaneity, drive and faith in your own strength."),
-    "earth": ("Земли мало — возможны трудности с практичностью и доведением идей до материального результата.", "Little Earth — there may be difficulty with practicality and bringing ideas to a material result."),
-    "air": ("Воздуха мало — порой сложно отстраниться и осмыслить происходящее рационально.", "Little Air — it can be hard to step back and make rational sense of what is happening."),
-    "water": ("Воды мало — эмоциям и интуиции бывает трудно довериться, и чувства остаются в тени.", "Little Water — it can be hard to trust emotions and intuition, and feelings stay in the shadow."),
+    "fire": (_editorial_text('interpretations.b8c1a6fca0284e496f49e06d84878d0e278e86106c25405b230367b8b6e1faa3'), _editorial_text('interpretations.8e437123c78e61e9e72026241a26e0646524918bc76315fb779f79b34e4bcdf7')),
+    "earth": (_editorial_text('interpretations.20d634e8951894ac234b11205dcbbf0eee69b95dfab064e040c62b29a9e2fcba'), _editorial_text('interpretations.98ddd8920a09077fd2c3f92fd517f0e1157c581e2b6a90afb759ac0dbee2880c')),
+    "air": (_editorial_text('interpretations.3850843df8fe9e1bb7d0a79fb7e1ee3a7b4404b5b84c888cb071c99ff35d1f23'), _editorial_text('interpretations.f8d4cc199e9a350fb45b5625120db6a55f80a8696cda5fc2634b700d92bb17e1')),
+    "water": (_editorial_text('interpretations.4914cd96ed178806a62a96ef947511a43c2ce81f1865fdc6b5a2a5235724bb31'), _editorial_text('interpretations.0981e3c6436ce41ae874e2ecc28c61f8032bf774e1e6a138cc6e0da131d641f0')),
 }
 QUALITY_PROFILE = {
-    "cardinal": ("Преобладает кардинальный крест — вы инициатор: легко начинаете новое и стремитесь влиять на события.", "The cardinal modality predominates — you are an initiator: you start new things easily and seek to influence events."),
-    "fixed": ("Преобладает фиксированный крест — вы устойчивы и настойчивы, доводите начатое до конца, но курс меняете с трудом.", "The fixed modality predominates — you are steady and persistent, finishing what you start, but you change course with difficulty."),
-    "mutable": ("Преобладает мутабельный крест — вы гибки и приспособляемы, легко перестраиваетесь, но труднее удерживаете одно направление.", "The mutable modality predominates — you are flexible and adaptable, adjusting easily, but you hold a single direction less easily."),
+    "cardinal": (_editorial_text('interpretations.1b278f54a0a65581d423b81e815616314ff6133ebd1b6737f15297e0d85b94ee'), _editorial_text('interpretations.9df71cde3b4d259142f05b44e683d05e0fc6fa5b213649011a64f718fcfe7145')),
+    "fixed": (_editorial_text('interpretations.dbed4d2d79d6935fe8e3402cd5da99e2e4a6c83b361f29a5515c8ecef84ee843'), _editorial_text('interpretations.f08dbe39e6e1aad64171c364da0ce27311e225534830262fcc3de9d7c192e22e')),
+    "mutable": (_editorial_text('interpretations.3de2cf60e648e4150ce43eb29e671f8dec30c3aa51a8ce2535f429d02d27dd63'), _editorial_text('interpretations.d3ac1181777d5ebb8912ef15906d31d68824c6fd9b400a34e854e726ed9d03c4')),
 }
 
 
 def interpret_balance(element_dist: dict, quality_dist: dict, lang: str = "ru") -> dict:
-    elements = {k: element_dist.get(f"{k}_percentage", 0) for k in ("fire", "earth", "air", "water")}
+    elements = {k: element_dist.get(f'{k}_percentage', 0) for k in ("fire", "earth", "air", "water")}
     dom_el = max(elements, key=elements.get)
     texts = [g(ELEMENT_PROFILE[dom_el], lang)]
     for el, pct in elements.items():
         if pct <= 10 and el != dom_el:
             texts.append(g(ELEMENT_LACK[el], lang))
 
-    qualities = {k: quality_dist.get(f"{k}_percentage", 0) for k in ("cardinal", "fixed", "mutable")}
+    qualities = {k: quality_dist.get(f'{k}_percentage', 0) for k in ("cardinal", "fixed", "mutable")}
     dom_q = max(qualities, key=qualities.get)
     texts.append(g(QUALITY_PROFILE[dom_q], lang))
 
@@ -1734,18 +1688,18 @@ def interpret_balance(element_dist: dict, quality_dist: dict, lang: str = "ru") 
 #  Синтез светил и Асцендента, управитель карты
 # --------------------------------------------------------------------------- #
 SIGN_CORE = {
-    "Ari": ("смелость, энергию и стремление действовать первым", "courage, energy and the drive to act first"),
-    "Tau": ("устойчивость, чувственность и потребность в надёжности", "steadiness, sensuality and the need for reliability"),
-    "Gem": ("любознательность, гибкость ума и лёгкость в общении", "curiosity, mental agility and ease in communication"),
-    "Can": ("заботливость, эмоциональную память и привязанность к дому", "caring, emotional memory and attachment to home"),
-    "Leo": ("творческое самовыражение, щедрость и потребность в признании", "creative self-expression, generosity and the need for recognition"),
-    "Vir": ("практичность, внимание к деталям и стремление быть полезным", "practicality, attention to detail and the wish to be useful"),
-    "Lib": ("тягу к гармонии, дипломатичность и ориентацию на партнёрство", "a longing for harmony, diplomacy and an orientation toward partnership"),
-    "Sco": ("глубину, страстность и способность к преображению", "depth, passion and the capacity for transformation"),
-    "Sag": ("оптимизм, любовь к свободе и поиск смысла", "optimism, love of freedom and the search for meaning"),
-    "Cap": ("целеустремлённость, ответственность и опору на результат", "determination, responsibility and a focus on results"),
-    "Aqu": ("оригинальность, независимость и устремлённость в будущее", "originality, independence and a reach toward the future"),
-    "Pis": ("сострадание, воображение и тонкую душевную организацию", "compassion, imagination and a fine inner sensitivity"),
+    "Ari": (_editorial_text('interpretations.6bb3978673688a05d6152117cc209d673d7c22fd28bf046e3499369ed6410636'), _editorial_text('interpretations.f618949887b0e1bdbbbdef33f9c14223d957f1c4fd3c43167eef48aee34e46aa')),
+    "Tau": (_editorial_text('interpretations.d827523214da55351ca1d7bc6ed07c627ffa3819bc7c5967c1fc643b7d26d4c8'), _editorial_text('interpretations.d0752a2fc2ba96f2e29c2890d745a778a6f0ef498a8c3cb9ebd4f3236ce7b7e2')),
+    "Gem": (_editorial_text('interpretations.055fbb7997d0c3b2e3446119fae0d976b6e34497f12b1dc12f033e5e44f862ba'), _editorial_text('interpretations.a694b8df5f223f1a131603a26ddd36b04be2f1ec56655046bf9606b16dd2284a')),
+    "Can": (_editorial_text('interpretations.036cd94b7162c021aa875a16d11c6806f24ae910e47abe4f8208346f6c7d60c6'), _editorial_text('interpretations.b11855a33bb1acc54293e31b4382c697b14afa1b1593207a3dd77cce1e4cde61')),
+    "Leo": (_editorial_text('interpretations.3aa7b977bb5d2e5f7bcd03381674729b5ed68b1b3b1cb6f2adf59286fd397c8a'), _editorial_text('interpretations.9d98f39f732251bb4eb60119cd04084e7cf1f2c2e0c4368221a2ac3c6def825f')),
+    "Vir": (_editorial_text('interpretations.12b6b8366b809ef88fbf630910b4413955808ab90113e3aa312debba416eae3e'), _editorial_text('interpretations.eb569d182bac34283e7f666fd7adef8d9f23f2bc1e694485079023c06881c919')),
+    "Lib": (_editorial_text('interpretations.26d7798d5df02e65e02aff3fa1070da141d9bd5cc4876c438507751be767d5ba'), _editorial_text('interpretations.4fa2a18055f890831b673731ead2ec3d996814587aef553ef10bc1f571479888')),
+    "Sco": (_editorial_text('interpretations.21fcf5e8d5ef12b804e0477825a8f4ff3ea6cd208a3e3e8073554b49c19ac7a5'), _editorial_text('interpretations.2835db0f9c7d41ab55d672fd9b5ee0ddb25ac56f277443c63f635dd1e2efec43')),
+    "Sag": (_editorial_text('interpretations.0f4aaa72a0808d41f27000a2402fec8d7310f519d732f171ee7dd95ed6ffd1d8'), _editorial_text('interpretations.08b235af2ce981038ad8d01feac3132feadaee1b714ecdb8fcad46373db7bea2')),
+    "Cap": (_editorial_text('interpretations.fa89c3588e08e6ce3e9e061a470251c5a7540bd780a754b5164fee59fc7e133e'), _editorial_text('interpretations.b8f7dc894b0b6c6d9733c9bd0fd6321d43df8529b51cfd6e1067aea149d645df')),
+    "Aqu": (_editorial_text('interpretations.8c9b973db3af604dec9b88ea6b291995198d78b2ee9248886999e28fc1863ea5'), _editorial_text('interpretations.16cd559cd82f446de490f6b6cb1ce7964b6691293a255043533ded6187071cc6')),
+    "Pis": (_editorial_text('interpretations.8d2285e911c80e8f7f3538ddb3ec8ee1de94ef9c32c70e32b300565e31def930'), _editorial_text('interpretations.552e07fb46268d5bade3becebe5f625febacc266a238341f272c69ed9bdff9de')),
 }
 
 SIGN_RULER = {
@@ -1759,58 +1713,58 @@ SIGN_RULER = {
 #  Психологический портрет личности
 # --------------------------------------------------------------------------- #
 _TEMP_QUALITY = {
-    "cardinal": ("Перевес кардинального креста добавляет инициативности — вы скорее запускаете процессы, чем поддерживаете их.",
-                 "A cardinal emphasis adds initiative — you tend to launch processes rather than sustain them."),
-    "fixed": ("Перевес фиксированного креста добавляет устойчивости и упорства — вы держите курс, но меняетесь тяжелее.",
-              "A fixed emphasis adds stability and persistence — you hold your course but change with difficulty."),
-    "mutable": ("Перевес мутабельного креста добавляет гибкости — вы легко подстраиваетесь, но труднее держите одну линию.",
-                "A mutable emphasis adds flexibility — you adjust easily but find it harder to hold one line."),
+    "cardinal": (_editorial_text('interpretations.85242b90b106633858697eb76155cdada825d16d5ca34796bcef87acb7124b2a'),
+                 _editorial_text('interpretations.190558038f54de7878b52f836984d3771eb3073d8311ce8bed2dae819ee21a7b')),
+    "fixed": (_editorial_text('interpretations.436c0bd043a6f97063b6c602afcb7848cfd4f90730f5328530aed59f48fcfb8d'),
+              _editorial_text('interpretations.645a7ec1e4120e52a55c3e00c30084170d456534a3f77f10dc95c3c7c32c72b8')),
+    "mutable": (_editorial_text('interpretations.530415026076ed00dec11e64b7a6b82f5d2d3698c9348a85ce19571d500858d4'),
+                _editorial_text('interpretations.2fde7ae4bc710df3dd11e4d2f8525ac1f31bae405fd20ef9dec862685d4f08b1')),
 }
 TEMPERAMENT = {
     "fire": {"name": ("Холерик", "Choleric"),
-             "text": ("энергичный, быстрый и страстный тип — вы загораетесь идеями, действуете напористо и ведёте за собой, но склонны к нетерпению и вспыльчивости",
-                      "an energetic, fast and passionate type — you ignite with ideas, act assertively and lead, but tend toward impatience and a quick temper")},
+             "text": (_editorial_text('interpretations.fc1311e18cf1514554a77a96d6c023df17228c592a9f611ef6af38fa4b1accb1'),
+                      _editorial_text('interpretations.4754615f1c04342a15fd3a11fec7a89c42c1074c350bd262abb3177b32acfd5b'))},
     "air": {"name": ("Сангвиник", "Sanguine"),
-            "text": ("общительный, лёгкий и любознательный тип — вы живёте контактами, идеями и переменами, легко адаптируетесь, но можете распыляться и скучать без новизны",
-                     "a sociable, light and curious type — you live by contacts, ideas and change, adapt easily, but may scatter and grow bored without novelty")},
+            "text": (_editorial_text('interpretations.315d831fbd0f130f0431919b2fdc4ac84568a856eb5a38168c525eae6b3fbbf5'),
+                     _editorial_text('interpretations.23058f88ba66a5727a78ac06b4ed5271bb79cbdc94730124d9f6c687675e47b1'))},
     "water": {"name": ("Флегматик", "Phlegmatic"),
-              "text": ("чувствительный, спокойный и глубокий тип — вы воспринимаете мир через эмоции и интуицию, привязчивы и заботливы, но ранимы и склонны уходить в себя",
-                       "a sensitive, calm and deep type — you perceive the world through emotion and intuition, are attached and caring, but vulnerable and prone to withdrawing")},
+              "text": (_editorial_text('interpretations.20852ec2074df237f50125ab4ca256a0aed4ca598697d62d750ef9cb514892f8'),
+                       _editorial_text('interpretations.4ebb771080e01f2c34cf0bfd6ca52d725f28ce722f851070b4c09dd4329d1bc0'))},
     "earth": {"name": ("Меланхолик", "Melancholic"),
-              "text": ("основательный, практичный и надёжный тип — вы цените стабильность, доводите дела до результата и опираетесь на факты, но склонны к осторожности и самокритике",
-                       "a grounded, practical and reliable type — you value stability, see things through and rely on facts, but tend toward caution and self-criticism")},
+              "text": (_editorial_text('interpretations.99396512a1ac77e1fab565982f00b73fe4a29e645810ff64e744128af74375f1'),
+                       _editorial_text('interpretations.b5c819f90ca8cd0167869acdab8353aa869bf6abe459742ce12940f615e8dda7'))},
 }
 
 
 def temperament(element_dist: dict, quality_dist: dict, lang: str = "ru") -> dict:
-    elements = {k: element_dist.get(f"{k}_percentage", 0) for k in ("fire", "earth", "air", "water")}
+    elements = {k: element_dist.get(f'{k}_percentage', 0) for k in ("fire", "earth", "air", "water")}
     dom = max(elements, key=elements.get)
     t = TEMPERAMENT[dom]
-    qualities = {k: quality_dist.get(f"{k}_percentage", 0) for k in ("cardinal", "fixed", "mutable")}
+    qualities = {k: quality_dist.get(f'{k}_percentage', 0) for k in ("cardinal", "fixed", "mutable")}
     dom_q = max(qualities, key=qualities.get)
     q_note = g(_TEMP_QUALITY[dom_q], lang)
     name = g(t["name"], lang)
     if lang == "en":
-        text = f"Your temperament is predominantly {name.lower()} — {g(t['text'], lang)}. {q_note}"
+        text = f"{_editorial_text('interpretations.dac49536fec3ea10d684fb1ce2fd7f2b2a7632f17dc44f869a0876bc0a8284e8')}{name.lower()} — {g(t['text'], lang)}. {q_note}"
     else:
-        text = f"Темперамент преимущественно {name.lower()}: {g(t['text'], lang)}. {q_note}"
+        text = f"{_editorial_text('interpretations.c12627ed65d7dec1b81b48c378c02d49d8d36226b5c2b68a9b9ca5a277492dd7')}{name.lower()}: {g(t['text'], lang)}. {q_note}"
     return {"name": name, "element": dom, "text": text}
 
 
 def missing_element(element_dist: dict, lang: str = "ru") -> list:
     out = []
     for el in ("fire", "earth", "air", "water"):
-        if element_dist.get(f"{el}_percentage", 0) == 0:
+        if element_dist.get(f'{el}_percentage', 0) == 0:
             out.append({"element": C._l(C.ELEMENT_NAMES[el], lang), "text": g(ELEMENT_LACK[el], lang)})
     return out
 
 
 _AXIS_DEFS = [
-    ("Sun", ("Мотивация и эго", "Motivation and ego"), ("самоутверждается и проявляет волю", "asserts itself and shows will")),
-    ("Moon", ("Эмоции и потребности", "Emotions and needs"), ("чувствует и ищет безопасность", "feels and seeks safety")),
-    ("Mercury", ("Мышление и речь", "Thinking and speech"), ("думает, учится и говорит", "thinks, learns and speaks")),
-    ("Mars", ("Воля и гнев", "Will and anger"), ("действует, желает и злится", "acts, desires and gets angry")),
-    ("Saturn", ("Страхи и защиты", "Fears and defenses"), ("сдерживает себя и защищается", "restrains itself and defends")),
+    ("Sun", (_editorial_text('interpretations.a3406de437cde1ae06cee48b11edc6f61fe0abd3547de5fa44512f25d551a37b'), _editorial_text('interpretations.e0d98662ff628a6b56229c9497a0b03c002c133e3d49dd56af5e5a0bcf189532')), (_editorial_text('interpretations.d8df8cff7ff0d60152fff804d188ba22c7a0ed6e2678cb9b5ef786ef95e71dbe'), _editorial_text('interpretations.f8d55105bd4237fdbda07e58046aec1c5e9eb662069a50a52c4d8738d59dd406'))),
+    ("Moon", (_editorial_text('interpretations.33b6fe76179f45d6faa20d13cb712bb76bf118551b62c81560e1146f6c80509e'), _editorial_text('interpretations.b50df2579d0904febea797389e392689400aabb220431e47f103bfa535a12d28')), (_editorial_text('interpretations.26a698b17074a97eb49df64c1c73d30bc66a4a5ca5a9aca093d42e4a288290f7'), _editorial_text('interpretations.73d69de1751004d1dbe87fd811b05487173af48165bb97aa129d4e0d486055c4'))),
+    ("Mercury", (_editorial_text('interpretations.9310365f9658f2ac45e40d2f3e47c4368e02a2a99d0c502efcf11211a9b733b8'), _editorial_text('interpretations.46ab6959dfa729a86c8a30c99414d20213e3b445970d750b65719ab8a36fb5c7')), (_editorial_text('interpretations.f4ebed86e1efc8fab769ab895dfae689b7375d1f9566f452b5cdd01cd257a8ed'), _editorial_text('interpretations.0bd775ee53fdee0e2e365fbca707fe03ac823bc18775682ee709100aa157780d'))),
+    ("Mars", (_editorial_text('interpretations.5f7aff83213ac01ed6b76d8f8bde880d661f8c9d911fd93f7714a900cb728bf5'), _editorial_text('interpretations.e0201a4d66a0b3e6a729cbf51c11ebde650951834f33dde21d7c9a769fff76bc')), (_editorial_text('interpretations.8acd47eb898eddbd92d1a2bc46d214b226bca2796349cc4b1ae09be0e787cd0b'), _editorial_text('interpretations.5097031fde4ae42dcb54e22f2d1c945c23e9dfc8aca310dde2f0a31c0787aa9c'))),
+    ("Saturn", (_editorial_text('interpretations.b0321eb3d6b1421230f0260934a580d1a0dac6cccfc1d78d370ffaf172da9bd2'), _editorial_text('interpretations.479a007aaec64ab3f47518d16d5b4a92d10c32a823805a7cb02cea03ef881fe6')), (_editorial_text('interpretations.d4df9a6afe32087b2ee754c1f81d271b1ba411f84127a1f8ab1a208007d5975c'), _editorial_text('interpretations.086ddb1f64ae383b52904830e4d4e38bdd5f365e75535e5bda0f8b2cfa85583a'))),
 ]
 
 
@@ -1824,9 +1778,9 @@ def psych_axes(planet_signs: dict, lang: str = "ru") -> list:
         manner = g(facets["manner"], lang)
         sign_ru = C.sign_name(sign, lang)
         psym = C.point_name(pname, lang)
-        text = f"{psym} {C.sign_in(sign, lang)}: {g(verb, lang)} {manner}"
+        text = f'{psym} {C.sign_in(sign, lang)}: {g(verb, lang)} {manner}'
         if pname == "Saturn":
-            text += "; здесь зона страха, контроля и взросления." if lang != "en" else "; this is the zone of fear, control and maturing."
+            text += _editorial_text('interpretations.2075df13ac9affe207b5d7c113e9380526329b375a8e39b6a358f08aadb7cefa') if lang != "en" else _editorial_text('interpretations.002a33ba563040641d2d4ac185b20ed274a434246a0ce307469e253d18a1f260')
         else:
             text += "."
         out.append({"label": g(label, lang), "text": text})
@@ -1834,26 +1788,26 @@ def psych_axes(planet_signs: dict, lang: str = "ru") -> list:
 
 
 DOMINANT_PLANET = {
-    "Sun": ("Личность держится на самовыражении, воле и жажде быть значимым — всё проходит проверку через «я хочу» и «я есть».",
-            "The personality revolves around self-expression, will and the need to matter — everything is filtered through “I want” and “I am”."),
-    "Moon": ("Всем правят чувства, потребность в безопасности и забота: настроение и привязанности становятся главным двигателем.",
-             "Life is governed by feelings, the need for safety and care — mood and attachments become the main driver."),
-    "Mercury": ("Ведёт ум, любопытство и общение — человек живёт информацией, словом, анализом и связями.",
-                "The lead is the mind, curiosity and communication: the person lives by information, words, analysis and contacts."),
-    "Venus": ("В центре — любовь, отношения, красота и ценности: важнее всего гармония, удовольствие и притяжение.",
-              "At the centre are love, relationships, beauty and values: harmony, pleasure and attraction matter most."),
-    "Mars": ("Главное — действие, воля и желание: человек живёт инициативой, борьбой и достижением цели.",
-             "The main thing is action, will and desire: the person lives through initiative, struggle and reaching goals."),
-    "Jupiter": ("Ведут рост, смысл и расширение — человеком движут вера, оптимизм и жажда большего.",
-                "The lead is growth, meaning and expansion: the person is driven by faith, optimism and the search for more."),
-    "Saturn": ("В центре — ответственность, структура и дисциплина: жизнь строится на долге, контроле и мастерстве.",
-               "At the centre are responsibility, structure and discipline: life is built through duty, control and mastery."),
-    "Uranus": ("Главное — свобода, оригинальность и перемены: человек живёт независимостью и новаторством.",
-               "The main thing is freedom, originality and change: the person lives through independence and innovation."),
-    "Neptune": ("Ведут воображение, чувствительность и идеал — человек живёт мечтой, состраданием и тонким восприятием.",
-                "The lead is imagination, sensitivity and the ideal: the person lives by dream, compassion and subtle perception."),
-    "Pluto": ("В центре — глубина, власть и трансформация: человек живёт интенсивностью, контролем и перерождением.",
-              "At the centre are depth, power and transformation: the person lives through intensity, control and rebirth."),
+    "Sun": (_editorial_text('interpretations.5e18aa406e6666198f4e216d874c983d44d240ed332d49259265ef4b60dde76e'),
+            _editorial_text('interpretations.e3a0791aece850e8e0422064c4bd3544ceb262d45ff7cfd975792fb9c680d802')),
+    "Moon": (_editorial_text('interpretations.314cc99f121497988a9e5fd63665e996f49827e3416a9870817e948d1aecd039'),
+             _editorial_text('interpretations.354a0ba6e1477d35356ea956e3305df40d7c8a52511ce7c413c39547fc22d9e6')),
+    "Mercury": (_editorial_text('interpretations.629d347abff2729cd16f745c4f92f8992008151f8f68ac26e8ff3f06d80c5a86'),
+                _editorial_text('interpretations.b5e7ec4ba148fad52c1e04af9c61c766693f7abb297ffc2af21eb3ceddb4da4b')),
+    "Venus": (_editorial_text('interpretations.9a70463a02755055254e5284a156a833512df48efb7150e724b898bfcd41484b'),
+              _editorial_text('interpretations.b51f940ad598cb8a35328ca6a9bee5bc1df924487146ecc27044b2533d25a5e1')),
+    "Mars": (_editorial_text('interpretations.6e6d5beeaa3c481831509af2f3dbc6befcf55721084fe4ff35bfbabb8134527b'),
+             _editorial_text('interpretations.e0263300d815e5b39a117d93f0e89bee303f84af8e7e1cdc6cbdabc47225eb55')),
+    "Jupiter": (_editorial_text('interpretations.a7f9f0ad48e0204b667c500a1cc3ccbeb4407defd42fd6d6335d1ffc0d7e2e36'),
+                _editorial_text('interpretations.fa889a544650d438b6bde10bc7baf7555acc872ae438e10a19f269b022e19b83')),
+    "Saturn": (_editorial_text('interpretations.dfd1e9642a7a1f2b4228912a83749abc8232e8f1372070716a8e58821f59dc74'),
+               _editorial_text('interpretations.6d40618cb731aa98a6d4bb55fbb5069594939c86aee14f2c99a4189f7d2d6579')),
+    "Uranus": (_editorial_text('interpretations.6f3c7f97368cd588e9b95d8748f38abdade70b3603b193ded452d39e98c9d012'),
+               _editorial_text('interpretations.d13a77a7300c47793e45b3411d34bb56a20993f8e093717eb6fb65d6c2f063a5')),
+    "Neptune": (_editorial_text('interpretations.6bbf51b58f5903a90da35f887f9e7b7292017f25768c04a76609b269f70f9d12'),
+                _editorial_text('interpretations.07c3bfc308e7ba6940280c7b08bcf6eb94ad564dfe8a19039beecc1b5be7025a')),
+    "Pluto": (_editorial_text('interpretations.9583a8348d72a3165eb0121bd6736d325ff79ef4187a2ac662717492deb6022d'),
+              _editorial_text('interpretations.8200e3349e96f2bc5d49e95a6a2cbd59baae67fccf10dce96c18db2f1e98ba95')),
 }
 
 
@@ -1863,14 +1817,14 @@ def dominant_planet_text(name: str, lang: str = "ru") -> str:
 
 
 _SELF_ESTEEM = {
-    "critic": ("Внутренний критик строг, и самооценка вечно сверяется с вопросом «достаточно ли я сделал». Опора приходит с возрастом и реальными достижениями — важно не путать строгость к себе с правдой о себе.",
-               "The inner critic is strict: self-worth is tested by “have I done enough”. Support comes with age and real achievement — it's important not to confuse harshness toward yourself with the truth about yourself."),
-    "steady": ("Здоровая внутренняя опора: уверенность растёт постепенно и надёжно — через зрелость, ответственность и накопленный опыт.",
-               "A healthy inner foundation: confidence is built gradually and steadily — through maturity, responsibility and accumulated experience."),
-    "tempered": ("Самооценка подвижна и закаляется в напряжении: внутреннее «я» крепнет в преодолении, хотя порой колеблется под давлением обстоятельств.",
-                 "Self-worth is mobile and tempered through tension: the inner self grows by overcoming, though it sometimes wavers under pressure."),
-    "free": ("Самоощущение в целом устойчивое: «я» проявляется свободно, без сильного внутреннего давления и вечной самопроверки.",
-             "An overall stable sense of self: the “I” expresses freely, without heavy inner pressure or constant self-checking."),
+    "critic": (_editorial_text('interpretations.836d0852453ed88a5afba2a281d8a8f9ba05f682dcd8b7f732133d79c34efedf'),
+               _editorial_text('interpretations.64781568ab839c80ed38787b2db1781516e29dc667ad0048c66c43428391d657')),
+    "steady": (_editorial_text('interpretations.d1f29005873c16b6a3eb4ec533ba57222ecb3eaeee314ef0f5b8f784204c83ce'),
+               _editorial_text('interpretations.2771832f4a1289603c8aca0f6329d9a7e6e606b977be67fd7ab2289ceb467483')),
+    "tempered": (_editorial_text('interpretations.12cad026d0a40771b658e861a23b37eda6b40032c4a607e6e579e50253bddffa'),
+                 _editorial_text('interpretations.d8eeabea6819e26576f8af9d9a00706f842ce857c6313bbf3bc82559454bdbaa')),
+    "free": (_editorial_text('interpretations.88229c4181ad1fdd47c74b48b644033018ad07f8a07303829a57af10c248147c'),
+             _editorial_text('interpretations.65286d900a6bb81945bcb60e1669b9ffb48b1f61ea4b9a55e089c602dad9bbc3')),
 }
 
 
@@ -1891,18 +1845,18 @@ def synthesize_core(sun_sign: str, moon_sign: str, asc_sign: str, lang: str = "r
     parts = []
     if lang == "en":
         if sun:
-            parts.append(f"The core of the personality (Sun {C.sign_in(sun_sign, lang)}) unfolds through {g(sun, lang)}.")
+            parts.append(f"{_editorial_text('interpretations.7d585cf4dc001b6a201124b1ed999b4b8f4e7012769bcdfb7ddc014ecdc9a637')}{C.sign_in(sun_sign, lang)}{_editorial_text('interpretations.b3f23dd2bbc897c1d323cac043942a6e1dcaaf5ed01820b41b8d148b7a70bb81')}{g(sun, lang)}.")
         if moon:
-            parts.append(f"The emotional nature and inner needs (Moon {C.sign_in(moon_sign, lang)}) are {g(moon, lang)}.")
+            parts.append(f"{_editorial_text('interpretations.7dddaca38882811a87c20e3c37ddb03ce3e512d05944024c67241660f9a94df4')}{C.sign_in(moon_sign, lang)}{_editorial_text('interpretations.9a421c594797ec0c33289a791e8805db2924cfc647c00795bd1826d49b7c5974')}{g(moon, lang)}.")
         if asc:
-            parts.append(f"The outer self and first impression (Ascendant {C.sign_in(asc_sign, lang)}) show up through {g(asc, lang)}.")
+            parts.append(f"{_editorial_text('interpretations.4e7e67daa730a1cb662e67b798da516215911483c18f0e5fa40a66a30ef4e324')}{C.sign_in(asc_sign, lang)}{_editorial_text('interpretations.92220b860434ea543b84f3c29577c1d0a9df1e45c2a955d6d289a787f336f23a')}{g(asc, lang)}.")
     else:
         if sun:
-            parts.append(f"Ядро личности (Солнце {C.sign_in(sun_sign, lang)}) раскрывается через {g(sun, lang)}.")
+            parts.append(f"{_editorial_text('interpretations.91d85e801ee9c6d4dd6b37df3813734d9ae7e596f175dfaa403e4860ff7acbaf')}{C.sign_in(sun_sign, lang)}{_editorial_text('interpretations.7ac11b553ef6d67eafd2f768113017e110fa290ca4997bbf5de5aa5bac71eb65')}{g(sun, lang)}.")
         if moon:
-            parts.append(f"Эмоциональная природа и внутренние потребности (Луна {C.sign_in(moon_sign, lang)}) — это {g(moon, lang)}.")
+            parts.append(f"{_editorial_text('interpretations.d3751861a71cb88e8c63cc96b518c8feaa2150ac2f97a17aac0cd90ded656eda')}{C.sign_in(moon_sign, lang)}{_editorial_text('interpretations.70ceef541b24f729a388357f803ff613cba1f86604b52a7e35c6dd6f0b520698')}{g(moon, lang)}.")
         if asc:
-            parts.append(f"Внешнее «я» и первое впечатление (Асцендент {C.sign_in(asc_sign, lang)}) проявляются через {g(asc, lang)}.")
+            parts.append(f"{_editorial_text('interpretations.1409ac39aa7ec98e5fe51310a16217ce8da0639b66a2e9a6e256c283cbd97dd0')}{C.sign_in(asc_sign, lang)}{_editorial_text('interpretations.6ddffa71777cf3a2b67a7eb7f01028b38a81ec3bdb95c875f3f8841d90c077f1')}{g(asc, lang)}.")
     return " ".join(parts)
 
 
@@ -1923,16 +1877,16 @@ def modern_coruler(asc_sign: str) -> Optional[str]:
 # --------------------------------------------------------------------------- #
 LUMINARY_PURPOSE = {
     "Sun": {
-        "ru": ("Солнце", "наше предназначение, воля и жизненная цель — то, ради чего мы живём и кем призваны стать; источник жизненной силы и сознательного «Я»"),
-        "en": ("Sun", "our purpose, will and life goal — what we live for and who we are called to become; the source of vitality and the conscious self"),
+        "ru": ("Солнце", _editorial_text('interpretations.b9519e127419cfaf75ba79a14407ed0ef7de5272d7eefa0f41a954ca4fd1783d')),
+        "en": ("Sun", _editorial_text('interpretations.9d6298ec392033a4eb6e0b9e0f4dcf959e26564b07808b5f9a9a7a61c8e77eb3')),
     },
     "Moon": {
-        "ru": ("Луна", "фильтр восприятия и внутренняя психология — как мы чувствуем, в чём нуждаемся и что даёт ощущение безопасности; реакции, привычки и память души"),
-        "en": ("Moon", "the filter of perception and inner psychology — how we feel, what we need and what gives a sense of safety; reactions, habits and the memory of the soul"),
+        "ru": ("Луна", _editorial_text('interpretations.d95713c521f1d1e856b07dfe556d5e5b1421aff0896863bb0067e98f7117235c')),
+        "en": ("Moon", _editorial_text('interpretations.ab05c163627ccf91d0f03cd0b74ed7bd0ca19913fa7c43c5c9a8fbbe714898d2')),
     },
     "Ascendant": {
-        "ru": ("Асцендент", "инструмент, которым мы пользуемся — стиль действия, «маска» и способ входить в мир, наша мгновенная реакция и первое впечатление"),
-        "en": ("Ascendant", "the instrument we use — the style of action, the “mask” and the way we enter the world, our immediate reaction and first impression"),
+        "ru": ("Асцендент", _editorial_text('interpretations.77a24d96831351b026876bbf9e37b74be5a31e00ef79d972811ef379c8a8ad4a')),
+        "en": ("Ascendant", _editorial_text('interpretations.2891056d9641eb5a1af8ba7118541fd9ef73d3703e2d4a6247d80bdc6911f4f3')),
     },
 }
 
@@ -1941,123 +1895,123 @@ LUMINARY_PURPOSE = {
 # --------------------------------------------------------------------------- #
 SIGN_ARCHETYPE = {
     "Ari": {
-        "archetype": ("Воин, Первопроходец", "The Warrior, the Pioneer"),
-        "essence": ("чистая инициирующая энергия, импульс к действию и началу", "pure initiating energy, the impulse to act and to begin"),
-        "light": ("смелость, решительность, честность, лидерство и умение начинать", "courage, decisiveness, honesty, leadership and the ability to start"),
-        "shadow": ("вспыльчивость, эгоцентризм, нетерпеливость и неумение доводить до конца", "hot temper, egocentrism, impatience and difficulty finishing things"),
+        "archetype": (_editorial_text('interpretations.68adbd6cbe70d8dcdfb1c42553d21c08c3574a6dcbb0d867aa549c2826c57957'), _editorial_text('interpretations.b1a0acea1685f7b9cc5e8cf03a73b272a7787933454f82d933947edb840d91c9')),
+        "essence": (_editorial_text('interpretations.a55649dc5fc3080c1c5ae3daf3a5188984734edf7d3d253de37b170836e3584e'), _editorial_text('interpretations.ba6243781580185011976d4341f64e1f1e3addace9b8d013ddb1223d91b31316')),
+        "light": (_editorial_text('interpretations.a428d5bb54401c667aff8ae13f3a21504ccbdbedaec68a6585f289a3b9761dc5'), _editorial_text('interpretations.0c0d80b2fba1883adef9772772bc514315ec3de8f0a1a89ed14031d2ac5eb008')),
+        "shadow": (_editorial_text('interpretations.d39772379b96f9e3ea4fb4baf57fd79001026f4121af881f08d1314e87fc9ffe'), _editorial_text('interpretations.2551c03a2009df139ad67e698c7c65e90b386e0518fd6e988ea2f0c841c570af')),
         "detail": (
-            "Овном движет чистый глагол «действовать». Там, где другие ещё взвешивают, он уже сделал первый шаг — и в этом одновременно его дар и его беда. Внутри живёт ребёнок-первопроходец: ему нужно завоёвывать, пробовать, быть первым, встречать сопротивление и преодолевать его. Скука и ожидание для Овна мучительнее любого поражения.\n\nВ отношениях он честен до прямоты и завоёвывает открыто, но быстро остывает, когда исчезает азарт погони. В работе незаменим на старте — запустить, пробить, зажечь команду, — а рутину и доведение до финиша лучше отдать другим. Главный внутренний конфликт: энергия рвётся наружу быстрее, чем приходит терпение её направить. Взрослея, Овен учится не гасить огонь, а держать его — превращать вспышку в ровное горение, злость в смелость, «я первый» в «я поведу за собой».",
-            "Aries is driven by a single verb: to act. Where others are still weighing options, an Aries has already taken the first step — and that is both the gift and the trouble. Inside lives a pioneer-child who needs to conquer, to try, to be first, to meet resistance and overcome it; waiting and boredom are more painful to Aries than any defeat.\n\nIn love they court openly and honestly but cool quickly once the thrill of the chase is gone. At work they are invaluable at the start — to launch, to break through, to fire up a team — while routine and finishing are better left to others. The core tension: energy bursts out faster than the patience to aim it. Growing up, Aries learns not to smother the fire but to hold it — turning a flash into a steady flame, anger into courage, 'me first' into 'follow me'.",
+            _editorial_text('interpretations.a7b04b3fa0aaf67d062c3b5eb2719d2325aa52948632f9f3bdc49331b3515243'),
+            _editorial_text('interpretations.63d9cdbc685fce7eeae1c056dee4309f47a03685a1c09b89fbdbd0fa15274d63'),
         ),
     },
     "Tau": {
-        "archetype": ("Хранитель, Садовник", "The Keeper, the Gardener"),
-        "essence": ("укоренённость в материи, чувственность и созидание устойчивости", "rootedness in matter, sensuality and the building of stability"),
-        "light": ("надёжность, терпение, верность, практичность и вкус к жизни", "reliability, patience, loyalty, practicality and a taste for life"),
-        "shadow": ("упрямство, инертность, собственничество и страх перемен", "stubbornness, inertia, possessiveness and fear of change"),
+        "archetype": (_editorial_text('interpretations.763c625bd1c4192c2dd80c29e1dfb48ebf2af9d9b205a96891e3c53e3ecebc3f'), _editorial_text('interpretations.d5b193a11175d076fd1698c36042375d0c9619720fa5b7fb9ff3209bac64da06')),
+        "essence": (_editorial_text('interpretations.88b1bc7b79ac3fe0db7be08e4e06207826f1cb7776a8b9e13686bc0067abf7dc'), _editorial_text('interpretations.0a54c6a1f5a9f8c41ecc8d0b0b6f2bc50ca5dfaab939ed94c2112af4a7440a52')),
+        "light": (_editorial_text('interpretations.a80103af02b7bd0647b6155c21ae21fecd2dc9b22d285e89ddc6b49f71e0a013'), _editorial_text('interpretations.7902a248850034f5755104bf194004c0d8531047cec46e85d880ebfc8cd6441d')),
+        "shadow": (_editorial_text('interpretations.269c80238aaa8efc7fc352b381ceabfb0953c4f07342a4bb382b25444ab96bb7'), _editorial_text('interpretations.0d7ea8ff26eab5421d66cd23653423ea8e8895274163c423dc245ae867d6566c')),
         "detail": (
-            "Телец приходит в мир, чтобы обжить его телом и руками. Ему важно не абстрактное, а осязаемое: вкус, тепло, надёжность, то, что можно потрогать и чем можно спокойно владеть. Он никуда не спешит — и в этой неспешности его сила: то, что Телец строит, стоит долго, потому что построено на совесть.\n\nВ любви он верен, чувственен и основателен, дарит партнёру ощущение защищённости, но ревнует и тяжело отпускает — привязанность легко превращается в собственничество. В деле он выносливый марафонец: доведёт начатое до конца, когда остальные бросили, зато сдвинуть его с наезженной колеи почти невозможно. Его внутренний узел — страх перемен: устойчивость, которая держит, при перегибе становится тюрьмой из привычек. Зрелость Тельца — научиться разжимать ладонь: беречь ценное, но не путать обладание с любовью, а покой — с застоем.",
-            "Taurus comes into the world to inhabit it through the body and the hands. What matters is not the abstract but the tangible: taste, warmth, reliability, what can be touched and calmly owned. There is no hurry — and in that lies the strength: what Taurus builds lasts, because it is built to last.\n\nIn love they are faithful, sensual and grounding, giving a partner a sense of safety, but they are jealous and slow to let go — attachment easily hardens into possessiveness. At work they are the enduring marathoner who finishes what others abandoned, yet moving them off a worn track is nearly impossible. Their inner knot is the fear of change: the stability that steadies them can, taken too far, become a prison of habits. Maturity for Taurus is learning to unclench the hand — to keep what is precious without mistaking ownership for love, or calm for stagnation.",
+            _editorial_text('interpretations.08c18edfc95de77d55aa00a883c23ee8843727bf36253edba150deec79623011'),
+            _editorial_text('interpretations.a523ed36fd727180c4eada6efc6d3d5a85de91790000a2a7e352fda8206cae39'),
         ),
     },
     "Gem": {
-        "archetype": ("Посланник, Вечный ученик", "The Messenger, the Eternal Student"),
-        "essence": ("подвижный ум, любознательность и связь через слово", "a mobile mind, curiosity and connection through words"),
-        "light": ("гибкость, остроумие, общительность и быстрая обучаемость", "flexibility, wit, sociability and quick learning"),
-        "shadow": ("поверхностность, разбросанность, непостоянство и суетливость", "superficiality, scatteredness, inconstancy and restlessness"),
+        "archetype": (_editorial_text('interpretations.979291a68335de300bf46c76a2a77600817ae87ebd41f67836efa4fd467575d2'), _editorial_text('interpretations.539395a9d0ef1d6eb5a3e28649daa3c70344e5d5d56cfeebf485de484eff030f')),
+        "essence": (_editorial_text('interpretations.6b4f59f9b753f6dedc0eeb50f55d49b906372b63e6ef5977439e597a1811c790'), _editorial_text('interpretations.a4575a97d7708ee5f2febcd7bb144fdc16399c76f4247a3a422efa76b3a363a3')),
+        "light": (_editorial_text('interpretations.1bbac66154571531356bdfa468c5baed502bf21add1b2e43c4630c9d61f787bc'), _editorial_text('interpretations.1ea2c7126eaabf87d693c68b5ed416cc4d92b7f2091745199dd3f4bcbf202cd4')),
+        "shadow": (_editorial_text('interpretations.c8d9b5ea91798bff381cd8c51f55c1a0c60a35574e23dee9c4918c2a8b500b53'), _editorial_text('interpretations.22d07517b4d957b4f0b31068fcc284116a12d3759be40d3dbdfbba7f5b74ca19')),
         "detail": (
-            "Близнецы живут скоростью мысли. Мир для них — бесконечная библиотека, где хочется полистать всё сразу: новое знакомство, новую тему, новый поворот разговора. Слово — их стихия и инструмент: они связывают людей, идеи и факты, переводят сложное на понятный язык и заражают любопытством.\n\nВ отношениях им нужен собеседник прежде любовника — молчаливая скука для Близнецов страшнее ссоры. Они лёгкие и остроумные, но непостоянные: интерес вспыхивает ярко и так же быстро перескакивает дальше. В работе блестящи там, где нужны переговоры, тексты, многозадачность и быстрое переключение, а глубина и усидчивость даются с трудом. Их конфликт — распыление: тысяча начатых дел и ни одного законченного, ум, который бежит впереди чувств. Взрослея, Близнецы учатся не хвататься за всё подряд, а выбирать одно и доходить до сути — превращать эрудицию в настоящую мудрость.",
-            "Gemini lives at the speed of thought. The world is an endless library they long to leaf through all at once: a new acquaintance, a new topic, a new turn in the conversation. Words are their element and their tool — they connect people, ideas and facts, translate the complex into plain language and spread curiosity.\n\nIn relationships they need a conversationalist before a lover; silent boredom frightens a Gemini more than a quarrel. They are light and witty but inconstant — interest flares brightly and just as quickly leaps elsewhere. At work they shine wherever negotiation, writing, multitasking and quick switching are needed, while depth and persistence come hard. Their conflict is scattering: a thousand things begun and none finished, a mind that outruns the heart. Growing up, Gemini learns not to grab at everything but to choose one thing and reach its essence — turning cleverness into real wisdom.",
+            _editorial_text('interpretations.7335354aec51180734c2588930271b4d8284cc00e934adeb692ef08686d3d4c3'),
+            _editorial_text('interpretations.1b83e11018117b886736ca59ace21317ef857fcc9c2292e22956cdf09e837f5f'),
         ),
     },
     "Can": {
-        "archetype": ("Хранитель очага, Мать", "The Keeper of the Hearth, the Mother"),
-        "essence": ("эмоциональная глубина, забота и потребность в принадлежности", "emotional depth, care and the need to belong"),
-        "light": ("чуткость, преданность, интуиция и умение создавать тепло", "sensitivity, devotion, intuition and the ability to create warmth"),
-        "shadow": ("обидчивость, тревожность, цепляние за прошлое и манипуляции чувствами", "touchiness, anxiety, clinging to the past and manipulation through feelings"),
+        "archetype": (_editorial_text('interpretations.e374898730fd8c6a71be61253b6228b055cc52597c8a4a00f5f4077c84860ddb'), _editorial_text('interpretations.7695dcd47f240397ff518a61a5a28d41ca540e4f70b662fdefba90c16e0c8774')),
+        "essence": (_editorial_text('interpretations.6c2dee223daeafff429a61eb9a105dfa8e9431b3cc0f46283910d643c3777d4f'), _editorial_text('interpretations.16ecbc399076f2cea7203fbabdc9a6c89b11d67fdaca5fb85e70bcc54c54d77d')),
+        "light": (_editorial_text('interpretations.234cd634dae88592142c60f7454fb078592f2ff7a14e579180e6b12301f8377f'), _editorial_text('interpretations.87e3c462304346eaffeb0f108a755318eaf7bc9d466f4ce6639f2f7b950bb84a')),
+        "shadow": (_editorial_text('interpretations.761841f6608aa6235f5b592bdaa15d30a79881ccc3dbe972199347edfa637c65'), _editorial_text('interpretations.9cafcbf7ca660bf4c412d6e4a29435cdd7a8d39ea63dcdf15b37282349dd0912')),
         "detail": (
-            "Рак чувствует мир кожей. Там, где другие рассуждают, он ощущает — настроение в комнате, невысказанную боль близкого, то, что «что-то не так». Его дом, его люди, его память — вот подлинная территория Рака; он создаёт тепло и принадлежность, без которых сам вянет.\n\nВ любви он преданный и заботливый, окутывает вниманием, но и уязвим: обиду носит долго, а страх быть покинутым толкает то к цеплянию, то к манипуляции чувством вины. В работе силён там, где нужно заботиться, удерживать атмосферу, чувствовать людей, — но тонкую кожу приходится защищать от грубости среды. Его внутренний узел — прошлое: память, что питает, легко превращается в якорь, не пускающий вперёд. Зрелость Рака — научиться заботиться, не растворяясь, и отпускать прожитое, оставляя себе тепло, а не рану.",
-            "Cancer feels the world through the skin. Where others reason, a Cancer senses — the mood in a room, a loved one's unspoken pain, the feeling that 'something is off'. Home, their people, their memory — this is Cancer's true territory; they create the warmth and belonging without which they themselves wilt.\n\nIn love they are devoted and caring, wrapping others in attention, but also vulnerable: they hold a hurt for a long time, and the fear of being abandoned pushes them now to cling, now to guilt-driven manipulation. At work they are strong wherever caring, holding the atmosphere and sensing people matter, though that thin skin needs shielding from a rough environment. Their inner knot is the past: the memory that nourishes can turn into an anchor that will not let them move on. Maturity for Cancer is learning to care without dissolving, and to release what has already been lived, keeping the warmth rather than the wound.",
+            _editorial_text('interpretations.7297bfb46b8125b33c8112582099865a6b6cdf1490fe0a2da6e1a13c9dd65778'),
+            _editorial_text('interpretations.0ce6799cb304969171293367013c1c245b5689466220ad91a39c0ce2ced578dd'),
         ),
     },
     "Leo": {
-        "archetype": ("Король, Творец", "The King, the Creator"),
-        "essence": ("творческая воля к самовыражению и сиянию", "the creative will to self-expression and to shine"),
-        "light": ("великодушие, харизма, верность, щедрость и достоинство", "magnanimity, charisma, loyalty, generosity and dignity"),
-        "shadow": ("гордыня, тщеславие, потребность в постоянном восхищении и драматизация", "pride, vanity, the need for constant admiration and drama"),
+        "archetype": (_editorial_text('interpretations.a49b34e5eb42e8c745a5dd383d32ed36bab83f1ed0185b8b4e0d27f2d429ad80'), _editorial_text('interpretations.a7d059d8bb7b3733bceb1bc977b1b949321ad074dab0da470fe53796c876b7ce')),
+        "essence": (_editorial_text('interpretations.f2d75b491fa6568eca7c53c16b9e98aca3d319241afaecc25359eb1c50ef9432'), _editorial_text('interpretations.d51032deaf045f2678c1b7b905038750a9507c75caacb8514c52060886e9c3cb')),
+        "light": (_editorial_text('interpretations.92156f9619cb9f691dd6d099bdcae73d8d85f3f35cc85cd82ea28e3e359b78d7'), _editorial_text('interpretations.72596ae8f97f093553c6e3b22dc6ef9a4826cf7a6ccf4962b037af7823d4d657')),
+        "shadow": (_editorial_text('interpretations.abaaa77e72760eed440792f7032ffc6085bb2de9c68ae3b3e1061a2b3aae5ef8'), _editorial_text('interpretations.3de0a6bdceabcec64ecdcdfa4d70442624b796ac9c55586c084ca7adfd28f5ea')),
         "detail": (
-            "Лев рождён светить. В нём живёт врождённое достоинство и потребность выразить себя — через творчество, любовь, игру, щедрый жест. Зрители нужны ему не из тщеславия, а потому что радость Льва настоящая только тогда, когда её с кем-то делят. Он согревает, вдохновляет и ведёт за собой теплом, а не приказом.\n\nВ любви он щедр, верен и театрален, любит красиво и крупно, но требует восхищения и тяжело переносит равнодушие. В работе — прирождённый лидер и вдохновитель там, где нужно зажечь и повести, но его подводит гордость и неумение признавать ошибки. Главный конфликт — самооценка, зависящая от аплодисментов: за царственной уверенностью часто прячется ребёнок, которому нужно, чтобы его любили. Зрелость Льва — научиться светить не ради оваций, а потому что это его природа, и находить величие в великодушии, а не в превосходстве.",
-            "Leo is born to shine. There is an innate dignity and a need for self-expression — through creativity, love, play, a generous gesture. Leo needs an audience not out of vanity but because their joy is only real when shared; they warm and inspire and lead by warmth rather than command.\n\nIn love they are generous, loyal and theatrical, loving large and beautifully, but they crave admiration and take indifference hard. At work they are a born leader and motivator, wherever it takes fire to get people moving, though pride and difficulty admitting mistakes trip them up. The core conflict is self-worth that hangs on applause: behind the regal confidence often hides a child who needs to be loved. Maturity for Leo is learning to shine not for the ovation but because it is their nature, and to find greatness in generosity rather than superiority.",
+            _editorial_text('interpretations.7e8c1646a9ce42b8c3e423df6b27e0e0262eb4eff4ccb4778998a02908820ce3'),
+            _editorial_text('interpretations.f8bc0dc98a12d0321ffa14451fc0f11abfd0e24888cc11e8c2dafb5b20d6745f'),
         ),
     },
     "Vir": {
-        "archetype": ("Мастер, Целитель", "The Craftsman, the Healer"),
-        "essence": ("стремление к совершенству, порядку и служению", "the striving for perfection, order and service"),
-        "light": ("трудолюбие, внимательность, скромность и реальная польза", "diligence, attentiveness, modesty and real usefulness"),
-        "shadow": ("придирчивость, тревога, самокритика и зацикленность на мелочах", "fault-finding, anxiety, self-criticism and fixation on trifles"),
+        "archetype": (_editorial_text('interpretations.77b48f7f45dd4e8344dbaf373baa1d00de54093e2c3078495491fb276765f1ca'), _editorial_text('interpretations.7f5c181eb213bfcb523c39a4e213e2e0d26c561a476f3748cb608b9f945264e3')),
+        "essence": (_editorial_text('interpretations.3c9164a04c4de3da2674d0ecd71902a24e83b53fb148045cc0e567a45bad49f8'), _editorial_text('interpretations.6aec5803a2aac845ee7a44a43a766639feb51f8a1ae169322f7f3396455d783f')),
+        "light": (_editorial_text('interpretations.34a2a5dcb14c6c175e8a26a0cf65a8e21a8c22ec3d873e79bc4f357c0f0069ee'), _editorial_text('interpretations.8c6859f2fab37bb406e07f11a57ef736681cb81c72250c5acd8fdc789f082847')),
+        "shadow": (_editorial_text('interpretations.2627925303c4b94a13fbf19fec4bd18f5db81bb95948d13843a6156884fe95b3'), _editorial_text('interpretations.cfeb8619af3583c884aec5fea6633a3663aad2c5c340aee5f1e1a4f8b862ef14')),
         "detail": (
-            "Дева видит то, что можно улучшить. Там, где другие довольствуются «нормально», она замечает шероховатость и хочет довести до ума — не из придирчивости, а из любви к делу, сделанному хорошо. Её стихия — польза: конкретная, ежедневная, та, что делает жизнь чище, здоровее и работоспособнее.\n\nВ отношениях Дева проявляет любовь заботой и делом, а не громкими словами: починит, подскажет, будет рядом в мелочах, — но её тепло легко спрятать за критикой. В работе незаменима там, где важны точность, анализ, порядок и внимание к деталям. Её внутренний узел — перфекционизм, обёрнутый в тревогу: планка «идеально» бьёт по ней самой сильнее, чем по другим, а мелочи заслоняют целое. Зрелость Девы — понять, что служить можно и себе, что «достаточно хорошо» тоже имеет право быть, и что настоящая забота начинается с милосердия к собственному несовершенству.",
-            "Virgo sees what can be improved. Where others settle for 'fine', a Virgo notices the rough edge and wants to set it right — not from fault-finding but from love of a thing done well. Their element is usefulness: concrete, daily, the kind that makes life cleaner, healthier and more workable.\n\nIn relationships Virgo shows love through care and deeds rather than grand words: they will fix it, advise, be there in the small things — though that warmth can hide behind criticism. At work they are indispensable wherever precision, analysis, order and attention to detail count. Their inner knot is perfectionism wrapped in anxiety: the bar of 'flawless' strikes them harder than anyone, and details eclipse the whole. Maturity for Virgo is realizing one may serve oneself too, that 'good enough' has a right to exist, and that real care begins with mercy toward one's own imperfection.",
+            _editorial_text('interpretations.4bf206a9683711bae1f0fb177fa8b1fba82ae9eaa638f883ebf51ad4ad059a38'),
+            _editorial_text('interpretations.1948511ecff58dfa911a20f3aee928aaa796c773763bc8f47b6d84942d34280c'),
         ),
     },
     "Lib": {
-        "archetype": ("Дипломат, Художник", "The Diplomat, the Artist"),
-        "essence": ("поиск гармонии, баланса и красоты в отношениях", "the search for harmony, balance and beauty in relationships"),
-        "light": ("тактичность, справедливость, обаяние и чувство меры", "tact, fairness, charm and a sense of proportion"),
-        "shadow": ("нерешительность, зависимость от других, избегание конфликтов и лицемерие", "indecision, dependence on others, conflict avoidance and hypocrisy"),
+        "archetype": (_editorial_text('interpretations.c4148d6a939adafd41599942956240d5d359bdb946cf71c8c3f6f0039f8ffc63'), _editorial_text('interpretations.a7896b345ff83588d2cda9768bc7ba0ef8e8a0418bfc277d85df8945324ec5a6')),
+        "essence": (_editorial_text('interpretations.07b7fd14c566051b034b22c4d492755db544172f5bea34bdf7373ac38314ac7f'), _editorial_text('interpretations.81b780755ecf2fbb8ba12c582ccdd1d2f70bb3a778577041d9706ab31e73e9e3')),
+        "light": (_editorial_text('interpretations.650d3b943388ca49123a7ad823e4d3bd6ee941ae2c1953a432ecd9aae81f1413'), _editorial_text('interpretations.bb5f2279839e1ba7c5e93d5e180faacc095500e076551452a07e1f84dd973fe9')),
+        "shadow": (_editorial_text('interpretations.2b7e0371713aab06cd07b3acab86945c21d794d500146a157ba1deb9b55e13f2'), _editorial_text('interpretations.409093735dd9002bb5f6ab90ce07472dfa068885a18e3273b97ce3f365d257b0')),
         "detail": (
-            "Весам невыносима дисгармония. Они чувствуют перекос — в отношениях, в пространстве, в справедливости — и инстинктивно тянутся выровнять, примирить, сделать красиво. Другой человек для Весов не фон, а зеркало: по-настоящему они раскрываются в паре, в диалоге, во взаимности.\n\nВ любви они обаятельны, тактичны и внимательны к партнёру, умеют слышать, но растворяются в чужих желаниях и боятся сказать «нет», чтобы не разрушить мир. В работе сильны там, где нужны переговоры, эстетика, дипломатия, умение свести разные интересы. Их конфликт — нерешительность: бесконечное взвешивание «за» и «против», за которым прячется страх столкновения и потери одобрения. Зрелость Весов — обрести собственную ось: понять, что честная граница не разрушает отношения, а делает их настоящими, и что гармония с собой важнее гладкости с каждым.",
-            "Libra cannot bear disharmony. They feel the imbalance — in a relationship, in a room, in fairness — and instinctively move to even it out, to reconcile, to make things beautiful. Another person is not background to Libra but a mirror: they truly come alive in a pair, in dialogue, in mutuality.\n\nIn love they are charming, tactful and attentive to a partner, good at listening, but they dissolve into others' wishes and fear saying 'no' lest they break the peace. At work they are strong wherever negotiation, aesthetics, diplomacy and reconciling different interests are needed. Their conflict is indecision: an endless weighing of pros and cons, behind which hide a fear of conflict and of losing approval. Maturity for Libra is finding their own axis — seeing that an honest boundary does not destroy a relationship but makes it real, and that harmony with oneself matters more than smoothness with everyone.",
+            _editorial_text('interpretations.7037c80ac8539d5b122d114cd46cc8426e7a9dcb45ab2487f55a49fa413f7de5'),
+            _editorial_text('interpretations.e6e9e4213715947c16b1ca25dd0773371209014f17b2b7295f1e54e2184b2563'),
         ),
     },
     "Sco": {
-        "archetype": ("Алхимик, Феникс", "The Alchemist, the Phoenix"),
-        "essence": ("погружение в глубины, страсть и трансформация через кризис", "immersion into the depths, passion and transformation through crisis"),
-        "light": ("проницательность, сила воли, верность и способность к перерождению", "insight, willpower, loyalty and the capacity for rebirth"),
-        "shadow": ("ревность, мстительность, контроль и разрушительные крайности", "jealousy, vengefulness, control and destructive extremes"),
+        "archetype": (_editorial_text('interpretations.c328785b810368a13a49154c28b75992c29ec49a108d01a831f74db4200814fb'), _editorial_text('interpretations.86968250e767d0465c5b90fa895b56e71d6f25d71f83cb814da5fa7302c66c6b')),
+        "essence": (_editorial_text('interpretations.04957a64421f0fea832f8525e79349cf0074fccc0cc2056247e78fa442f9eed6'), _editorial_text('interpretations.2780b04055258167dc6e490199793ab52e8aaa9f853e48e7e55334a9c0c8f1e1')),
+        "light": (_editorial_text('interpretations.2c243c835385684bf5672718a90a83154030c95edc2411f3d3664e3492a77848'), _editorial_text('interpretations.40196a49d5b2cd1e501ed63c7ea8b5d59567fd23dc9fe9f1f4f360d29b15e5d1')),
+        "shadow": (_editorial_text('interpretations.1d43c620645e494c26a1ff3c4bd7ce9cb376474f4ee485daf12dfda0fcccf9fd'), _editorial_text('interpretations.e475f925ffc5ac59bfb093b049ba6104930caba4608ede73fd6aac802397ad0c')),
         "detail": (
-            "Скорпион не выносит поверхностности. Его тянет туда, где горячо и глубоко: к правде за фасадом, к страсти, к тайнам, к тому, через что другие боятся пройти. Он живёт циклами смерти и возрождения — сгорает и восстаёт, и каждый кризис для него не катастрофа, а перерождение.\n\nВ любви он предан до самозабвения и требует такой же полной отдачи: полутонов он не признаёт, близость для него — слияние без остатка, оттого и ревность, и жажда контроля. В работе силён там, где нужны проницательность, выдержка, работа с кризисом, скрытым и запретным. Его внутренний узел — власть: сила видеть насквозь легко оборачивается манипуляцией, а боль — жаждой мести. Зрелость Скорпиона — направить свою мощь на преображение, а не на разрушение: отпускать вместо того, чтобы держать мёртвой хваткой, и превращать раны в источник глубины и сострадания.",
-            "Scorpio cannot stand the superficial. They are drawn to where it is hot and deep: to the truth behind the facade, to passion, to secrets, to what others are afraid to pass through. They live in cycles of death and rebirth — burning down and rising again, and each crisis is to them not a catastrophe but a transformation.\n\nIn love they are devoted to the point of self-abandon and demand the same total giving: they do not accept half-tones, closeness for them is a merging without remainder, hence the jealousy and the hunger for control. At work they are strong wherever insight, endurance and work with crisis, the hidden and the forbidden are needed. Their inner knot is power: the strength to see through people easily turns into manipulation, and pain into a thirst for revenge. Maturity for Scorpio is aiming that force at transformation rather than destruction — letting go instead of holding in a death-grip, and turning wounds into a source of depth and compassion.",
+            _editorial_text('interpretations.2fada976ff58d862426384cc75143cc785c899b09a5230cd5e1754e15cf739e4'),
+            _editorial_text('interpretations.64661febd8f4434f9defb3acb1be725ea3a40fd1236306c7a0ec757f38c3a48c'),
         ),
     },
     "Sag": {
-        "archetype": ("Странник, Философ", "The Wanderer, the Philosopher"),
-        "essence": ("стремление к смыслу, свободе и расширению горизонтов", "the striving for meaning, freedom and the widening of horizons"),
-        "light": ("оптимизм, щедрость, искренность и вера в будущее", "optimism, generosity, sincerity and faith in the future"),
-        "shadow": ("самоуверенность, нетерпимость, безответственность и склонность поучать", "overconfidence, intolerance, irresponsibility and a tendency to lecture"),
+        "archetype": (_editorial_text('interpretations.53b763c40e958796e9aed52ae110e9f59453d67555c7c18d3223cc9d04b88f72'), _editorial_text('interpretations.3f08baff13f266ccd8cda7b0ca7721e4674fe7c295696dfbed3ae6b970c50abc')),
+        "essence": (_editorial_text('interpretations.f4ce89cd33cd419074510a029d6b9f9b879e135536636a28350ec908e5fa0351'), _editorial_text('interpretations.f48efe69698c20aeac10b3931b9825fbf5e299d270dbbdfa97bf1b9ec447c923')),
+        "light": (_editorial_text('interpretations.878144927872035d5d83738dbda2cc2cd2d00e43ebc8d1b99926ca7fb708fb4a'), _editorial_text('interpretations.3b5535e063acbc57640fd30fbca530e28a329de8741f2c6c0d4ebf72b72410e9')),
+        "shadow": (_editorial_text('interpretations.d65c58085111af37a182d2506ea33a71223799e1ee3e885e4b995c68b6acd7f5'), _editorial_text('interpretations.26e97889c69157dfa9305272c2449d5c55894457a62f86edfc120d6fd789253b')),
         "detail": (
-            "Стрельцу нужен горизонт. Его гонит вперёд жажда смысла и простора: новые страны, идеи, вера, всё, что раздвигает рамки. Он оптимист по устройству — верит, что впереди лучше, и этой верой заражает других, зовя в дорогу и вширь.\n\nВ любви он щедр, честен и лёгок, дарит партнёру ощущение полёта, но свободу ценит выше уюта и пугается клетки обязательств. В работе хорош там, где нужны размах, обучение, дальние цели, идеология, — рутина и мелкий контроль его гасят. Его конфликт — между «всё обещать» и «за всё отвечать»: широкие жесты и уверенность легко переходят в самонадеянность и склонность поучать вместо того, чтобы слушать. Зрелость Стрельца — заземлить свою правду: понять, что настоящая свобода не в бегстве от обязательств, а в верности выбранному пути, и что мудрость тише, чем проповедь.",
-            "Sagittarius needs a horizon. They are driven forward by a hunger for meaning and open space: new countries, ideas, faith, everything that widens the frame. An optimist by design, they believe the best lies ahead and infect others with that belief, calling them onto the road and outward.\n\nIn love they are generous, honest and light, giving a partner a sense of flight, but they value freedom above comfort and take fright at the cage of obligation. At work they are good wherever scope, teaching, distant goals and vision matter — routine and petty control smother them. Their conflict is between promising everything and being answerable for it: broad gestures and confidence slide easily into overconfidence and a tendency to preach instead of listen. Maturity for Sagittarius is grounding their truth — seeing that real freedom is not in fleeing obligation but in loyalty to a chosen path, and that wisdom is quieter than a sermon.",
+            _editorial_text('interpretations.8eac4789d77841de3d805f3e9a3957e00a9c6fd7864a6ed7b6e1903c1a261958'),
+            _editorial_text('interpretations.be132bb3485b495394551b345a77c7cfcf9c32f2aa263f3d5892d0b0bba66522'),
         ),
     },
     "Cap": {
-        "archetype": ("Строитель, Мудрый старец", "The Builder, the Wise Elder"),
-        "essence": ("дисциплина, ответственность и восхождение к вершине", "discipline, responsibility and the climb to the summit"),
-        "light": ("целеустремлённость, надёжность, выдержка и стратегическое мышление", "determination, reliability, endurance and strategic thinking"),
-        "shadow": ("жёсткость, пессимизм, холодность и подавление чувств ради цели", "rigidity, pessimism, coldness and the suppression of feelings for the goal"),
+        "archetype": (_editorial_text('interpretations.308db2bcc564e8506464f1dc3962aa635cde2b611263dc287138d4377716077b'), _editorial_text('interpretations.1cd16b30b9a9fd14b2990ecb1ecb892fb0beeb4ca9532e7481081e91af7804e2')),
+        "essence": (_editorial_text('interpretations.759e11d5d1fe67d05ddb11fd4200a7bffef804d7d4fe02346673c2c0e2ff3e6c'), _editorial_text('interpretations.2365872467983d3daa04845d6e00217675a8918fffc2bed5c0d2548ad26f1cce')),
+        "light": (_editorial_text('interpretations.f088f83c1c4957d5b0ecf5c641ff83eeb29c568c47f8d48606a2985a4e59ad51'), _editorial_text('interpretations.87085f26b08884b4a3e4cb253c9bf315d9af3d1cf0d11afde6cad6e36828976d')),
+        "shadow": (_editorial_text('interpretations.98b92e725d095f33e05bc4e166f8a65465ee4b6763b0767c92d66cc3263a70f7'), _editorial_text('interpretations.946a759a4ccc60d8000310c261b9bb96bcd62b1549347222436256987311d2cd')),
         "detail": (
-            "Козерог мыслит вершинами и годами. Ему свойственна редкая выдержка: он готов идти долго и в гору, отказывая себе в лёгком сейчас ради весомого потом. Ответственность для него не бремя, а способ быть — он опора, на которую можно положиться, тот, кто доведёт.\n\nВ любви он сдержан и надёжен, говорит делом, а не словами, строит всерьёз и надолго, — но за бронёй самообладания прячет чувства, которые боится показать слабостью. В работе — стратег и труженик, силён там, где нужны дисциплина, структура, долгая игра и власть. Его внутренний узел — суровость: требовательность к себе оборачивается холодом и вечным «ещё не заслужил», а цель заслоняет живую жизнь. Зрелость Козерога — разрешить себе тепло и радость по дороге к вершине: понять, что он ценен не только достижениями и что позволить себе чувствовать — не слабость, а вершина повыше любой карьерной.",
-            "Capricorn thinks in summits and years. Theirs is a rare endurance: they will walk a long uphill road, denying themselves the easy now for a weighty later. Responsibility is not a burden but a way of being — they are the support you can lean on, the one who will see it through.\n\nIn love they are reserved and reliable, speaking through deeds rather than words, building seriously and for the long term — but behind the armor of self-control they hide feelings they fear to show as weakness. At work they are the strategist and the toiler, strong wherever discipline, structure, the long game and authority are needed. Their inner knot is severity: the demand they place on themselves turns into coldness and an eternal 'not earned yet', while the goal eclipses living life. Maturity for Capricorn is allowing warmth and joy along the way to the summit — seeing that they are worth more than their achievements, and that letting oneself feel is not weakness but a peak higher than any career.",
+            _editorial_text('interpretations.f368320b68ae439ea177bf486889da92ff71a71fb9a96dc74969857209b472d5'),
+            _editorial_text('interpretations.d36d3425cf4573470e7f130d0bc72028569fd13cd05c95fa56155f45419580ff'),
         ),
     },
     "Aqu": {
-        "archetype": ("Реформатор, Гений", "The Reformer, the Genius"),
-        "essence": ("свобода, оригинальность и устремлённость в будущее", "freedom, originality and a reach toward the future"),
-        "light": ("независимость, новаторство, гуманизм и широта взглядов", "independence, innovation, humanism and breadth of outlook"),
-        "shadow": ("отстранённость, упрямый бунт, эмоциональная холодность и эпатаж", "detachment, stubborn rebellion, emotional coldness and provocation"),
+        "archetype": (_editorial_text('interpretations.a6b625124fd272db2332d7d9ee647152e9c1b571c0f75491e3115f5af1b91d8d'), _editorial_text('interpretations.73fe3d382f946bd8134ace553e234bfe8563574b359f875901a0bfe3fff391c7')),
+        "essence": (_editorial_text('interpretations.d867d6c30ed4de3021d575eee00aa0f4a838a069cef266edf574419d0b0e7316'), _editorial_text('interpretations.7cdf0a67997516f357ee2b720f755384ab3de4f0b1cb8c69fe968d95f27f1dc9')),
+        "light": (_editorial_text('interpretations.4f92ce84054181a75a85621c4d49568d677cbd0f803cf078bb95d629c8dc8195'), _editorial_text('interpretations.8edd44765325e11a83cac1ad21b71e4ee7c760ae934b1a8ba2395d9041e91632')),
+        "shadow": (_editorial_text('interpretations.40ecc08163021158d6445d56187887819f23df3799d29e66f8b22fdf7eb45958'), _editorial_text('interpretations.ac9ec771245470d7fcae1907f85e84feafb5d141a25c6724c599f50bee1784c6')),
         "detail": (
-            "Водолей смотрит из будущего. Ему тесно в общепринятом: он видит, как могло бы быть иначе — лучше, свободнее — и не понимает, почему все держатся за старое. Он мыслит человечеством и идеями, дорожит независимостью и правом быть не как все.\n\nВ отношениях он верный друг прежде страстного любовника: ценит свободу, равенство и общность взглядов, но эмоциональная близость даётся ему труднее интеллектуальной — чувства он порой держит на расстоянии. В работе блестящ там, где нужны новизна, технологии, нестандартный взгляд, командная идея, — а иерархия и «так принято» его отталкивают. Его конфликт — между «люблю человечество» и «сложно с конкретным человеком»: за отстранённостью и бунтом ради бунта прячется страх раствориться и потерять себя. Зрелость Водолея — соединить свободу с теплом: понять, что близость не отменяет самобытности и что менять мир начинают с готовности быть по-настоящему рядом с одним живым человеком.",
-            "Aquarius looks in from the future. The conventional feels cramped to them: they see how things could be otherwise — better, freer — and cannot understand why everyone clings to the old. They think in terms of humanity and ideas, and prize independence and the right to be unlike the rest.\n\nIn relationships they are a loyal friend before a passionate lover: they value freedom, equality and shared views, but emotional closeness comes harder to them than intellectual, and feelings are sometimes kept at a distance. At work they are brilliant wherever novelty, technology, an unconventional angle and a shared idea are needed — while hierarchy and 'the way it's done' repel them. Their conflict is between 'I love humanity' and 'it's hard with an actual person': behind the detachment and rebellion-for-rebellion's-sake hides a fear of dissolving and losing themselves. Maturity for Aquarius is uniting freedom with warmth — seeing that closeness does not cancel individuality, and that changing the world begins with the willingness to be truly present with one living person.",
+            _editorial_text('interpretations.2e898caeb0a3c8e3f48f5282b4e8c30e380284d676c0551122807851278853cf'),
+            _editorial_text('interpretations.a5d0a224113caa12ea58a9477defc1f24ed10a48cdb576a6cbfbcd953731eca7'),
         ),
     },
     "Pis": {
-        "archetype": ("Мистик, Сострадающий", "The Mystic, the Compassionate One"),
-        "essence": ("растворение границ, сострадание и связь с высшим", "the dissolving of boundaries, compassion and a link with the higher"),
-        "light": ("чуткость, воображение, милосердие и духовная тонкость", "sensitivity, imagination, mercy and spiritual subtlety"),
-        "shadow": ("уход от реальности, жертвенность, иллюзии и бегство (в т.ч. в зависимости)", "escape from reality, self-sacrifice, illusions and flight (including into addictions)"),
+        "archetype": (_editorial_text('interpretations.bd963cbf7c43ed7444bfb87b48a6611e43d44b69a5c1a260a9d0f3303a065a04'), _editorial_text('interpretations.63af16251605164063fe4fd6dce9bbdb5f5d86cb9f9de2f9b48656e08bd7fa77')),
+        "essence": (_editorial_text('interpretations.1c97233e5091ca728f1aa716eba8b21743962ce5a537aed97ab8e6d0db30da68'), _editorial_text('interpretations.b3cf70e611888706e62891f2603c45e88173bed54a8a192bddf5c47ad910aa87')),
+        "light": (_editorial_text('interpretations.5e5bc8c7dc76ce10bdf193243da0a8c332e0834504feebd633f02e7901cc8054'), _editorial_text('interpretations.747bb6ca007c44c1b6d8cb2d59e847e8f9353d8c284b50ef636d6001715b5584')),
+        "shadow": (_editorial_text('interpretations.580053e51e9eff6c992d4413d83f7bd9e9c6f776d5ffa2028d68705acd1055a6'), _editorial_text('interpretations.23bbb4f80bba43e6bfa586f18794eed3d33277198641ec73693015c1eefc15c5')),
         "detail": (
-            "Рыбы живут без жёстких границ. Они впитывают настроения, как вода — цвет: чувствуют чужую боль как свою, улавливают невидимое, тянутся к тому, что больше обыденности, — к искусству, состраданию, вере. В них редкая мягкость и воображение, способное видеть за краем очевидного.\n\nВ любви они самоотверженны, нежны и всё прощают, растворяются в другом до потери себя, — и оттого легко становятся спасателями или жертвами. В работе сильны там, где нужны сочувствие, творчество, интуиция, помощь, — а жёсткие рамки и грубая конкуренция их ранят. Их внутренний узел — границы: там, где нет своего «нет», реальность давит, и появляется соблазн уплыть — в мечты, идеализацию, а то и в зависимость. Зрелость Рыб — научиться сострадать, не тонув: беречь свою мягкость, но ставить берега, отличать спасение других от бегства от себя и превращать чувствительность в дар, а не в рану.",
-            "Pisces live without hard borders. They soak up moods the way water takes color: they feel another's pain as their own, catch the invisible, and reach for what is larger than the everyday — art, compassion, faith. In them is a rare softness and an imagination that sees past the edge of the obvious.\n\nIn love they are selfless, tender and endlessly forgiving, dissolving into another to the point of losing themselves — and so they easily become rescuers or victims. At work they are strong wherever empathy, creativity, intuition and helping are needed, while rigid frames and raw competition wound them. Their inner knot is boundaries: where there is no personal 'no', reality presses in and the temptation arises to swim away — into dreams, idealization, sometimes addiction. Maturity for Pisces is learning to feel with others without drowning: to guard their softness but set shores, to tell rescuing others from fleeing themselves, and to turn sensitivity into a gift rather than a wound.",
+            _editorial_text('interpretations.c4cb9aff135e39d7884263d1aad1cbc2471397b27a4f8d90971538b568720e03'),
+            _editorial_text('interpretations.48c2103e2b17e4ed36b2dd5ffec3a883ca6ee3feb1d34e9631f44b0ecc278379'),
         ),
     },
 }
@@ -2130,18 +2084,10 @@ def sphere_love(venus_sign, mars_sign, dsc_sign, lang="ru"):
     sv, sm, sd = C.sign_in(venus_sign, lang), C.sign_in(mars_sign, lang), C.sign_in(dsc_sign, lang)
     if lang == "en":
         return (
-            f"How you love (Venus {sv}): the main emotional theme is {_af(venus_sign,'essence',lang)}; "
-            f"supportive qualities in closeness are {_af(venus_sign,'light',lang)}. "
-            f"Passion and attraction (Mars {sm}): {_af(mars_sign,'essence',lang)}. "
-            f"Partner image (Descendant {sd}): qualities that attract your attention — {_af(dsc_sign,'essence',lang)}; "
-            f"possible shadow tendencies — {_af(dsc_sign,'shadow',lang)}."
+            f"{_editorial_text('interpretations.f1205cc590407e72f14093c49603bc4cf7d190ae61ed1da11bd35652fb1fef98')}{sv}{_editorial_text('interpretations.33cb48c26d9284aa6468646b14d968e11b18f4f2513727604b38d884ffd4c863')}{_af(venus_sign, 'essence', lang)}{_editorial_text('interpretations.2a0b02dceb9f6bdc4db2a82eb20f61bd02a5e11cac5359fec8d2201a9dcd25d1')}{_af(venus_sign, 'light', lang)}{_editorial_text('interpretations.e0327e7f2bcfe18efebb168a79dbbcb89783de8150bd9f68581d880a3e2c1364')}{sm}): {_af(mars_sign, 'essence', lang)}{_editorial_text('interpretations.1d449b98603c6da3ba7f253904287840dba17e2c956ca93f6fd1c9dbf7c6fc23')}{sd}{_editorial_text('interpretations.bd684aa4de625defedf0f944c574cafe31dd776bb1bbd9ac2ae17fc7cd6e44ed')}{_af(dsc_sign, 'essence', lang)}{_editorial_text('interpretations.0c370d9f43ef584c06c1f07567ad041ddc35b2d23cadccedd390c9d426540f0a')}{_af(dsc_sign, 'shadow', lang)}."
         )
     return (
-        f"Как вы любите (Венера {sv}): основная эмоциональная тема — {_af(venus_sign,'essence',lang)}; "
-        f"поддерживающие качества в близости — {_af(venus_sign,'light',lang)}. "
-        f"Страсть и влечение (Марс {sm}): {_af(mars_sign,'essence',lang)}. "
-        f"Образ партнёра (Десцендент {sd}): качества, привлекающие внимание, — {_af(dsc_sign,'essence',lang)}; "
-        f"возможные теневые тенденции — {_af(dsc_sign,'shadow',lang)}."
+        f"{_editorial_text('interpretations.005fce77ba98c1d48167589465c9cf70cd4d2a5583736df94f6ebeeec47e1085')}{sv}{_editorial_text('interpretations.06c34af619fdd007ab530e5c82fea1c80fa4c3e49bf333413e6097752dd6011d')}{_af(venus_sign, 'essence', lang)}{_editorial_text('interpretations.4118d6ba4e87953909e68ec9a6f5cf2d09d9e9ca21f541e23ae616727024cfa6')}{_af(venus_sign, 'light', lang)}{_editorial_text('interpretations.e74fc194acc5f68caef5fb11bffaab1ccd4baa40c4255dc8d61659f522360814')}{sm}): {_af(mars_sign, 'essence', lang)}{_editorial_text('interpretations.6633df77796ffc661f1dd0bccc2c0e9bee0feaf0b697840c60dd45a3bf229bff')}{sd}{_editorial_text('interpretations.c3bbd7d5ae04c881e6423e008490377a42c52893fc049122392cb3e9a38509c9')}{_af(dsc_sign, 'essence', lang)}{_editorial_text('interpretations.311fb538abfb8fe9ac873c4d1cae03322ebefb209c57b8948613416e910946b4')}{_af(dsc_sign, 'shadow', lang)}."
     )
 
 
@@ -2149,18 +2095,10 @@ def sphere_career(mc_sign, sun_sign, saturn_sign, lang="ru"):
     smc, ss, ssat = C.sign_in(mc_sign, lang), C.sign_in(sun_sign, lang), C.sign_in(saturn_sign, lang)
     if lang == "en":
         return (
-            f"Vocation and public role (MC {smc}): the main professional theme is {_af(mc_sign,'essence',lang)}; "
-            f"supportive strengths in work are {_af(mc_sign,'light',lang)}. "
-            f"Inner driver (Sun {ss}): {_af(sun_sign,'essence',lang)}. "
-            f"Discipline and career endurance (Saturn {ssat}): {_af(saturn_sign,'light',lang)}; "
-            f"the risk zone for growth is {_af(saturn_sign,'shadow',lang)}."
+            f"{_editorial_text('interpretations.e74cc9c5c75f80d0e226f71fd4072e5aef33efe0a3e4738f4d6bd701a699982d')}{smc}{_editorial_text('interpretations.8132332182d135fb653e73ca869d2689be5ab9e08e51579fae8ce2d4024d9668')}{_af(mc_sign, 'essence', lang)}{_editorial_text('interpretations.87b96d69dbe5e573eb000d4f6b840e493b75ab75fa450fdb048d380b2b55889b')}{_af(mc_sign, 'light', lang)}{_editorial_text('interpretations.431259cc1a3c2d96b03e6b8de0158206a499112b3fc4ebb72bc445f78e45ad74')}{ss}): {_af(sun_sign, 'essence', lang)}{_editorial_text('interpretations.e18f0b697fd1785844723a8e2b689bd186515065bffec7db0e2d0d4904671441')}{ssat}): {_af(saturn_sign, 'light', lang)}{_editorial_text('interpretations.235e98c03b6cc8b90e14f32b37287dd480ec1c842747c977ab61e41f9d4ce596')}{_af(saturn_sign, 'shadow', lang)}."
         )
     return (
-        f"Призвание и публичная роль (MC {smc}): основная профессиональная тема — {_af(mc_sign,'essence',lang)}; "
-        f"поддерживающие сильные стороны в деле — {_af(mc_sign,'light',lang)}. "
-        f"Внутренний двигатель (Солнце {ss}): {_af(sun_sign,'essence',lang)}. "
-        f"Дисциплина и карьерная выдержка (Сатурн {ssat}): {_af(saturn_sign,'light',lang)}; "
-        f"зона риска для роста — {_af(saturn_sign,'shadow',lang)}."
+        f"{_editorial_text('interpretations.30e2fdf024cedfccb7ad8312de5b491643e19dff5e7e13c2deb7b6ae000911f9')}{smc}{_editorial_text('interpretations.5dc425422834b1c9311a89ffee722b7f328e7af4cf7c0e2763001318ac24002e')}{_af(mc_sign, 'essence', lang)}{_editorial_text('interpretations.cf4e6a9b6a5a4bdeb6667af97ec5ae37b07959d37aa4ffbda6c84cd6237dc19c')}{_af(mc_sign, 'light', lang)}{_editorial_text('interpretations.d26e23564671ec39b3f8fd4d5fe4c5b4e2eb097afbde0ffe4db8a0fa7908ac24')}{ss}): {_af(sun_sign, 'essence', lang)}{_editorial_text('interpretations.295e0526a1ada83a24cf6c4f5aa0b249a38e6618871ce089edd63376882aea94')}{ssat}): {_af(saturn_sign, 'light', lang)}{_editorial_text('interpretations.42c50ff19e1959df8228fde177c912c137b3dddb3ea2a97cbf0bae21c200c155')}{_af(saturn_sign, 'shadow', lang)}."
     )
 
 
@@ -2168,21 +2106,11 @@ def sect_text(is_day: bool, lang: str = "ru") -> str:
     """Карта дня/ночи (sect) — простым языком: кто из планет «добрее», кто резче."""
     if lang == "en":
         if is_day:
-            return ("You were born by day — the Sun was above the horizon, so this is a daytime chart. "
-                    "In a day chart the main helper is Jupiter (its gifts are especially generous), strict Saturn "
-                    "behaves more mildly and constructively, while Mars tends to show up more sharply. "
-                    "The leading light of such a chart is the Sun.")
-        return ("You were born by night — the Sun was below the horizon, so this is a night-time chart. "
-                "In a night chart the main helper is Venus (its gifts are especially warm), forceful Mars "
-                "behaves more mildly, while strict Saturn tends to show up more sharply. "
-                "The leading light of such a chart is the Moon.")
+            return (_editorial_text('interpretations.b1f8550afdb94d6d6770fa7fbeefce94c26bd89a9de85b8fa9ad8560c1b49dda'))
+        return (_editorial_text('interpretations.947bde61042c735282e53fc400a70fb9374986f696bb6624f84dff0fc126362a'))
     if is_day:
-        return ("Вы родились днём — Солнце было над горизонтом, это «дневная» карта. "
-                "В дневной карте главный помощник — Юпитер (его дары особенно щедры), строгий Сатурн действует "
-                "мягче и конструктивнее, а вот Марс проявляется резче. Ведущее светило такой карты — Солнце.")
-    return ("Вы родились ночью — Солнце было под горизонтом, это «ночная» карта. "
-            "В ночной карте главный помощник — Венера (её дары особенно тёплые), напористый Марс действует "
-            "мягче, а строгий Сатурн проявляется резче. Ведущее светило такой карты — Луна.")
+        return (_editorial_text('interpretations.325e0a595335dd14dfab0abec52864634df6e1e182672fde57433b168d23f5b3'))
+    return (_editorial_text('interpretations.af3838a71689f7d4d86a2655fa2e7dd77b1518d6fc3e532b966663a43a9fbdac'))
 
 
 def lot_fortune_text(sign: str, house_num, lang: str = "ru") -> str:
@@ -2190,15 +2118,13 @@ def lot_fortune_text(sign: str, house_num, lang: str = "ru") -> str:
     sign_ru = C.sign_name(sign, lang)
     where = C.house_meaning(house_num, lang).lower() if house_num else ""
     if lang == "en":
-        s = (f"The Lot of Fortune (Part of Fortune) marks natural well-being, bodily flow and good luck. "
-             f"In {sign_ru}" + (f" and the {house_num}th house" if house_num else "") + ": ")
-        s += f"prosperity and a sense of ease come to you most readily through the area of {where}, " if where else ""
-        s += f"expressed as {_af(sign, 'essence', lang)}."
+        s = (f"{_editorial_text('interpretations.1cf8ffdd2f46da38cdeacd4d719f0c0aaabfe8f1c5a6dd8516bad560ab28cb0e')}{sign_ru}" + (f"{_editorial_text('interpretations.9aa92d19a36be80af81c957f6bf48036cd4185a46afb242346a432d8fa4e2e69')}{house_num}{_editorial_text('interpretations.6f3e3b725840e20cedffecc13cc2f18d03224f17c9f71837cb0fd254572ca1af')}" if house_num else "") + ": ")
+        s += f"{_editorial_text('interpretations.8c8a6fbd1bd97c8b41caecb64a7037c81fd1d7642c996fb8c135aacbf09ef176')}{where}, " if where else ""
+        s += f"{_editorial_text('interpretations.8c812db175d3c615c489e8b95926d1162a5a2f00e406002be14b2702b0dea61d')}{_af(sign, 'essence', lang)}."
         return s
-    s = (f"Жребий Фортуны (Колесо Фортуны) — точка естественного благополучия, телесного потока и удачи. "
-         f"В знаке {sign_ru}" + (f" и {house_num}-м доме" if house_num else "") + ": ")
-    s += f"благополучие и ощущение лёгкости приходят к вам легче всего через сферу «{where}», " if where else ""
-    s += f"проявляясь как {_af(sign, 'essence', lang)}."
+    s = (f"{_editorial_text('interpretations.40cc4952fd3a193c0e9f4b5b2275ab3847b9c520acab2433a5020e3c90506db1')}{sign_ru}" + (f"{_editorial_text('interpretations.21db14e45f667f8eb8a632218a3a46c70ebe651777d91c1a2d2e18dd8c6e22e8')}{house_num}{_editorial_text('interpretations.c44bbb5abad7d63476b57a37cfea13e90210d4585a6e01b607cc1516f960125d')}" if house_num else "") + ": ")
+    s += f"{_editorial_text('interpretations.b4bdc5d2432594e3b22b908687dfed720e44e5c4ec723d78c42d420c3abb10e7')}{where}», " if where else ""
+    s += f"{_editorial_text('interpretations.23b566a9d73d12dbfcf285070bca03fbd02789566467c530b5cb1e4e46860ac3')}{_af(sign, 'essence', lang)}."
     return s
 
 
@@ -2222,20 +2148,20 @@ def return_forecast(rtype: str, asc_sign: str, sun_house, moon_sign: str, moon_h
 
     if lang == "en":
         out = {
-            "overlay": (f"Most important: the return Ascendant falls into your natal {_ord_en(asc_natal_house)} house — so the main theme of the {per} concerns the area of {nat_mean}. {nat_exp}") if asc_natal_house else "",
-            "tone": f"The tone of the {per} is set by the return Ascendant in {asc_ru}: {g(a.get('essence',('','')), lang)}. At its best — {g(a.get('light',('','')), lang)}.",
-            "focus": f"A key focus is the area of {sun_h_mean} (the Sun sits in the {_ord_en(sun_house)} house of the return). {sun_h_exp}" if sun_house else "",
-            "mood": f"Emotional climate — the Moon in {moon_ru}" + (f", {_ord_en(moon_house)} house" if moon_house else "") + f": {g(m.get('essence',('','')), lang)}.",
-            "lord": (f"Ruler of the {per} — {lord_ru} (ruler of the return Ascendant), placed in {lord_sign_ru}" + (f", {_ord_en(lord_house)} house" if lord_house else "") + f" of the return; that area gets extra emphasis.") if lord_name else "",
+            "overlay": (f"{_editorial_text('interpretations.0424b7e69bb66bae3bcc889577f601e20eecda8107dce24bd380ae080cd3ddf2')}{_ord_en(asc_natal_house)}{_editorial_text('interpretations.659d73c2272ba94d83cb34c6f35160be61c31d50d9fdba160a7c7eeed6a12db6')}{per}{_editorial_text('interpretations.386f86e71c3812eda6285cb13716ba9bfa28f339c3a42d01bdcadf71ad817cd0')}{nat_mean}. {nat_exp}") if asc_natal_house else "",
+            "tone": f"{_editorial_text('interpretations.bfb92a67b1daad6a81d09d169e2d6463122bb4ea0e791905b399a71ac82ce55d')}{per}{_editorial_text('interpretations.59299b215d933b9a59ce58ee9f559793d03877be4e1c136ea6a5d01bdc76ae99')}{asc_ru}: {g(a.get('essence', ('', '')), lang)}{_editorial_text('interpretations.a062fad248bb4ed0380c3de23ef2483968eeead1186c1ca5a61a8325315cdf39')}{g(a.get('light', ('', '')), lang)}.",
+            "focus": f"{_editorial_text('interpretations.304d12b9b139888dcd83f6293464af369996a43568a2059865b90b82249134c0')}{sun_h_mean}{_editorial_text('interpretations.36ccf3982d147a6099ba0d5020c2ff1638d5d5f3a47eb5812df0140a8bd13b1b')}{_ord_en(sun_house)}{_editorial_text('interpretations.b939c787d778bb903dd2bf55fc150a0a8e817f9352ab8793c8582cf64b2b45b0')}{sun_h_exp}" if sun_house else "",
+            "mood": f"{_editorial_text('interpretations.b68fecd55a33004546aff346ea2c9656d618a934d1d08fc168c82a5ed34e5600')}{moon_ru}" + (f", {_ord_en(moon_house)}{_editorial_text('interpretations.41981f406d038c45c2655a9936bc1a781552af51a69bfd376e5260a22f84396b')}" if moon_house else "") + f": {g(m.get('essence', ('', '')), lang)}.",
+            "lord": (f"{_editorial_text('interpretations.bd0ee0095310a52e5fddcc1ebd49c48f3b69b375acd607a1f7276f1885d1fac6')}{per} — {lord_ru}{_editorial_text('interpretations.c29213ec21ee86f8b37054406eff5ee5d7e79048948e16dcaee3ec4ebac59910')}{lord_sign_ru}" + (f", {_ord_en(lord_house)}{_editorial_text('interpretations.41981f406d038c45c2655a9936bc1a781552af51a69bfd376e5260a22f84396b')}" if lord_house else "") + f"{_editorial_text('interpretations.01d8bada8b72f840ddea84e765285885ddc6f4772cea393dc723641a49b83fbe')}") if lord_name else "",
         }
         return out
     ret_w = "соляра" if is_solar else "лунара"
     out = {
-        "overlay": (f"Самое важное: Асцендент {ret_w} попал в {asc_natal_house}-й дом вашей натальной карты — значит, главная тема {per} связана со сферой «{nat_mean}». {nat_exp}") if asc_natal_house else "",
-        "tone": f"Тон {per} задаёт Асцендент возвращения в знаке {asc_ru}: {g(a.get('essence',('','')), lang)}. В лучшем — {g(a.get('light',('','')), lang)}.",
-        "focus": (f"Ещё один акцент — сфера «{sun_h_mean}» (Солнце в {sun_house}-м доме возвращения). {sun_h_exp}") if sun_house else "",
-        "mood": f"Эмоциональный климат — Луна в знаке {moon_ru}" + (f", {moon_house}-й дом" if moon_house else "") + f": {g(m.get('essence',('','')), lang)}.",
-        "lord": (f"Управитель {per} — {lord_ru} (управитель Асцендента {ret_w}), в карте {ret_w} в знаке {lord_sign_ru}" + (f", {lord_house}-й дом" if lord_house else "") + "; эта сфера получает дополнительный акцент.") if lord_name else "",
+        "overlay": (f"{_editorial_text('interpretations.ad7ddcb51cbbbe22712bca874e51047a48a67117ecfa5525cac04b1f4fd39702')}{ret_w}{_editorial_text('interpretations.ba22abe1f0c4bcc399659896c17456cb989a61a2e7c6caf89323dd0813fb1c38')}{asc_natal_house}{_editorial_text('interpretations.58e9f86e0a830a1c07ae815705ff034ae00421fcbfaa2671469019a28235c7fd')}{per}{_editorial_text('interpretations.dc0ab70966badcab8500c18238376ab5c4d5bc6bd5c8894ffc8f36471cb0759a')}{nat_mean}». {nat_exp}") if asc_natal_house else "",
+        "tone": f"{_editorial_text('interpretations.fa7d2b936885ae8ef443842dfc9279f7076b4a7586e0edc5c89c6ee0528eb5f7')}{per}{_editorial_text('interpretations.2b5d8e64c831c3407d78adf9ef2f4a2d3cca263ab0f6311d5b2c19542f352d16')}{asc_ru}: {g(a.get('essence', ('', '')), lang)}{_editorial_text('interpretations.a34a90db39337ac63587f7ee814198c71bccde13915d5529092351eb5f53c4bb')}{g(a.get('light', ('', '')), lang)}.",
+        "focus": (f"{_editorial_text('interpretations.974d12e28f64d8995d25452396aaebbf48f7edd47ce421ff78fb34e6c59f439d')}{sun_h_mean}{_editorial_text('interpretations.07991db0ec736b9b0a54f31bf1748d7a1f0069b05a92338da0f11620db7dffdc')}{sun_house}{_editorial_text('interpretations.321fdf9f07ad1bbabb375c46ccb2a2fc667f8c27e2bc5c467e448a57991ee1dd')}{sun_h_exp}") if sun_house else "",
+        "mood": f"{_editorial_text('interpretations.65dadc22bae1dbd20d351dc27b726c910a63e446eee466aec58845397ab01813')}{moon_ru}" + (f", {moon_house}{_editorial_text('interpretations.685547d6d819c039ea9fd4e48a0d6e77dcbe52bf84d16c95903cbb7cdd7e5a65')}" if moon_house else "") + f": {g(m.get('essence', ('', '')), lang)}.",
+        "lord": (f"{_editorial_text('interpretations.c75dfe6cb1736701b7e18e36bd9451f671a29677caf010b8b1726afd751d7ad8')}{per} — {lord_ru}{_editorial_text('interpretations.5b800f78d1e20743f3fe041a59bc887e3da89aa52736513d87005f937d413228')}{ret_w}{_editorial_text('interpretations.e2d20d58a3878a1746bae8c3ef70d3fb22eb517a5b9b9f34cce65b0a2bb0ebc0')}{ret_w}{_editorial_text('interpretations.bf426631d14a3906e8bf3009ae01624029da06b1e8b1203c11025896b9a44fd8')}{lord_sign_ru}" + (f", {lord_house}{_editorial_text('interpretations.685547d6d819c039ea9fd4e48a0d6e77dcbe52bf84d16c95903cbb7cdd7e5a65')}" if lord_house else "") + _editorial_text('interpretations.b731191644240203063fe88fec0354704b514fdf18ef667580adb29b706f81ce')) if lord_name else "",
     }
     return out
 
@@ -2244,18 +2170,10 @@ def sphere_health(asc_sign, moon_sign, h6_sign, lang="ru"):
     sa, smo, sh = C.sign_in(asc_sign, lang), C.sign_in(moon_sign, lang), C.sign_in(h6_sign, lang)
     if lang == "en":
         return (
-            f"Everyday resources (Ascendant {sa}): the underlying pattern is {_af(asc_sign,'essence',lang)}; "
-            f"a supportive quality is {_af(asc_sign,'light',lang)}. "
-            f"Emotional balance (Moon {smo}): familiar reactions are connected with these themes: {_af(moon_sign,'essence',lang)}. "
-            f"During demanding periods, the following tendencies may become more visible: {_af(moon_sign,'shadow',lang)}. "
-            f"Rhythm and everyday habits (6th house {sh}): useful reference points are {_af(h6_sign,'essence',lang)}."
+            f"{_editorial_text('interpretations.ed7e4602a4debaf8137e98e5ff636a42c3f0eb676bb32e8ca15397b736e39368')}{sa}{_editorial_text('interpretations.89bb293cb6e055d6051301952911cefcd6fab180cf9ce851178da84353ac1774')}{_af(asc_sign, 'essence', lang)}{_editorial_text('interpretations.43491876444ab12286103d9504b840519034eb6cdf65242ce9f6d53612dd99c6')}{_af(asc_sign, 'light', lang)}{_editorial_text('interpretations.a545336f2fc6f4201e0e269f97ac3ee4243f900b80463e6e821699f5b9f01ee2')}{smo}{_editorial_text('interpretations.297cda29d00bd12c9cb3ff53df36b74d8fefac4ffa43eb58933a142a2eaf14ea')}{_af(moon_sign, 'essence', lang)}{_editorial_text('interpretations.a22ccf67dfdd3f04f08290baf3e98de03c0723a540994a708b00183cfc51a164')}{_af(moon_sign, 'shadow', lang)}{_editorial_text('interpretations.cb33c4f9c18253b418562f48cefa82b6415bbf235c5a000953fefa17d60f45e5')}{sh}{_editorial_text('interpretations.a22973c14c1689a747671155725af576c6893a50b456065779c9e9a8cf62753e')}{_af(h6_sign, 'essence', lang)}."
         )
     return (
-        f"Повседневный ресурс (Асцендент {sa}): основная настройка — {_af(asc_sign,'essence',lang)}; "
-        f"поддерживающая сторона — {_af(asc_sign,'light',lang)}. "
-        f"Эмоциональный баланс (Луна {smo}): привычные реакции связаны с темами: {_af(moon_sign,'essence',lang)}. "
-        f"В напряжённые периоды могут ярче проявляться следующие тенденции: {_af(moon_sign,'shadow',lang)}. "
-        f"Ритм и повседневные привычки (6-й дом {sh}): полезные ориентиры — {_af(h6_sign,'essence',lang)}."
+        f"{_editorial_text('interpretations.704c4ac1dd653786cb423e7abec5daf31047651f232e0b2d6c1b265221d4b7a3')}{sa}{_editorial_text('interpretations.d56802b7278980ecd346be808c8c94b93e4bf5ed2fbe8e0e218305875c5dafab')}{_af(asc_sign, 'essence', lang)}{_editorial_text('interpretations.a501f5fe7ef34b778987cd9d309d3fd01c9a024c0369d677085d2a6ee673bda8')}{_af(asc_sign, 'light', lang)}{_editorial_text('interpretations.9a7cf63c07dfdffc27cbc67467b849db6f746ba30834534ad752a59361c4a52e')}{smo}{_editorial_text('interpretations.10f37d137741396deb9b833775217ef408e6f9cb675312c04e06a4e427e19ce0')}{_af(moon_sign, 'essence', lang)}{_editorial_text('interpretations.9aefbba5ff8281d946c95bdc200001e8ddeaf64ea6f591314d45d3b63cb74b5a')}{_af(moon_sign, 'shadow', lang)}{_editorial_text('interpretations.e817ca9672892b63f573c8ded4193b101a9789c94ed81273ff719c253552601e')}{sh}{_editorial_text('interpretations.765e1215080308476019d4b98044ac1f88a53df26c33325eb5bd57df17086633')}{_af(h6_sign, 'essence', lang)}."
     )
 
 
@@ -2263,24 +2181,24 @@ def sphere_health(asc_sign, moon_sign, h6_sign, lang="ru"):
 #  Углублённый разбор: ретроградность, фаза Луны, конфигурации, полушария
 # --------------------------------------------------------------------------- #
 RETROGRADE_NOTE = {
-    "Mercury": ("мышление обращено внутрь: вы переосмысливаете информацию по-своему, не сразу высказываетесь, склонны к самостоятельным, нестандартным выводам и повторному обдумыванию.",
-                "thinking turns inward: you reprocess information in your own way, don't speak out at once, and tend toward independent, unconventional conclusions and review."),
-    "Venus": ("ценности и любовь переживаются внутренне и нестандартно: вы по-своему чувствуете близость, можете не доверять открытым проявлениям чувств и переоценивать отношения изнутри.",
-              "values and love are experienced inwardly and unconventionally: you feel closeness in your own way, may distrust open displays of feeling and reassess relationships from within."),
-    "Mars": ("энергия направлена внутрь: вы действуете не напрямую, копите импульс, иногда подавляете гнев — важно научиться выражать волю и желания открыто.",
-             "energy is directed inward: you act indirectly, build up impulse, sometimes suppress anger — it's important to learn to express will and desire openly."),
-    "Jupiter": ("вера и рост идут изнутри: вы ищете собственную философию, развиваетесь через внутренний поиск, а не внешнюю экспансию.",
-                "faith and growth come from within: you seek your own philosophy and develop through inner search rather than outer expansion."),
-    "Saturn": ("дисциплина и требовательность обращены к себе: усиленная самокритика и уроки о собственной ценности; опора строится изнутри.",
-               "discipline and demands turn on yourself: heightened self-criticism and lessons about self-worth; your backbone is built from within."),
-    "Uranus": ("бунт и потребность в свободе переживаются внутренне, как личное право быть собой.",
-               "rebellion and the need for freedom are experienced inwardly, as a personal right to be yourself."),
-    "Neptune": ("духовность и воображение обращены вглубь себя.",
-                "spirituality and imagination turn deep inward."),
-    "Pluto": ("трансформация идёт через глубокую внутреннюю работу.",
-              "transformation goes through deep inner work."),
-    "Chiron": ("исцеление раны — внутренний, личный путь.",
-               "healing the wound is an inner, personal journey."),
+    "Mercury": (_editorial_text('interpretations.488bbbe03b2596a2d717c9677f929fb7f95f2c6291dea1cef58a0fe9b6556127'),
+                _editorial_text('interpretations.80053d850a5e08a551a7f9e1f149b5db381a98cd518076fbff2584643765c5a7')),
+    "Venus": (_editorial_text('interpretations.2538a7d1309fe37e18f0d636bc53cda7786b106837a371005ee26f3ac5ca3821'),
+              _editorial_text('interpretations.6e75b2807e5f5f7999476257b0a4d0b7832ac341062274f828ab4016c1d7c926')),
+    "Mars": (_editorial_text('interpretations.778e63ee2dab01696650bb81010c2b6ed25cd5461f04b1da8cd6e17ddbcface6'),
+             _editorial_text('interpretations.c5289730b1f6effd0774fce43a1de4879e71dae73d7482a6543f8bc462ae8b10')),
+    "Jupiter": (_editorial_text('interpretations.b7c1678adf688302ff06132f7859bc93cd3ab3add37d7e95ffb0bb144101b071'),
+                _editorial_text('interpretations.0cccbf0f6812f3c2dd6114893f0044eb265e2139b9821f89f3b3366a0b9b4b24')),
+    "Saturn": (_editorial_text('interpretations.37ac2c443d41265982b909033143a2a23bb22558257c0160f8a2e98fabaa2c19'),
+               _editorial_text('interpretations.6081ecb903a581bfca18bce1addf1acf828027a8e20f4f85ef7c0149d5fa5b98')),
+    "Uranus": (_editorial_text('interpretations.52c2f6596244b3b595f82baebd074d4528468cab2f29fe42ed521e30c9315f79'),
+               _editorial_text('interpretations.316f54378e5da390eb0defcba96faf3feafe58cfc41ec7dba7a0dc438a8d8b35')),
+    "Neptune": (_editorial_text('interpretations.d9d978b80937ee37a52347cce0879c09a665c2bdc52fa43aa0295c035e5c3cf0'),
+                _editorial_text('interpretations.839f11a6598327b1293d9262aacbb33bfdd16a786e1cfb983a40b3a117410889')),
+    "Pluto": (_editorial_text('interpretations.19729e68c23e2e4eb2b2d9472dbbf18ba876bad20ddbdbf3d4e45732f9653c28'),
+              _editorial_text('interpretations.e59e1f9d23f4ab6ca3f460522e8e0e3f175a4c77a4b2ab95524b5b843d637df9')),
+    "Chiron": (_editorial_text('interpretations.11f42f8cc4b18e5fca2b616ecf362927ef333cdd9143358fe46b06ecd3117bce'),
+               _editorial_text('interpretations.82bdd2ce96a6b2d0504a6dda7b48a35bf01a79ccf9bf78562ef62034df9d11e5')),
 }
 
 
@@ -2290,22 +2208,22 @@ def retrograde_note(name, lang="ru"):
 
 
 LUNAR_PHASE_MEANING = {
-    "New Moon": ("Новолуние: вы человек инстинкта и порыва — действуете спонтанно, начинаете новое, смотрите вперёд, не оглядываясь. Субъективность и вера в себя.",
-                 "New Moon: you are a person of instinct and impulse — acting spontaneously, starting fresh, looking forward without glancing back. Subjectivity and self-belief."),
-    "Waxing Crescent": ("Растущий серп: вы боретесь с инерцией прошлого и строите новое; в вас живёт стремление утвердить свою индивидуальность.",
-                        "Waxing Crescent: you struggle with the inertia of the past and build something new; a drive to assert your individuality lives in you."),
-    "First Quarter": ("Первая четверть: вы — деятель и строитель, решительный и волевой; растёте через кризисы действия и преодоление.",
-                      "First Quarter: you are a doer and builder, decisive and strong-willed; you grow through crises of action and overcoming."),
-    "Waxing Gibbous": ("Растущая Луна: вы стремитесь к совершенству и смыслу, анализируете, доводите до ума — вам важно понимать «зачем».",
-                       "Waxing Gibbous: you strive for perfection and meaning, analyse and refine — it matters to you to understand the “why”."),
-    "Full Moon": ("Полнолуние: вы осознанны и объективны, реализуетесь через отношения и партнёрство; важен баланс себя и другого.",
-                  "Full Moon: you are aware and objective, fulfilled through relationships and partnership; the balance of self and other matters."),
-    "Waning Gibbous": ("Убывающая Луна: вы делитесь, учите и передаёте опыт; вам важно донести понятое до других.",
-                       "Waning (Disseminating) Moon: you share, teach and pass on experience; conveying what you've understood matters to you."),
-    "Last Quarter": ("Последняя четверть: вы переориентируетесь, переосмысливаете убеждения; внутренний кризис сознания ведёт к перестройке.",
-                     "Last Quarter: you reorient and rethink beliefs; an inner crisis of consciousness leads to restructuring."),
-    "Waning Crescent": ("Убывающий серп (бальзамическая Луна): вы визионер с сильной кармической памятью; завершаете циклы и сеете семена будущего.",
-                        "Balsamic Moon: you are a visionary with strong karmic memory; you close cycles and plant the seeds of the future."),
+    'New Moon': (_editorial_text('interpretations.b6a131930ee37a85339bcbd32f6277183322db25d42e98b9432536b03db0004c'),
+                 _editorial_text('interpretations.740eb084ee15f7315174df75235a80eef852e265c263771ecc4d9e5536bf57b8')),
+    'Waxing Crescent': (_editorial_text('interpretations.d9f2c6c132e92adb878063feeaedeff3ed00d03cbf2c23e456b3bfdd0d9a5b95'),
+                        _editorial_text('interpretations.4854a77d120032d350fabd707354a45d174d76eed8f353f46db614c43f47caba')),
+    'First Quarter': (_editorial_text('interpretations.79aaf79cc0667da0d3bb2a07272f4176c25472b751de1c373581913e36e31705'),
+                      _editorial_text('interpretations.dd8e062e78603b23fb2fc937e0ffd36feba8be0c4de70ecc0b5594f5403d9fe0')),
+    'Waxing Gibbous': (_editorial_text('interpretations.1e1765e73eadde8f8ecd00a42bd437cc3384f7be956ca4985e8aee2c4042de8a'),
+                       _editorial_text('interpretations.9e3294ab88e98847fa9d802a337678422e12c78ad25173d1d795e20f5b041890')),
+    'Full Moon': (_editorial_text('interpretations.9d4ad4a31483d1276c58dbd5cc698ad763fe37214f628c4603a21e0b962be3aa'),
+                  _editorial_text('interpretations.701516591fd7a15df58e5f71687212b004f3b06d66f635d94d4eb2f814cbf48e')),
+    'Waning Gibbous': (_editorial_text('interpretations.90f5c9ce5061ce4c439f40af75c44accd6d21cc68d3fc94391fc073040b44574'),
+                       _editorial_text('interpretations.2a1f7a1c83891aa3db6a814f93abb11f4950cc3aca69c327fb396d4d5c47c240')),
+    'Last Quarter': (_editorial_text('interpretations.821ccb6a1acb0a67864ee2ba46cf06e1643655d9c6532d4799d624a812ceaad4'),
+                     _editorial_text('interpretations.865ec3ad0d21f258348cc9dbc29aab5e7663b104fb1d6d2e93d432e5fd966568')),
+    'Waning Crescent': (_editorial_text('interpretations.462123ef33929d44f1ed4070f32e264d11e33195a6d43733b05df1c111f91a31'),
+                        _editorial_text('interpretations.f4c92f783d5d8bbe292aa5b349c3ced9b33aceca06e2c3070fac6606ce70dbea')),
 }
 
 
@@ -2316,50 +2234,50 @@ def lunar_phase_meaning(phase_name, lang="ru"):
 
 # Энергия дня по фазе Луны — что благоприятно делать (для лунного календаря).
 LUNAR_PHASE_ADVICE = {
-    "New Moon": ("Время начинаний: загадывайте цели и «сажайте семена» новых дел. Энергии пока мало — не перегружайтесь, наметьте планы.",
-                 "A time for beginnings: set intentions and plant the seeds of new undertakings. Energy is still low — don't overload, sketch out plans."),
-    "Waxing Crescent": ("Первые шаги к задуманному: набирайте обороты, преодолевайте сомнения и инерцию, укрепляйте начатое.",
-                        "First steps toward your aim: gather momentum, overcome doubt and inertia, reinforce what you've begun."),
-    "First Quarter": ("Точка действия: решайте задачи, преодолевайте препятствия, проявляйте волю. Возможно напряжение — оно толкает вперёд.",
-                      "A point of action: tackle tasks, push through obstacles, exert your will. Tension may rise — it drives you forward."),
-    "Waxing Gibbous": ("Доработка и доводка: уточняйте детали, исправляйте, готовьтесь к результату. Хорошо для анализа и улучшений.",
-                       "Refinement and fine-tuning: polish details, correct, prepare for the result. Good for analysis and improvement."),
-    "Full Moon": ("Кульминация и результаты: пик энергии и эмоций, ясность — но и обострение. Хорошо завершать, подводить итоги и праздновать.",
-                  "Culmination and results: a peak of energy and emotion, clarity — but also heightened sensitivity. Good for completing, summing up and celebrating."),
-    "Waning Gibbous": ("Время делиться и отдавать: благодарность, обучение других, осмысление достигнутого, наведение порядка в делах.",
-                       "A time to share and give back: gratitude, teaching others, making sense of what's achieved, tidying up affairs."),
-    "Last Quarter": ("Расчистка и пересмотр: отпускайте лишнее, завершайте начатое, исправляйте ошибки, освобождайте место новому.",
-                     "Clearing and review: let go of the excess, finish what's begun, correct mistakes, make room for the new."),
-    "Waning Crescent": ("Отдых и восстановление: замедлитесь, отпустите старое, копите силы и подводите итог цикла перед новолунием.",
-                        "Rest and recovery: slow down, release the old, gather strength and close the cycle before the new moon."),
+    'New Moon': (_editorial_text('interpretations.ed8bdb1a7177a5f8b5655d84eb99a036008f66be5d7ce2ca15c73cb5ad4828af'),
+                 _editorial_text('interpretations.c646d55149e36221095de8caf9591986cfa00b6eebb04f4e81181c55c007ac52')),
+    'Waxing Crescent': (_editorial_text('interpretations.a318fb809b59270a8ef9c367de28d1a49c04782f239b3fabbfe1b618167092e0'),
+                        _editorial_text('interpretations.9dd870d881d0e2e7e925c2ab74e537490a3b4ff00d46dd720055b256344a125c')),
+    'First Quarter': (_editorial_text('interpretations.48af358e20ae455a601a87671360681c563c118750bb1f1e046c34148ce9cf81'),
+                      _editorial_text('interpretations.a09704289c93f222df9cc7281662dfe693c03919e6eea061595c374dbbf7df34')),
+    'Waxing Gibbous': (_editorial_text('interpretations.a1193956b80033356d9a6bf58a2b282f13827396679e98996f69eb53331e5c2b'),
+                       _editorial_text('interpretations.05b60227f14d85eeaec79f8c8f3107744430876e98d85cfbf6119098a1a900f1')),
+    'Full Moon': (_editorial_text('interpretations.667a5b56951cc820a3eae6c44c1d87a4d2e79f5a92a8166b3789577b17df956f'),
+                  _editorial_text('interpretations.9abaaa3ecf384d593fe740d2a55d6e5a4b7361d484d864b8eefb0b0c2d360dbf')),
+    'Waning Gibbous': (_editorial_text('interpretations.e3778fc54ac2c8a1c4dc055545e4f1ef5ce3bbe6a86e8f3f7a9b9110081d60f2'),
+                       _editorial_text('interpretations.3cacef746b362fd4157f36143883635b5c5806d9ab7c7f2bc9c6e380874e148b')),
+    'Last Quarter': (_editorial_text('interpretations.0b088f8070ec2832f77da9a1737e694fead9c471720d58d437dc23fbdfd1e677'),
+                     _editorial_text('interpretations.120e4faf462beecd38015078b0dfc07426208945c2734aa94385a67e74c19fb6')),
+    'Waning Crescent': (_editorial_text('interpretations.db22e0ed4d4939571de38bb83e4f7acec5234da8983d3c06a6022074082c4ad0'),
+                        _editorial_text('interpretations.f1f941317f3df39e289c1ca779e693f9a3e6f90f39d670080bee1bf50a185989')),
 }
 
 # Эмоциональная «погода» дня по знаку, в котором идёт Луна.
 MOON_IN_SIGN_MOOD = {
-    "Ari": ("День энергичный и импульсивный — тянет действовать, начинать и лидировать; легко вспылить, держите темп под контролем.",
-            "An energetic, impulsive day — you're drawn to act, start and lead; tempers flare easily, keep the pace in check."),
-    "Tau": ("День спокойный и чувственный — хочется уюта, вкусной еды и надёжности; спешка и перемены сегодня в тягость.",
-            "A calm, sensual day — you crave comfort, good food and stability; haste and change feel burdensome."),
-    "Gem": ("День лёгкий и общительный — много контактов, информации и поездок; внимание скачет, трудно сосредоточиться.",
-            "A light, sociable day — lots of contacts, information and short trips; attention darts about, hard to focus."),
-    "Can": ("День чувствительный и домашний — тянет к близким, заботе и уюту; выше ранимость и потребность в безопасности.",
-            "A sensitive, homey day — you're drawn to loved ones, care and comfort; sensitivity and the need for safety rise."),
-    "Leo": ("День яркий и щедрый — хочется творить, блистать и получать признание; берегитесь гордости и жажды внимания.",
-            "A bright, generous day — you want to create, shine and be recognised; watch for pride and a craving for attention."),
-    "Vir": ("День практичный и аккуратный — удобно наводить порядок, заниматься делами и мелочами; не придирайтесь к себе.",
-            "A practical, tidy day — good for order, chores and details; don't be too hard on yourself."),
-    "Lib": ("День про отношения и красоту — тянет к гармонии, партнёрству и эстетике; решения даются трудно, хочется компромисса.",
-            "A day of relationships and beauty — drawn to harmony, partnership and aesthetics; decisions come hard, you seek compromise."),
-    "Sco": ("День глубокий и напряжённый — сильные чувства и тяга к самой сути; возможны страсти, ревность и желание контроля.",
-            "A deep, intense day — strong feelings and a pull toward the core; passion, jealousy and a wish for control may surface."),
-    "Sag": ("День оптимистичный и свободный — тянет к путешествиям, учёбе, простору и приключениям; не разбрасывайтесь обещаниями.",
-            "An optimistic, free day — drawn to travel, study, open space and adventure; don't scatter promises."),
-    "Cap": ("День деловой и собранный — удобно работать, строить планы и брать ответственность; следите, чтобы не зачерстветь.",
-            "A businesslike, focused day — good for work, planning and taking responsibility; just don't turn cold."),
-    "Aqu": ("День необычный и независимый — тянет к новому, дружбе и идеям; нужна свобода, рутина раздражает.",
-            "An unusual, independent day — drawn to the new, to friendship and ideas; you need freedom, routine irritates."),
-    "Pis": ("День мечтательный и чуткий — обострены интуиция и сочувствие; хочется уединения, творчества и покоя.",
-            "A dreamy, sensitive day — intuition and compassion are heightened; you long for solitude, creativity and peace."),
+    "Ari": (_editorial_text('interpretations.32817e8da7d318e924d0168bd9edc429e9481fa65464654ff79e67d4364c3bb8'),
+            _editorial_text('interpretations.128ea59bf059181b86d956a2a994d61ae93ff8b5587ed32f9db3278274aac2e8')),
+    "Tau": (_editorial_text('interpretations.8fa90ea757d8f6093860a044e8073e7a1b459a3082ebdda79ee8c4ebf9016db0'),
+            _editorial_text('interpretations.e50f87f284a5b4e145e5a99e76809b91b005595097e2194b783d63611ee67658')),
+    "Gem": (_editorial_text('interpretations.3b419b2f1203d36d92f7e252ee5dbf94b0ebf320b9407c7839bbb50e19ad1e8d'),
+            _editorial_text('interpretations.3e5618ce6b52eddded1acecf3a05f334e13c7dc7d0681f74c62580bf41966385')),
+    "Can": (_editorial_text('interpretations.16fc72d500c8f5d29822035f02f6ed82500bff28a95c8e181a46d0db96e39c77'),
+            _editorial_text('interpretations.3f3a4295d9bb76ce8c16d4cfd8ca5fd99acc7ffb08e76e895e98116227f01baa')),
+    "Leo": (_editorial_text('interpretations.8198537b82eee084fea3f7f90cca2d4d4aaf85d210a170e773e76ad37dd385df'),
+            _editorial_text('interpretations.e509869679158e8ca60fa1047df2a032ef1be644553c241610bb2e99c54aedd1')),
+    "Vir": (_editorial_text('interpretations.a81b1d28b7c69eaaa507f30ec2be937f21664eac9155818764ce7026245284fc'),
+            _editorial_text('interpretations.b6f081a6c73833f37d0aa4006173e35d934d008925ec0872248df4482baba7c7')),
+    "Lib": (_editorial_text('interpretations.d774ad650ce4c8d250b4690cfe2f9ce3988cbf3b9f6e233db8f3ef784a26c659'),
+            _editorial_text('interpretations.0b0e0c297cec44d191a8161954d757347f2fb63a70afd0f305a1e0d3ad25ea79')),
+    "Sco": (_editorial_text('interpretations.d2376d846b7b6feb77587d3ae016130ac415eebc8a9388f7ec66ea10af55a965'),
+            _editorial_text('interpretations.e625c0f5d1abb17f6acb177c33c4e3e54288566b9f041e00954774868ef8e8fc')),
+    "Sag": (_editorial_text('interpretations.20d90e880c1fefbd10e26edf1adee0378ffd9a68a27ceeedcd2b0b70dfe82fd6'),
+            _editorial_text('interpretations.afcb199a22d96b5815e0b52a72a94a3a1f8b4d6dee6588603810c85f28fe767e')),
+    "Cap": (_editorial_text('interpretations.fc6487acc1eb432923d7eda514f84f92690cef21968dc31cc28a106e8a3194a3'),
+            _editorial_text('interpretations.9373aeaa7bb6539aeb08eef7d521d197cfea2ddc97da3a0ae2301fbe6f3ef584')),
+    "Aqu": (_editorial_text('interpretations.90f1c305ce9cd98012dd4899f700c9d2a2c87e20e85f36d3463dceea6c455cb2'),
+            _editorial_text('interpretations.9ce456c42ba64738ac313ec21078c48348d4a6e2a2637a54b7b94d44e19d17f4')),
+    "Pis": (_editorial_text('interpretations.dc6613401eced10efc90e5e61d81294c333ba7255d7278b6bd49364d8f29367e'),
+            _editorial_text('interpretations.ddaeceb5681c8afe0d074261af9c39e5e573a62279e377feafba45d71743f02e')),
 }
 
 
@@ -2375,29 +2293,29 @@ def moon_sign_mood(sign, lang="ru"):
 
 PATTERN_INFO = {
     "grand_trine": {
-        "name": ("Большой трин", "Grand Trine"),
-        "text": ("замкнутый треугольник из трёх гармоничных тринов — мощный природный дар и лёгкость в стихии этих планет. Талант даётся даром, но именно поэтому его легко не реализовать: нужен внешний стимул, чтобы не закоснеть в зоне комфорта.",
-                 "a closed triangle of three harmonious trines — a powerful natural gift and ease in the element of these planets. The talent comes for free, which is exactly why it can go unused: an outer stimulus is needed so it doesn't stagnate in the comfort zone."),
+        "name": (_editorial_text('interpretations.87e28915a18f0550e7e92de23748615f4908ef29065d21480212d736a654c156'), _editorial_text('interpretations.94bac27e494199b0c3d1c023da12e2957a3e33160a6b1532234673e61b064d9c')),
+        "text": (_editorial_text('interpretations.9b70bf56c9b1177ec59df07092accc2a540d7275f12aa53af76f88e08cbff37d'),
+                 _editorial_text('interpretations.22c583f3e746c6bab25afd33b5faf5b461bfe42043888749bd08a34b2e056487')),
     },
     "t_square": {
         "name": ("Тау-квадрат", "T-Square"),
-        "text": ("две планеты в оппозиции, обе в квадрате к третьей (вершине). Это мощный двигатель: напряжение требует постоянного действия. Планета-вершина — точка наибольшего давления и одновременно ключ к разрядке через осознанную работу.",
-                 "two planets in opposition, both square a third (the apex). A powerful engine: the tension demands constant action. The apex planet is the point of greatest pressure and at the same time the key to release through conscious work."),
+        "text": (_editorial_text('interpretations.3326aa9e7ea55e624ba74eb06bae360104c3cc5814a328b6f6b6feb2cd351a51'),
+                 _editorial_text('interpretations.25ad120d773e462225e24132a45b3c11312e3d67b6b8e7dd36a0dc590b53565f')),
     },
     "grand_cross": {
-        "name": ("Большой крест", "Grand Cross"),
-        "text": ("четыре планеты в двух оппозициях и четырёх квадратах — максимальное напряжение по всем четырём точкам. Колоссальная внутренняя сила и выносливость, но энергия рассеивается; мастерство приходит через умение удерживать равновесие.",
-                 "four planets in two oppositions and four squares — maximum tension across all four points. Colossal inner strength and endurance, but the energy scatters; mastery comes through the ability to hold balance."),
+        "name": (_editorial_text('interpretations.4771ae4d81eb38f17e9d970236990b208194ab704e2896ef70194805c170013d'), _editorial_text('interpretations.e12eee4e675c0a9cb5a03ca8fcd1d90fa5d37010a923ebe6c146cf512d7c42c9')),
+        "text": (_editorial_text('interpretations.dcaaeaf1c33bba9d4bcfd8db1a1c87ae19a583e5f56c643492afa23d947e1933'),
+                 _editorial_text('interpretations.9394883f5a50419579b193935df1324a3eb36b59c1fb6d97e2cbbc7d99536be5')),
     },
     "yod": {
-        "name": ("Йод (Перст судьбы)", "Yod (Finger of God)"),
-        "text": ("две планеты в секстиле, обе в квинконсе к третьей (вершине). Особая «миссия» и судьбоносная тема: планета-вершина требует постоянной тонкой подстройки и часто связана с поворотными моментами жизни.",
-                 "two planets in sextile, both quincunx a third (the apex). A special “mission” and fateful theme: the apex planet demands constant fine adjustment and is often tied to life's turning points."),
+        "name": (_editorial_text('interpretations.8b413454d7ea19578a533af0c78b66a2fa45717406cb1da08fd9ced5255a9afe'), _editorial_text('interpretations.26005b1aafbe115c8f518549977193bc0b0b0346bbfacc4a7673e382ef6215b4')),
+        "text": (_editorial_text('interpretations.917ff7e9df0622b7560bb6b550c144e318b3f0839dbc6d3eaff540f5a8665bb5'),
+                 _editorial_text('interpretations.ac33f9abb202e152b7f466ebe2c4e30d7597519c6d28084e0370a404b6d5c0c5')),
     },
     "stellium": {
         "name": ("Стеллиум", "Stellium"),
-        "text": ("скопление трёх и более планет в одном знаке или доме — мощная концентрация энергии. Эта сфера жизни и качества знака резко доминируют в характере, становясь и главной силой, и зоной перекоса.",
-                 "a cluster of three or more planets in one sign or house — a powerful concentration of energy. This life area and the sign's qualities strongly dominate the character, becoming both the main strength and a point of imbalance."),
+        "text": (_editorial_text('interpretations.cfa0cdca00461dba536b4e725df7b639c259d3db00084193dc5a14c17b18d98b'),
+                 _editorial_text('interpretations.10fed526f52d3df6cb5894abd606416e5d6a345e446fdef6e2dc6504461ffd23')),
     },
 }
 
@@ -2413,14 +2331,14 @@ def pattern_text(key, lang="ru"):
 
 
 HEMISPHERE_INFO = {
-    "lower": ("Нижнее полушарие (дома 1–6) акцентировано: жизнь разворачивается прежде всего в личном, внутреннем пространстве — вы субъективны, опираетесь на себя и свой внутренний мир.",
-              "The lower hemisphere (houses 1–6) is emphasized: life unfolds mainly in the personal, inner space — you are subjective and rely on yourself and your inner world."),
-    "upper": ("Верхнее полушарие (дома 7–12) акцентировано: вы устремлены вовне, в социальную и публичную сферу — реализуетесь через мир, других людей и общественные цели.",
-              "The upper hemisphere (houses 7–12) is emphasized: you are oriented outward, toward the social and public sphere — fulfilled through the world, other people and collective goals."),
-    "east": ("Восточное полушарие (вокруг Асцендента) акцентировано: вы инициатор, опираетесь на свободу воли и сами творите обстоятельства.",
-             "The eastern hemisphere (around the Ascendant) is emphasized: you are an initiator, relying on free will and shaping your own circumstances."),
-    "west": ("Западное полушарие (вокруг Десцендента) акцентировано: ваша жизнь во многом разворачивается через отношения и других людей, через отклик и обстоятельства.",
-             "The western hemisphere (around the Descendant) is emphasized: your life largely unfolds through relationships and other people, through response and circumstance."),
+    "lower": (_editorial_text('interpretations.41760698a1b192d5c32b75b48763b03fbd3a781785b7a00a9da276c1ce38534d'),
+              _editorial_text('interpretations.412e66a101c445cc65a8dd5f2b6b36b073261835d418f511822eda80fad7a029')),
+    "upper": (_editorial_text('interpretations.a40d91d25cd19d18b61ded1a4b82078a5fb0d9033ebf69cc06ca2ef13ff610b4'),
+              _editorial_text('interpretations.57df83265d913273294171fa3ee07b7ab43d965dd43b905720544936e0e6861c')),
+    "east": (_editorial_text('interpretations.ba92175abc6b0c67dbb67d79cc73a21419ad4bbb88e8ef2ec8b78b963f127c4e'),
+             _editorial_text('interpretations.0fbdfcd981c238663bcd94b5df9b69d7ac155a37802e1f5d1590d203d31a373f')),
+    "west": (_editorial_text('interpretations.bba0e587de2d65e729e51348433682a8602b7eeafd70f71f2d28bbd8a4795e18'),
+             _editorial_text('interpretations.20ff7ae2b6b300138d75de806329b0d032039d9ffa89d35bd14d066d25f7d4c2')),
 }
 
 
@@ -2442,15 +2360,10 @@ def luminary_info(which: str, sign: str, lang: str = "ru") -> Optional[dict]:
     shadow = g(arc["shadow"], lang)
     if lang == "en":
         text = (
-            f"{lum_l[0]} is {lum_l[1]}. "
-            f"In {sign_ru} (archetype “{archetype}”: {essence}) this unfolds as follows. "
-            f"At its best — {light}. In the shadow — {shadow}."
+            f"{lum_l[0]}{_editorial_text('interpretations.81afb10b461acd8f2b7eee698fb0c314c454f7acb574a34baded7f6912fc7a0f')}{lum_l[1]}{_editorial_text('interpretations.121ac3350c135750b0c3ab8781c34339733a114e577512e5baa69fd9a943c6ba')}{sign_ru}{_editorial_text('interpretations.138740919e54fa42d2ced6d779f5ba21e0ef7125c53a2af6788c3b5dd0345c1f')}{archetype}”: {essence}{_editorial_text('interpretations.ac2994fd8b3a8b2622c0865c466a0e57dc3d24e07f2a834dc0e49f67db3e8451')}{light}{_editorial_text('interpretations.41721311b28eedbdbb225810b07356100f43e775a01cb1a88272a4ed0faac2b1')}{shadow}."
         )
     else:
         text = (
-            f"{lum_l[0]} — это {lum_l[1]}. "
-            f"В знаке {sign_ru} (архетип «{archetype}»: {essence}) "
-            f"это раскрывается так. В сильном проявлении — {light}. "
-            f"В теневом — {shadow}."
+            f"{lum_l[0]}{_editorial_text('interpretations.a5ec731571763469aa79db0adcea886fa305d7e4ade107971c9a4bd3d3d46430')}{lum_l[1]}{_editorial_text('interpretations.48305c03bf12c56cf16d139639bd879adb2aa447fef27cba74e6069f8965f8e4')}{sign_ru}{_editorial_text('interpretations.9367d4ea89c299b46377b81f95000cb6dc03a50d07d1d3ddff40e19c2c3559a6')}{archetype}»: {essence}{_editorial_text('interpretations.b91e9ba018c796a84fee3e036d6c308cce699060d1ed42d3df994e01f5af0a54')}{light}{_editorial_text('interpretations.1b2e310ba61e184e690403950739c5297660ac8e8df6db667a921cedd837f106')}{shadow}."
         )
     return {"purpose": lum_l[1], "sign_ru": sign_ru, "archetype": archetype, "text": text}

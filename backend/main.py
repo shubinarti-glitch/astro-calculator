@@ -24,6 +24,8 @@ import re
 
 from . import astrology, constants, content_store, db, emailer, payments, seo, vedic
 from . import api_language
+from .editorial_data import validate_required
+from .editorial_glossary import router as glossary_router
 
 logger = logging.getLogger("astro")
 
@@ -53,12 +55,14 @@ CSP_POLICY = (
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    validate_required()
     db.init_db()
     content_store.init()
     yield
 
 
 app = FastAPI(title="Астрология — натальная карта и транзиты", version="0.1.0", lifespan=lifespan)
+app.include_router(glossary_router)
 
 
 @app.exception_handler(HTTPException)
@@ -523,12 +527,18 @@ def _brief_report(report: dict, kind: str) -> dict:
         for planet in result.get("planets", []):
             if not isinstance(planet, dict):
                 continue
-            blocks = planet.get("interp_full")
-            if isinstance(blocks, list):
-                planet["interp_full"] = blocks[:1]
-                for block in planet["interp_full"]:
-                    if isinstance(block, dict):
-                        block["text"] = _short_text(block.get("text"), 260)
+            # Both rendering modes must obey the same access boundary.
+            # Keep field shapes for the website, PDF and older APK clients.
+            for key in ("interp_sign", "interp_house", "interp_plain"):
+                if key in planet:
+                    planet[key] = _short_text(planet[key], 260)
+            for key in ("interp_full", "interp_full_plain"):
+                blocks = planet.get(key)
+                if isinstance(blocks, list):
+                    planet[key] = blocks[:1]
+                    for block in planet[key]:
+                        if isinstance(block, dict):
+                            block["text"] = _short_text(block.get("text"), 260)
         for aspect in result.get("aspects", []):
             if isinstance(aspect, dict) and "interp" in aspect:
                 aspect["interp"] = _short_text(aspect.get("interp"), 220)

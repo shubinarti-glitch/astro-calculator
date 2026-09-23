@@ -1,37 +1,13 @@
 """English transit copy; authored translations stay in the private data layer."""
+from .editorial_data import text as _editorial_text
 import json
 from pathlib import Path
+from .editorial_data import table as _editorial_table
 
 FIELDS = ("energy", "psychology", "relationships", "realization", "risks", "advice")
-ASPECTS = {
-    "conjunction": "A conjunction brings both functions into a single flow: the theme becomes prominent and calls for direct involvement. The energy is concentrated, making a conscious choice of expression especially important.",
-    "sextile": "A sextile offers an opportunity that opens through initiative, a conversation or a concrete step. The support of this period does not work automatically: notice the opening and put it into practice.",
-    "square": "A square creates friction between familiar ways of living and the new demands of the period. Obstacles reveal a weak point, while accumulated tension calls for action, discipline and a change in how you apply your skills.",
-    "trine": "A trine provides natural support and lets both functions work together without intense inner conflict. Ease becomes a result when you develop the available resources rather than simply enjoying favourable conditions.",
-    "opposition": "An opposition brings the theme into focus through other people and external circumstances, confronting you with two poles of the same task. Rather than choosing one extreme, it calls for agreement, boundaries and reclaiming a quality you have noticed in someone else.",
-    "quintile": "A quintile reveals a creative aspect linking two functions and encourages an unconventional way of expressing them. This is not passive good fortune, but an ability that becomes apparent through interest, experimentation and practice.",
-}
-TIMING = {
-    "Sun": "The solar emphasis is brief, usually lasting a few days around the exact aspect.",
-    "Moon": "The lunar emphasis is fleeting and is usually noticeable for a few hours or one to two days.",
-    "Mercury": "The Mercurial theme usually unfolds over a few days and may repeat during retrograde motion.",
-    "Venus": "The Venusian emphasis usually lasts a few days or weeks and may return during a retrograde loop.",
-    "Mars": "The influence of Mars usually develops quickly and is felt for a few days to several weeks.",
-    "Jupiter": "The Jupiterian theme develops over months and may return during a retrograde passage.",
-    "Saturn": "The Saturnian process lasts for months and often unfolds in several waves, establishing a new level of responsibility.",
-    "Uranus": "Uranus works over an extended period and in waves: an external event may happen quickly, but the restructuring takes months.",
-    "Neptune": "The Neptunian background develops slowly, sometimes remaining noticeable for more than a year and repeating during a retrograde loop.",
-    "Pluto": "Plutonian restructuring belongs to long cycles and unfolds in stages rather than through a single event.",
-    "Chiron": "The theme of Chiron develops gradually and may bring you back to the same vulnerability several times, each time opening a new way of working with it.",
-    "North_Node": "The nodal emphasis marks a stage in a cycle, connecting your present choices with the direction of further development.",
-    "South_Node": "The nodal emphasis brings accumulated experience and recurring patterns to the surface, helping you distinguish useful skills from exhausted habits.",
-    "Lilith": "The emphasis of Lilith calls for separating strong emotional reactions from facts and engaging consciously with the shadow theme.",
-}
-ROLES = {
-    "North_Node": "the direction of growth and the challenges of new experience",
-    "South_Node": "accumulated experience, familiar patterns and the past",
-    "Lilith": "repressed desires, shadow passions and the impulse to rebel",
-}
+ASPECTS = _editorial_table("transit_english.ASPECTS")
+TIMING = _editorial_table("transit_english.TIMING")
+ROLES = _editorial_table("transit_english.ROLES")
 
 
 def load_authored(directory=None):
@@ -41,48 +17,42 @@ def load_authored(directory=None):
         raw = json.loads(path.read_text(encoding="utf-8"))
         for key, value in raw.items():
             if key in result:
-                raise ValueError(f"Duplicate English transit key: {key}")
+                raise ValueError(f"{_editorial_text('transit_english.f1038e134a6b99a5e8de46e15133472957c4b636727d85bbc99578d552c49343')}{key}")
             if not isinstance(value, dict) or any(
                 not isinstance(value.get(field), str) or not value[field].strip()
                 for field in FIELDS
             ):
-                raise ValueError(f"Incomplete English transit: {key}")
+                raise ValueError(f"{_editorial_text('transit_english.f15c9309a1e2bd12fc67dbbb4b06f0ebae35affb34aa31bd47cfc258ceda93d6')}{key}")
             result[key] = value
     return result
 
 
 def phase(orbit, movement):
     if orbit is None:
-        return "The exact orb, speed and retrograde repetitions clarify the strength and stage of this influence."
-    proximity = "close to exact" if orbit <= 1 else "within its effective orb"
+        return _editorial_text('transit_english.ec8c421982c9b7a1b35a0f3b24df16a488328ac29f41538c0dcfdf2b09a50bc0')
+    proximity = _editorial_text('transit_english.89c202c40548f709caf6aca95bcb6b562eeb32551a4158235f7a242173993d3a') if orbit <= 1 else _editorial_text('transit_english.8985d0008fd0bd4c95b27679b86a617a0225ded24ca58e9c0af1efaf059e93a3')
     motion = (movement or "").lower()
     if "расход" in motion or "separ" in motion:
-        direction = "The peak has passed; now it is more important to reflect on the consequences and consolidate the result."
+        direction = _editorial_text('transit_english.a7d745cd8b9818e3aba7c72b88d6678461882b11a39bba51b7e56de6542b95b2')
     elif "сход" in motion or "app" in motion:
-        direction = "The energy is building, so it is worth preparing the main decisions now."
+        direction = _editorial_text('transit_english.0489e6d883c5c2ba3aec76f1f7fadb30194d484e0a4d1de32258000c2bf9c9eb')
     else:
-        direction = "The current phase is clarified by speed and any possible retrograde repetition."
-    return f"With an orb of {orbit:.2f}°, the aspect is {proximity}. {direction}"
+        direction = _editorial_text('transit_english.481c2c3f14920e3577703ca6c2a92bcfc4260a13e1aa83b5caf42ae743d09028')
+    return f"{_editorial_text('transit_english.64a7ab6c1ea238d5f76c2d8d79ea3e8031ef0b2d993b211e248ded17efa116da')}{orbit:.2f}{_editorial_text('transit_english.59d32d92822c81d5d79d3590befcaef21677ac91c6b2f9ac6a212889d833430d')}{proximity}. {direction}"
 
 
 def generic_pair(source, focus):
     return {
-        "energy": f"Energy connected with {source} activates the area of {focus}, making events in this sphere more noticeable.",
-        "psychology": f"Internally, it becomes more important to reconcile the impulse of the period with the way {focus} is expressed.",
-        "relationships": "Interactions show where honest exchange, clear boundaries and respect for different responses are needed.",
-        "realization": "In practical matters, turn the emerging impulse into one observable action and assess its result.",
-        "risks": "Difficulty arises when temporary intensity is mistaken for a final decision, or when you act without checking the circumstances.",
-        "advice": "Observe the recurring pattern, relate it to the orb and choose an action appropriate to the real situation.",
+        "energy": f"{_editorial_text('transit_english.a5c51ce008ea55920f79c3c3a461b289c9433e7bf37211f43687e6bec7076190')}{source}{_editorial_text('transit_english.7c7bfa266e62a22198acd46cbc59ace4c7853e4b30ceccb90c4d02c6d9b1af7a')}{focus}{_editorial_text('transit_english.07df254e0d8d7ac8fe6b5feb6f258bbdd7624061948131311b6bc9c8ba3322c8')}",
+        "psychology": f"{_editorial_text('transit_english.36d2262b8a5f603b16e235a535b3905bb6a45737bfcd29fa4ad964d060948156')}{focus}{_editorial_text('transit_english.a355eccc5577a873ea4e7441aacb01ce2d4b620f01d632c3f80d3d0ca8c27ded')}",
+        "relationships": _editorial_text('transit_english.909eb119afb540def82a702ed4a0fac4a7731ede5e91b7ffebc136c55cd5a32d'),
+        "realization": _editorial_text('transit_english.65bf8a7e5500556f43bf5227f4c713383f68c177dd68e68904ca5ac1fdfea261'),
+        "risks": _editorial_text('transit_english.530ae1090e02ed0906821f401384ef55860ac766a6f2c919e764d91a2c8732fb'),
+        "advice": _editorial_text('transit_english.027d014445f6818e045e0baa06c01013a2d87f7a4141da16cdd3629c8bd6fd63'),
     }
 
 
 def render(pair, moving, aspect, orbit, movement):
     return (
-        f"Transit overview. {ASPECTS[aspect]} {TIMING.get(moving, '')}\n\n"
-        f"Energy of the period. {pair['energy']} {phase(orbit, movement)}\n\n"
-        f"Psychology. {pair['psychology']}\n\n"
-        f"Relationships. {pair['relationships']}\n\n"
-        f"Practical expression. {pair['realization']}\n\n"
-        f"Challenging expressions. {pair['risks']}\n\n"
-        f"Recommendations. {pair['advice']}"
+        f"{_editorial_text('transit_english.df01f9f5cec8b75efb8df89a1fe3d13a9a29d77d2b188d4f1f7a2535134823b4')}{ASPECTS[aspect]} {TIMING.get(moving, '')}{_editorial_text('transit_english.9b92c4569214977ac2f4fd5ce465305671b7bc9de34c5d996dd958f1bad1b419')}{pair['energy']} {phase(orbit, movement)}{_editorial_text('transit_english.a28e3089e880d096a1a796ff202973c26889df1f0406da4c5db47725a53440cd')}{pair['psychology']}{_editorial_text('transit_english.cd5a787eaf403422a00e905ca779b72486517f5068a2a6b2d0fc7cb5ad8ac89d')}{pair['relationships']}{_editorial_text('transit_english.55f899853f3f2d41172b7d6168c2b6262fa7db2b3d2287ead8ea9bffff749925')}{pair['realization']}{_editorial_text('transit_english.11502aa477c51d4065f03c067142739c2989890e3d6c30a4afe338588bba5f17')}{pair['risks']}{_editorial_text('transit_english.78a1ccbbb627b562777a14b1ab5cfe76cc1f9bbbf0cc9e31b9601d48022767fd')}{pair['advice']}"
     )

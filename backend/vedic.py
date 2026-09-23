@@ -5,6 +5,7 @@
 человека добавляется Тарабала — качество дня относительно его джанма-накшатры.
 """
 from __future__ import annotations
+from .editorial_data import text as _editorial_text
 
 import calendar as _cal
 from datetime import datetime
@@ -12,6 +13,7 @@ from typing import Optional
 import pytz
 
 from .ephe import ensure_ephemeris
+from .editorial_data import table as _editorial_table
 
 ensure_ephemeris()
 
@@ -28,14 +30,14 @@ NAKSHATRAS = [
     ("Мригашира", "Mrigashira", "good"), ("Ардра", "Ardra", "bad"),
     ("Пунарвасу", "Punarvasu", "good"), ("Пушья", "Pushya", "good"),
     ("Ашлеша", "Ashlesha", "bad"), ("Магха", "Magha", "neutral"),
-    ("Пурва Пхалгуни", "Purva Phalguni", "neutral"), ("Уттара Пхалгуни", "Uttara Phalguni", "good"),
+    (_editorial_text('vedic.adce709104eef61a25183dac3c632a2e26170b1384d011210a93cc602c387c34'), _editorial_text('vedic.dd7ff7681c7d193439a630255a20e288299c361bf9f72a4f660896db76fa2b51'), "neutral"), (_editorial_text('vedic.37fde0ccf999dafbd2112f8b2e84a3c580486ff5f9ab44901add0ef6102c2c11'), _editorial_text('vedic.156771e3e2761911bb55a88e5aae69afc5993880176002a732542f1875a4084b'), "good"),
     ("Хаста", "Hasta", "good"), ("Читра", "Chitra", "good"),
     ("Свати", "Swati", "good"), ("Вишакха", "Vishakha", "neutral"),
     ("Анурадха", "Anuradha", "good"), ("Джйештха", "Jyeshtha", "bad"),
-    ("Мула", "Mula", "bad"), ("Пурва Ашадха", "Purva Ashadha", "neutral"),
-    ("Уттара Ашадха", "Uttara Ashadha", "good"), ("Шравана", "Shravana", "good"),
+    ("Мула", "Mula", "bad"), (_editorial_text('vedic.03ce7bf7ffd2096bbb781f0127301903de6699adcad64ef946784bea977fef8b'), _editorial_text('vedic.00b6f83b795099b652c438976ef23b080d7225d6c5ad4dfefe6ea7592402200f'), "neutral"),
+    (_editorial_text('vedic.26afb99ba78a92cd32370ab7efd44de2e25965cffd99c5f6dd2ccdcba3c0fe75'), _editorial_text('vedic.aa5c8ea1629cd532ed87d27084afa9a196e39f5abb7d3f7fc629342f04451242'), "good"), ("Шравана", "Shravana", "good"),
     ("Дхаништха", "Dhanishta", "good"), ("Шатабхиша", "Shatabhisha", "neutral"),
-    ("Пурва Бхадрапада", "Purva Bhadrapada", "bad"), ("Уттара Бхадрапада", "Uttara Bhadrapada", "good"),
+    (_editorial_text('vedic.7de759afabb93b84a3dbaa5dbb704460d5860241787e0aca389aa5b9c77e57ff'), _editorial_text('vedic.373266900ec1c26785985a9c24761d75ff50881829efa284d8fc64f9d7c598ef'), "bad"), (_editorial_text('vedic.31e0e5674320b693ad8625da55aac065ad6b7402ef80aff326c9f93566dd5629'), _editorial_text('vedic.689c60cddd2880d9a23f85f5c74bab12a3ec426576876e7c904c71cf12aca3e6'), "good"),
     ("Ревати", "Revati", "good"),
 ]
 
@@ -72,79 +74,12 @@ _QUALITY_RU = {"good": "благоприятный", "neutral": "нейтрал�
 _QUALITY_EN = {"good": "favorable", "neutral": "neutral", "bad": "unfavorable"}
 
 # Человеческое описание дня по накшатре (что за энергия, для чего хорош) — простым языком.
-NAKSHATRA_GUIDE = [
-    ("быстрая, лёгкая энергия — хорош для начала дел, поездок, восстановления сил и спорта",
-     "fast, light energy — good for starting things, travel, restoring energy and sport"),
-    ("интенсивный день — лучше завершать начатое, чем браться за новое",
-     "intense day — better to finish things than to start new ones"),
-    ("острая, очищающая энергия — подходит для решительных действий и порядка, но возможны вспышки",
-     "sharp, cleansing energy — suits decisive action and tidying up, but flare-ups are possible"),
-    ("плодородный, приятный день — любовь, покупки, творчество и всё, что должно расти",
-     "fertile, pleasant day — love, shopping, creativity and anything meant to grow"),
-    ("лёгкий, ищущий день — поездки, общение, поиск и учёба",
-     "light, searching day — travel, communication, seeking and study"),
-    ("грозовой день перемен — подходит для расчистки старого, но не для важных стартов",
-     "stormy day of change — good for clearing out the old, not for important starts"),
-    ("день обновления — возвращения, дом, переезды и второй шанс",
-     "day of renewal — returns, home, moving and a second chance"),
-    ("один из лучших дней — важные дела, забота, учёба и духовные практики (но не свадьба)",
-     "one of the best days — important matters, care, study and spiritual practice (but not weddings)"),
-    ("скрытный, интуитивный день — хорош для исследования, но осторожнее с доверием и новыми делами",
-     "secretive, intuitive day — good for research, but be careful with trust and new ventures"),
-    ("день уважения к корням — семья, традиции, признание заслуг и церемонии",
-     "day of honoring roots — family, tradition, recognition and ceremonies"),
-    ("день удовольствий и отдыха — любовь, праздники, творчество и забота о себе",
-     "day of pleasure and rest — love, celebrations, creativity and self-care"),
-    ("надёжный день — договоры, помощь, дружба и долгие обязательства",
-     "reliable day — agreements, helping, friendship and lasting commitments"),
-    ("умелый день — ручная работа, ремесло, сделки и практичные дела",
-     "skilful day — handiwork, craft, deals and practical tasks"),
-    ("яркий, творческий день — красота, дизайн, покупки и всё эффектное",
-     "bright, creative day — beauty, design, shopping and anything striking"),
-    ("независимый день — торговля, поездки, гибкость и новые связи",
-     "independent day — trade, travel, flexibility and new connections"),
-    ("целеустремлённый день — упорные усилия к цели, но возможна нетерпеливость",
-     "goal-driven day — persistent effort toward a goal, but impatience is possible"),
-    ("дружелюбный день — дружба, сотрудничество, путешествия и преданность",
-     "friendly day — friendship, cooperation, travel and devotion"),
-    ("напряжённый день — защита своего, но возможны соперничество и усталость",
-     "tense day — protecting what's yours, but rivalry and fatigue are possible"),
-    ("корчующий день — докапывание до сути и исследование, но не для важных стартов",
-     "uprooting day — getting to the root and research, but not for important starts"),
-    ("вдохновляющий день — убеждение, дебаты, очищение и смелые планы",
-     "inspiring day — persuasion, debate, cleansing and bold plans"),
-    ("день победы — важные начинания, ответственность и дела с долгим результатом",
-     "day of victory — important undertakings, responsibility and matters with lasting results"),
-    ("слушающий день — учёба, переговоры, музыка и связи",
-     "listening day — study, negotiations, music and connections"),
-    ("ритмичный, щедрый день — музыка, группы, финансы и активность",
-     "rhythmic, generous day — music, groups, finance and activity"),
-    ("восстанавливающий, нестандартный день — отдых, тайны, технологии и уединение",
-     "restorative, unconventional day — rest, mysteries, technology and solitude"),
-    ("серьёзный, интенсивный день — глубокие темы, но осторожнее с резкостью и риском",
-     "serious, intense day — deep matters, but be careful with harshness and risk"),
-    ("глубокий, спокойный день — мудрость, благотворительность и долгие решения",
-     "deep, calm day — wisdom, charity and long-term decisions"),
-    ("мягкий, завершающий день — забота, путешествия, искусство и завершение дел",
-     "gentle, finishing day — care, travel, art and wrapping things up"),
-]
+NAKSHATRA_GUIDE = _editorial_table("vedic.NAKSHATRA_GUIDE")
 
 # Совет по фазе Луны (пакше) — интуитивно понятно обычному пользователю.
-_PAKSHA_ADVICE = {
-    "waxing": ("Растущая Луна — время начинать, расти, набирать и развивать задуманное.",
-               "The waxing Moon is a time to start, grow, gather and develop your plans."),
-    "waning": ("Убывающая Луна — время завершать, отпускать, убирать лишнее и наводить порядок.",
-               "The waning Moon is a time to finish, release, clear out and tidy up."),
-}
+_PAKSHA_ADVICE = _editorial_table("vedic._PAKSHA_ADVICE")
 # Итоговый совет по качеству дня.
-_DAY_ADVICE = {
-    "good": ("Хороший день для важных дел, начинаний и всего, что для вас значимо.",
-             "A good day for important matters, new starts and anything meaningful to you."),
-    "neutral": ("Обычный, ровный день — подойдёт для повседневных дел и текущих задач.",
-                "An ordinary, steady day — fine for everyday matters and routine tasks."),
-    "bad": ("Лучше отложить важные начинания; займитесь рутиной, отдыхом и завершением дел.",
-            "Better to postpone important starts; focus on routine, rest and finishing things."),
-}
+_DAY_ADVICE = _editorial_table("vedic._DAY_ADVICE")
 
 
 def _li(pair, lang):
@@ -156,7 +91,7 @@ def _jd_for_local_noon(year: int, month: int, day: int, tz_str: str) -> float:
     try:
         zone = pytz.timezone(tz_str)
     except pytz.UnknownTimeZoneError as exc:
-        raise ValueError(f"Неизвестный часовой пояс: {tz_str}") from exc
+        raise ValueError(f"{_editorial_text('vedic.bfdb747e3bf66883553030f6170eb29a9fb1295bf8bb99b178704bfbffdeaf33')}{tz_str}") from exc
     local = zone.localize(datetime(year, month, day, 12, 0), is_dst=None)
     ut = local.astimezone(pytz.UTC)
     return swe.julday(ut.year, ut.month, ut.day, ut.hour + ut.minute / 60 + ut.second / 3600)
@@ -198,7 +133,7 @@ def vedic_calendar(
 
         diff = (moon - sun) % 360
         tithi = int(diff // 12) + 1  # 1..30
-        paksha_ru, paksha_en = ("Шукла (растущая)", "Shukla (waxing)") if tithi <= 15 else ("Кришна (убывающая)", "Krishna (waning)")
+        paksha_ru, paksha_en = (_editorial_text('vedic.acac004ed579ce344fa722145369b64dbab6ec1c5396b12ccfb73d1087a4c84c'), _editorial_text('vedic.f72ca26be9b3ccf300dccc91ab28497266400f077f8a8ca64220d57923150d86')) if tithi <= 15 else (_editorial_text('vedic.4c341988986b1b808011f04978bdc26bf40e83a5fc277e92961e9656f3d5f8b7'), _editorial_text('vedic.08b2fde8c3b33f44cb943afc11f782776b91bc637c27f3a54b305f4529e3409f'))
         if tithi == 15:
             tithi_name = _FULL
         elif tithi == 30:
@@ -218,10 +153,10 @@ def vedic_calendar(
             score -= 2
         if is_rikta:
             score -= 2
-            notes.append("Рикта-титхи — не лучший день для новых начинаний" if lang != "en" else "Rikta tithi — not ideal for new beginnings")
+            notes.append(_editorial_text('vedic.e320d17ed1d4167d77f4ceb6643f877c4675e8904ba3e3b402a1a1e2569a6d5b') if lang != "en" else _editorial_text('vedic.dd3a114379f26e58276b5800f1e1d41f1ad54710e128d799aaa21e812eb7e835'))
         if tithi == 30:
             score -= 1
-            notes.append("Амавасья (новолуние)" if lang != "en" else "Amavasya (new moon)")
+            notes.append(_editorial_text('vedic.aff35c1c43b9a92e7d8492436a2f0b507143dd068cef8ca06a9e77d80f85bd8c') if lang != "en" else _editorial_text('vedic.c6f05cd18f4f74072ad73f6e35d9a30ccd6e5381536008bb3702df22c4e03a88'))
         if tithi == 15:
             score += 1
 
@@ -235,7 +170,7 @@ def vedic_calendar(
                 score += 2
             elif t_quality == "bad":
                 score -= 2
-                notes.append((f"Тара «{t_ru}» — неблагоприятный день для вас") if lang != "en" else f"Tara “{t_en}” — unfavorable day for you")
+                notes.append((f"{_editorial_text('vedic.ec2dd29acf5fc50d02d14c77b4c0bdd5c25898af5f65240f694297829194265e')}{t_ru}{_editorial_text('vedic.47922c8d070da6cf8019cacd29ad962db3df02dc73be85d0a9a01ea2e34bf851')}") if lang != "en" else f"{_editorial_text('vedic.f6de74be8390d3fa243acddd2384be3236543b395b53a898898d4118394bb647')}{t_en}{_editorial_text('vedic.0e4c72d3dcbb79e4170661a51f004a1e166e2f10371cafa1ddaf55a986fd0849')}")
 
         quality = "good" if score >= 2 else ("bad" if score <= -2 else "neutral")
         counts[quality] += 1
@@ -248,13 +183,13 @@ def vedic_calendar(
         q_word = (_QUALITY_EN if lang == "en" else _QUALITY_RU)[quality]
         nak_cap = nak_meaning[:1].upper() + nak_meaning[1:]
         if lang == "en":
-            summary = f"A {q_word} day. {nak_cap}. {paksha_advice}"
+            summary = f"{_editorial_text('vedic.7a7202fb1b53105f00a4308223160a22fd287678fcc8cf3681a36a57ee85e75a')}{q_word}{_editorial_text('vedic.17631436ef7705f392da6c4e3f850d550da91d7cc1137021e7069a71ad90fe22')}{nak_cap}. {paksha_advice}"
         else:
-            summary = f"День {q_word}. {nak_cap}. {paksha_advice}"
+            summary = f"{_editorial_text('vedic.4c6367be727fee6613a6205cd0364f58004b83b193280c2063f7fe17c1119e86')}{q_word}. {nak_cap}. {paksha_advice}"
 
         days.append({
             "day": day,
-            "date": f"{year:04d}-{month:02d}-{day:02d}",
+            "date": f'{year:04d}-{month:02d}-{day:02d}',
             "weekday": _li(_WEEKDAYS[weekday], lang),
             "weekday_idx": weekday,
             "tithi": tithi if tithi <= 15 else tithi - 15,
