@@ -3137,16 +3137,22 @@ let IS_PREMIUM = false;
 let PREMIUM_UNTIL = null;
 let HAS_CONSULT = false;
 let REPORT_CREDITS = 0; // разовые PDF-отчёты (без подписки)
+let PENDING_PAYWALL = false; // после входа сразу продолжить к оформлению Premium
 // Telegram астролога для оплаченных консультаций (тарифы «Премиум+»)
 const ASTROLOGER_TG = "https://t.me/Astrosmap";
 
 function openPaywall(status) {
-  // Полный платный раздел (не натал) → размытое превью прямо в области результата.
-  if (mode && mode !== "natal") { showLockedPreview(mode); return; }
-  // Надстройки над наталом (глубокий разбор, PDF) → сразу окно.
-  if (!getToken()) {
+  // Для платного раздела оставляем понятное превью под модальным окном.
+  if (mode && mode !== "natal") showLockedPreview(mode);
+
+  // 401 означает, что сервер не принял авторизацию (в том числе старый токен).
+  // После успешного входа пользователь автоматически попадёт к тарифам.
+  if (status === 401 || !getToken()) {
+    PENDING_PAYWALL = true;
     $("auth-modal").classList.remove("hidden");
+    setAuthMode("login");
   } else {
+    PENDING_PAYWALL = false;
     openPremiumModal();
   }
 }
@@ -3568,6 +3574,10 @@ $("auth-form").addEventListener("submit", async (e) => {
       REPORT_CREDITS = me.report_credits || 0;
       refreshPremiumBtn();
     } catch (e) {}
+    if (PENDING_PAYWALL) {
+      PENDING_PAYWALL = false;
+      if (!IS_PREMIUM) openPremiumModal();
+    }
   } catch (ex) {
     showAuthError(ex.message);
   }
