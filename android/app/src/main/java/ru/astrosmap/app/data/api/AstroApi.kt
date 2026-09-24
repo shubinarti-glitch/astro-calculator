@@ -32,11 +32,11 @@ data class RegisterRequest(
     val password: String,
     val email: String,
     val lang: String = "ru",
-    @SerialName("privacy_accepted") val privacyAccepted: Boolean = true,
-    @SerialName("terms_accepted") val termsAccepted: Boolean = true,
-    @SerialName("privacy_version") val privacyVersion: String = "2026-09-01",
-    @SerialName("terms_version") val termsVersion: String = "2026-09-01",
-    @SerialName("consent_source") val consentSource: String = "android",
+    @SerialName("privacy_accepted") val privacyAccepted: Boolean,
+    @SerialName("terms_accepted") val termsAccepted: Boolean,
+    @SerialName("privacy_version") val privacyVersion: String,
+    @SerialName("terms_version") val termsVersion: String,
+    @SerialName("consent_source") val consentSource: String,
 )
 
 @Serializable
@@ -150,6 +150,10 @@ data class TransitsResponse(
 
 /** REST-клиент бэкенда astrosmap.ru (backend/main.py). */
 interface AstroApi {
+    @GET("api/mobile/editorial/v1")
+    suspend fun editorial(): ru.astrosmap.app.editorial.EditorialPackage
+    @POST("api/mobile/reports")
+    suspend fun sendReport(@Body report: MobileReportRequest): MobileReportReceipt
     /** Общий небесный фон: где сейчас планеты, период и значение. Без авторизации. */
     @GET("api/transits/current")
     suspend fun currentTransits(

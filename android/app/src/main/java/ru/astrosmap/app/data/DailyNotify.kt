@@ -161,10 +161,12 @@ class DailyWorker @AssistedInject constructor(
     private val dao: ChartDao,
     private val engine: AstroEngine,
     private val analytics: Analytics,
+    private val api: ru.astrosmap.app.data.api.AstroApi,
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
         if (!DailyNotify.isEnabled(context)) return Result.success()
+        ru.astrosmap.app.editorial.RemoteEditorial.refresh(api)
         val (title, text) = runCatching { buildText() }.getOrElse {
             // Сбой расчёта не роняет задачу, но должен быть виден в логах, а не проглатываться.
             Log.w("DailyWorker", "Не удалось собрать текст напоминания", it)

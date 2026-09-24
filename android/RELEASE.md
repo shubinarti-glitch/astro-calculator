@@ -1,3 +1,5 @@
+> Обновлено 24 сентября 2026: Google Play — только AAB. Общие assemble-задачи запрещены. Старые разделы ниже о первом серверном релизе исторические; актуальный порядок — RELEASE-PREP-2026-09-24.md.
+
 # Выпуск приложения AstroSMap (Android)
 
 Все команды выполняются из папки `android/`. Java берётся из Android Studio:
@@ -27,13 +29,13 @@ keyPassword=<пароль ключа>
 ## 2. Сборка
 
 ```powershell
-.\gradlew.bat :app:bundleRelease    # AAB для RuStore
-.\gradlew.bat :app:assembleRelease  # APK для распространения с сайта
+.\gradlew.bat :app:bundleGoogleplayRelease  # Google Play: только AAB
+.\gradlew.bat :app:assembleStandardRelease  # APK: RuStore, AppGallery, сайт
 ```
 
 Артефакты:
-- `app/build/outputs/bundle/release/app-release.aab` (~6.5 МБ)
-- `app/build/outputs/apk/release/app-release.apk` (~4 МБ)
+- `app/build/outputs/bundle/googleplayRelease/app-googleplay-release.aab`
+- `app/build/outputs/apk/standard/release/app-standard-release.apk`
 
 Перед выпуском поднять `versionCode` (+1 каждый выпуск) и `versionName`
 в `app/build.gradle.kts`.
@@ -43,7 +45,7 @@ keyPassword=<пароль ключа>
 1. Кабинет разработчика: https://console.rustore.ru (регистрация на ИП/самозанятого —
    реквизиты Шубина А.И. подходят).
 2. Создать приложение: название «AstroSMap — натальная карта», категория «Образ жизни».
-3. Загрузить AAB (или APK), заполнить:
+3. Загрузить standard APK, заполнить:
    - описание (RU) — кратко: натальная карта офлайн, транзиты, синхронизация с astrosmap.ru;
    - иконка 512×512 (из `app/src/main/res/drawable/ic_launcher_foreground.xml` отрендерить,
      фон #0A0A1A);
@@ -54,7 +56,7 @@ keyPassword=<пароль ключа>
 
 ## 4. APK с сайта
 
-Выложить `app-release.apk` на сервер (например, `/download/astrosmap.apk`)
+Выложить `app-standard-release.apk` на сервер (например, `/download/astrosmap.apk`)
 и дать ссылку на сайте. Обновления пользователь ставит поверх (подпись совпадает).
 
 ## 5. Деплой бэкенда (нужно приложению!)

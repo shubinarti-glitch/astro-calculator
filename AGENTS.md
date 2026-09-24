@@ -32,6 +32,10 @@
 - **Отключены, включать по требованию:** `Codex-seo` (~3.4k токенов always-on — только под SEO-задачи по страницам сайта), `caveman` (сжатый вывод, конфликтует с подробным RU-стилем), `context-mode` (экономия контекста, 6 хуков сильно меняют поведение).
 - **Переключение:** `Codex plugin enable|disable <имя>`. CLI не в PATH — бинарь: `C:\Users\archi\AppData\Roaming\Codex\Codex\<версия>\Codex.exe`. После enable/disable нужен перезапуск Codex.
 
+## Форматы Android-сборок — обязательное правило пользователя
+- **Google Play: ТОЛЬКО AAB** (`:app:bundleGoogleplayRelease`). Не собирать Google Play APK, не запускать `assembleGoogleplayRelease` или `assembleGoogleplayDebug`, не включать APK Google Play в выдачу. Исключение — только по отдельной явной просьбе пользователя.
+- RuStore, AppGallery и установка с сайта: APK стандартного варианта. Для эмулятора использовать стандартный debug-вариант; Google Play проверять unit-тестами и проверками AAB без сборки Google Play APK.
+
 ## Технические заметки
 - **Эфемериды на Windows:** Swiss Ephemeris не читает `.se1` по путям с кириллицей. `backend/ephe.py` копирует файлы в ASCII-папку (`~/.astro_ephe` / `C:\sweph`) автоматически — не трогать без нужды.
 - **Тексты интерпретаций** редактируются через админку (`content_store.py` + `content_overrides.json`), синхронизация по mtime. Ключи текстов не переименовывать бездумно — сломает оверрайды.
