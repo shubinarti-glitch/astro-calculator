@@ -2451,5 +2451,6 @@ def current_transits(lang: str = "ru", when: Optional[datetime] = None) -> list[
             "since_datetime": back.isoformat(timespec="minutes") + "Z" if back else None,
             "until_datetime": fwd.isoformat(timespec="minutes") + "Z" if fwd else None,
             "meaning": I.interpret_sign(name, sign, lang),
+            "guidance": I.current_transit_guidance(name, lang),
         })
     return out

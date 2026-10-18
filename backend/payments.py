@@ -14,7 +14,7 @@ from pathlib import Path
 
 import requests
 
-from . import db
+from . import db, sales
 
 CONFIG_FILE = Path(__file__).resolve().parent.parent / "data" / "yookassa.json"
 API = "https://api.yookassa.ru/v3/payments"
@@ -56,9 +56,11 @@ def _auth() -> tuple[str, str]:
     return cfg["shop_id"], cfg["secret_key"]
 
 
-def create_payment(user_id: int, plan: str, return_url: str) -> str:
+def create_payment(user_id: int, plan: str, return_url: str, attribution: dict | None = None) -> str:
     """Создать платёж, вернуть URL страницы оплаты ЮKassa."""
     price, _days = PLANS[plan]
+    attempt = str(uuid.uuid4())
+    return_url += ("&" if "?" in return_url else "?") + "attempt=" + attempt
     resp = requests.post(
         API,
         auth=_auth(),
@@ -74,26 +76,13 @@ def create_payment(user_id: int, plan: str, return_url: str) -> str:
     )
     resp.raise_for_status()
     data = resp.json()
-    db.add_payment(data["id"], user_id, plan)
+    sales.register_payment(data["id"], user_id, plan, attempt, price, attribution)
     return data["confirmation"]["confirmation_url"]
 
 
 def _apply_status(payment_id: str, user_id: int, plan: str, status: str) -> bool:
-    """Идемпотентно применить статус ЮKassa к нашему платежу. Вызывать только для записей
-    в статусе pending (иначе возможна двойная выдача подписки). Возвращает True при активации."""
-    if status == "succeeded":
-        db.set_payment_status(payment_id, "succeeded")
-        days = PLANS[plan][1]
-        if days:
-            db.extend_subscription(user_id, plan, days)
-        if plan.startswith("plus_") or plan == "consult":
-            db.add_consultation(user_id)
-        if plan == "report":
-            db.add_report_credit(user_id)
-        return True
-    if status == "canceled":
-        db.set_payment_status(payment_id, "canceled")
-    return False
+    """Apply status and rights atomically; repeated and concurrent calls are safe."""
+    return sales.apply_status(payment_id, user_id, plan, status, PLANS[plan][1])
 
 
 def reconcile_one(payment_id: str) -> bool:
@@ -125,14 +114,19 @@ def reconcile_pending(older_than_min: int = 30) -> int:
     return n
 
 
-def check_payments(user_id: int) -> dict:
+def check_payments(user_id: int, attempt: str | None = None) -> dict:
     """Проверить pending-платежи пользователя; активировать подписку при успехе."""
+    selected = sales.find_attempt(user_id, attempt) if attempt else None
+    if attempt and selected is None:
+        raise LookupError("Payment attempt not found")
     activated = False
-    for p in db.pending_payments(user_id):
+    pending = ([selected] if selected["status"] == "pending" else []) if selected else db.pending_payments(user_id)
+    for p in pending:
         resp = requests.get(f"{API}/{p['payment_id']}", auth=_auth(), timeout=15)
-        if resp.status_code != 200:
-            continue
+        resp.raise_for_status()
         if _apply_status(p["payment_id"], user_id, p["plan"], resp.json().get("status", "")):
             activated = True
+    selected = sales.find_attempt(user_id, attempt) if attempt else None
     return {"activated": activated, "premium": db.is_premium(user_id),
-            "subscription": db.get_subscription(user_id)}
+            "subscription": db.get_subscription(user_id),
+            "payment": {"status": selected["status"], "plan": selected["plan"]} if selected else None}

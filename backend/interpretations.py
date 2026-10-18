@@ -923,6 +923,28 @@ def interpret_sign(planet_name: str, sign: str, lang: str = "ru") -> str:
     return text
 
 
+_CURRENT_TRANSIT_GUIDANCE = {
+    "Sun": (_editorial_text("current_transits.Sun.ru"), _editorial_text("current_transits.Sun.en")),
+    "Moon": (_editorial_text("current_transits.Moon.ru"), _editorial_text("current_transits.Moon.en")),
+    "Mercury": (_editorial_text("current_transits.Mercury.ru"), _editorial_text("current_transits.Mercury.en")),
+    "Venus": (_editorial_text("current_transits.Venus.ru"), _editorial_text("current_transits.Venus.en")),
+    "Mars": (_editorial_text("current_transits.Mars.ru"), _editorial_text("current_transits.Mars.en")),
+    "Jupiter": (_editorial_text("current_transits.Jupiter.ru"), _editorial_text("current_transits.Jupiter.en")),
+    "Saturn": (_editorial_text("current_transits.Saturn.ru"), _editorial_text("current_transits.Saturn.en")),
+    "Uranus": (_editorial_text("current_transits.Uranus.ru"), _editorial_text("current_transits.Uranus.en")),
+    "Neptune": (_editorial_text("current_transits.Neptune.ru"), _editorial_text("current_transits.Neptune.en")),
+    "Pluto": (_editorial_text("current_transits.Pluto.ru"), _editorial_text("current_transits.Pluto.en")),
+}
+
+
+def current_transit_guidance(planet_name: str, lang: str = "ru") -> str:
+    """Planet-specific practical context for the public current-sky panel."""
+    pair = _CURRENT_TRANSIT_GUIDANCE.get(planet_name)
+    if not pair:
+        return ""
+    return g(pair, lang)
+
+
 # --------------------------------------------------------------------------- #
 #  Развёрнутая трактовка планеты в знаке (как на тематических сайтах)
 # --------------------------------------------------------------------------- #
