@@ -54,6 +54,7 @@ import ru.astrosmap.app.data.access.SubscriptionPlan
 fun ChartViewScreen(
     onEdit: () -> Unit,
     onClosed: () -> Unit,
+    onForecast: (Long) -> Unit,
     viewModel: ChartViewViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -127,6 +128,20 @@ fun ChartViewScreen(
                 .joinToString("\n\n") { "${it.title}\n${it.text}" }
         }.orEmpty()
         LazyColumn(Modifier.fillMaxSize().padding(padding)) {
+            item {
+                Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                    Button(
+                        onClick = { viewModel.openForecast(onForecast) },
+                        enabled = !state.saving,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { Text(stringResource(if (state.saving) R.string.forecast_chart_saving else R.string.forecast_chart_open)) }
+                    if (state.saveFailed) Text(
+                        stringResource(R.string.forecast_chart_save_error),
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
             item {
                 ChartWheel(
                     chart = chart,

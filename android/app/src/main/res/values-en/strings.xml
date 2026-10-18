@@ -23,7 +23,7 @@
     <string name="tools_need_saved">Save at least one chart first</string>
     <string name="tools_transits">Transits today</string>
     <string name="tools_progression">Progressions</string>
-    <string name="tools_forecast">Monthly forecast</string>
+    <string name="tools_forecast">Period forecast</string>
     <string name="tools_solar">Solar return — year chart</string>
     <string name="tools_lunar">Lunar return — month chart</string>
     <string name="tools_synastry">Synastry — compatibility</string>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_cards_short">Карты</string>
+    <string name="personal_forecast_title">Персональный прогноз</string>
+    <string name="forecast_chart_open">Посмотреть прогноз</string>
+    <string name="forecast_chart_saving">Сохраняем карту…</string>
+    <string name="forecast_chart_save_error">Не удалось сохранить карту. Попробуйте ещё раз.</string>
+</resources>

@@ -20,6 +20,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
+import kotlinx.coroutines.CancellationException
 import retrofit2.HttpException
 import ru.astrosmap.app.R
 import ru.astrosmap.app.ui.openSite
@@ -30,12 +31,15 @@ sealed interface ReportState {
     data object NeedPremium : ReportState
     data object NeedAuth : ReportState
     data object Offline : ReportState
+    data object MissingChart : ReportState
     data class Ready(val data: JsonObject) : ReportState
 }
 
 /** Единая обработка ошибок серверных отчётов: 402 — подписка, 401 — вход, прочее — офлайн. */
 suspend fun loadReport(block: suspend () -> JsonObject): ReportState = try {
     ReportState.Ready(block())
+} catch (e: CancellationException) {
+    throw e
 } catch (e: HttpException) {
     when (e.code()) {
         402 -> ReportState.NeedPremium
@@ -51,6 +55,7 @@ suspend fun loadReport(block: suspend () -> JsonObject): ReportState = try {
 fun ReportScaffold(
     state: ReportState,
     onRetry: () -> Unit,
+    onMissingChart: (() -> Unit)? = null,
     content: @Composable (JsonObject) -> Unit,
 ) {
     when (state) {
@@ -62,6 +67,11 @@ fun ReportScaffold(
             if (ru.astrosmap.app.BuildConfig.SHOW_EXTERNAL_PURCHASE_LINKS) {
                 val context = LocalContext.current
                 Button(onClick = { openSite(context) }) { Text(stringResource(R.string.premium_buy)) }
+            }
+        }
+        ReportState.MissingChart -> CenteredNote(stringResource(R.string.forecast_missing_chart)) {
+            onMissingChart?.let { action ->
+                Button(onClick = action) { Text(stringResource(R.string.forecast_choose_chart)) }
             }
         }
         ReportState.NeedAuth -> CenteredNote(stringResource(R.string.solar_need_auth)) {}

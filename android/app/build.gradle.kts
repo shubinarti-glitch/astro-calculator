@@ -1,4 +1,5 @@
 import java.util.Properties
+import java.io.File
 import java.security.MessageDigest
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import groovy.json.JsonSlurper
@@ -48,8 +49,9 @@ android {
         applicationId = "ru.astrosmap.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 12
-        versionName = "1.7.4"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        versionCode = 13
+        versionName = "1.7.5"
     }
 
     buildTypes {
@@ -64,8 +66,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // До создания боевого ключа release подписывается debug-ключом (только для локальных проверок).
-            // Боевая подпись — см. android/RELEASE.md (signing.properties, создаёт владелец).
+            // Release never falls back to a debug certificate. Debug builds need no production key.
             val props = Properties()
             val f = rootProject.file("signing.properties")
             if (f.exists()) {
@@ -77,8 +78,6 @@ android {
                     keyPassword = props.getProperty("keyPassword")
                 }
                 signingConfig = signingConfigs.getByName("release")
-            } else {
-                signingConfig = signingConfigs.getByName("debug")
             }
         }
     }
@@ -114,6 +113,25 @@ android {
     }
 }
 
+val validateReleaseSigning = tasks.register("validateReleaseSigning") {
+    val signingFile = rootProject.file("signing.properties")
+    doLast {
+        check(signingFile.isFile) { "Release requires signing.properties; debug signing is forbidden." }
+        val signing = Properties().apply { signingFile.inputStream().use { load(it) } }
+        for (key in listOf("storeFile", "storePassword", "keyAlias", "keyPassword")) {
+            check(!signing.getProperty(key).isNullOrBlank()) { "Missing release signing property: $key" }
+        }
+        val configuredStore = File(signing.getProperty("storeFile"))
+        val store = if (configuredStore.isAbsolute) configuredStore else File(signingFile.parentFile, signing.getProperty("storeFile"))
+        check(store.isFile) { "Release keystore is missing." }
+    }
+}
+tasks.configureEach {
+    if (name == "preStandardReleaseBuild" || name == "preGoogleplayReleaseBuild") {
+        dependsOn(validateReleaseSigning)
+    }
+}
+
 dependencies {
     implementation(project(":astrocore"))
     implementation(libs.androidx.core.ktx)
@@ -143,5 +161,9 @@ dependencies {
     ksp(libs.hilt.work.compiler)
     debugImplementation(libs.compose.ui.tooling)
     testImplementation(libs.junit)
+    androidTestImplementation(platform(libs.compose.bom))
+    androidTestImplementation(libs.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.test.runner)
+    debugImplementation(libs.compose.ui.test.manifest)
     testImplementation(libs.kotlinx.serialization.json)
 }
