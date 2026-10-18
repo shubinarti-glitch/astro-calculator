@@ -9,15 +9,15 @@ Implementation and verification are separate. A checkbox is marked only after
 the final implementation and its relevant checks pass.
 
 - [x] 1. Structured forecast interpretation, practical advice and dates.
-- [ ] 2. Preserve the original animated, draggable pet on every screen, including reports. Tapping explains the current page; sleep, reactions and preferences remain intact. User correction supersedes the compact help proposal.
+- [x] 2. Preserve the original animated, draggable pet on every screen, including reports. Tapping explains the current page; sleep, reactions and preferences remain intact. User correction supersedes the compact help proposal.
 - [x] 3. Technical forecast reads API `orb`.
 - [x] 4. Missing chart has an explicit recovery screen.
-- [ ] 5. Latest period wins; previous requests cannot overwrite state/history.
+- [x] 5. Latest period wins; previous requests cannot overwrite state/history.
 - [ ] 6. Personal forecast is discoverable at the top of Tools.
-- [ ] 7. Calculated chart opens forecast through a safe save operation.
+- [x] 7. Calculated chart opens forecast through a safe save operation.
 - [x] 8. Period overview uses actual returned events and advice.
-- [ ] 9. Saved navigation label fits: Карты / Cards.
-- [ ] 11. Exact-period cached forecast works offline with timestamp and retry;
+- [x] 9. Saved navigation label fits: Карты / Cards.
+- [x] 11. Exact-period cached forecast works offline with timestamp and retry;
   account boundaries and entitlements remain enforced.
 - [x] 12. Instrumented Compose smoke tests.
 - [ ] 13. Core journey, both store variants, large text and offline checks.
@@ -61,3 +61,7 @@ References: Android content structure https://developer.android.com/design/ui/mo
 Verify on the installed debug app using a synthetic chart and local API, inspect final screenshots, and repeat the large-font and pet interaction checks. Production publication remains outside this verification.
 
 Visual refinement verification: standard debug build succeeded; MainActivityForecastJourneyTest plus ForecastContentUiTest passed all 6 tests. Synthetic chart created and saved without duplicates, rapid period selection checked, large-font interpretation/advice and draggable animated pet hint checked. Inspected refined-forecast-overview.png and refined-forecast-advice.png from the installed emulator. Native panels and original pet visible. The overview capture displayed cached-data notice; this is not proof of a fresh monthly response on that capture. Remaining release, offline and both-theme acceptance is not declared complete.
+
+Final acceptance update (19 October): standard and Google Play unit suites each pass 47 tests. The separate offline/component/city suite passes 7; preconfigured 840x1600 display with font scale 200% passes 1; preconfigured light theme passes 1. Screenshots inspected for the actual synthetic chart in both configurations. Live resizing during instrumentation produced a harness wait, so display configurations are deliberately set before Activity launch. No runtime resize result is claimed.
+
+Visual inspection found white status icons on the light background. MainActivity now synchronizes system icon brightness with the actual Compose theme, retaining light icons on the branded dark splash. A focused Activity assertion and screenshot verify this correction before release.

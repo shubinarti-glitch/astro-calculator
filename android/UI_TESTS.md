@@ -42,7 +42,7 @@ one persisted chart and cleans only its uniquely named synthetic QA record.
 For offline acceptance, retain the synthetic record with `retainQa=true`, then run
 `ForecastOfflineJourneyTest` with `qaName` equal to the exact `QA_CHART_NAME` marker
 printed by the real journey. This test reads only that record, checks cached and
-uncached periods without a network connection, font scale 200% and a small display.
+uncached periods without a network connection. For large-text and small-display checks, configure the emulator before launching `cachedForecastInConfiguredWindow`: use `wm size 840x1600`, `settings put system font_scale 2.0`, `captureName=forecast-small-screen.png`, and the same exact `qaName`. For light-theme acceptance use `cmd uimode night no` and `captureName=forecast-light-theme.png`. Keep the network disabled for these cached-window checks and restore all original settings afterwards. Configuration is set before Activity launch to avoid live-resize races in the instrumentation framework.
 It restores network, font and display settings in `finally`. Screenshots stay in
 the debug application's private `files/qa-evidence` folder. Afterwards run
 `RetainedQaCleanupTest` with `cleanupQa` equal to the same exact name.

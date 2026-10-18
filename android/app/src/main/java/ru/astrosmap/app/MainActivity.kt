@@ -7,6 +7,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.SideEffect
+import androidx.core.view.WindowCompat
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -59,8 +62,17 @@ class MainActivity : ComponentActivity() {
         // не срабатывает — и заставка висела бы вечно.
         val coldStart = savedInstanceState == null
         setContent {
-            AstroTheme {
+            val darkTheme = isSystemInDarkTheme()
+            AstroTheme(darkTheme = darkTheme) {
                 var showSplash by rememberSaveable { mutableStateOf(coldStart) }
+                SideEffect {
+                    // The branded splash stays dark; the actual UI follows the system theme.
+                    val darkSystemIcons = !darkTheme && !showSplash
+                    WindowCompat.getInsetsController(window, window.decorView).apply {
+                        isAppearanceLightStatusBars = darkSystemIcons
+                        isAppearanceLightNavigationBars = darkSystemIcons
+                    }
+                }
                 Crossfade(targetState = showSplash, label = "splash") { splash ->
                     if (splash) {
                         ru.astrosmap.app.ui.SplashScreen(

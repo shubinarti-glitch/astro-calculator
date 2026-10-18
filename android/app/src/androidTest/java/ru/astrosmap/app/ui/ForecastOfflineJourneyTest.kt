@@ -73,7 +73,7 @@ class ForecastOfflineJourneyTest {
         compose.onNodeWithText(label(labelRes)).performScrollTo().performClick()
     }
 
-    @Test fun cachedForecastRecoversAfterUncachedPeriodAndSupportsLargeText() {
+    @Test fun cachedForecastRecoversAfterUncachedPeriod() {
         val name = InstrumentationRegistry.getArguments().getString("qaName")
         assumeTrue("Explicit synthetic card is required", name?.matches(Regex("QA-forecast-[0-9a-f-]{36}")) == true)
         assumeTrue("Local API only", BuildConfig.BASE_URL == "http://10.0.2.2:8000/")
@@ -107,11 +107,6 @@ class ForecastOfflineJourneyTest {
             // The period selector must survive the error and allow a cached-period recovery.
             selectPeriod(R.string.forecast_period_this_month)
             waitForText(cachedPrefix, true)
-            shell("settings put system font_scale 2.0")
-            compose.waitUntil(30_000) { compose.activity.resources.configuration.fontScale > 1.9f }
-            waitForText(cachedPrefix, true)
-            compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText(label(R.string.forecast_advice_label)))
-            capture("forecast-offline-large-font.png")
 
         } finally {
             shell("settings put system font_scale $previousFont")
@@ -137,6 +132,9 @@ class ForecastOfflineJourneyTest {
         } else {
             org.junit.Assert.assertEquals(android.content.res.Configuration.UI_MODE_NIGHT_NO,
                 compose.activity.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK)
+            org.junit.Assert.assertTrue("Light UI needs dark status bar icons",
+                androidx.core.view.WindowCompat.getInsetsController(compose.activity.window,
+                    compose.activity.window.decorView).isAppearanceLightStatusBars)
         }
         compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText(label(R.string.forecast_advice_label)))
         capture(captureName!!)
