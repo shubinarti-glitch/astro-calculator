@@ -17,7 +17,7 @@
   <meta name="twitter:card" content="summary" />
   <script>(function(){try{var t=localStorage.getItem('astro_theme')||'light';document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script>
   <link rel="stylesheet" href="/fonts/fonts.css?v=20" />
-  <link rel="stylesheet" href="/css/style.css?v=33" />
+  <link rel="stylesheet" href="/css/style.css?v=34" />
   <style>html[lang="en"] .chart-svg::after { content: "⤢ click to enlarge"; }</style>
 </head>
 <body>
@@ -309,6 +309,10 @@
       </div>
 
       <div class="adm-pane hidden" id="adm-pane-pay">
+        <h3 id="sales-funnel-title">Воронка продаж</h3>
+        <label id="sales-period-label" for="sales-period">Период</label>
+        <select id="sales-period"><option value="7">7</option><option value="30" selected>30</option><option value="90">90</option></select>
+        <div id="sales-funnel" aria-live="polite"></div>
         <div id="admin-pay-summary" class="admin-stats"></div>
         <div class="table-wrap"><table id="admin-payments"></table></div>
       </div>
@@ -890,6 +894,7 @@
   </div>
 
   <script src="/js/i18n.js?v=35"></script>
-  <script src="/js/app.js?v=36"></script>
+  <script src="/js/sales.js?v=1"></script>
+  <script src="/js/app.js?v=37"></script>
 </body>
 </html>

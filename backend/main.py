@@ -12,6 +12,7 @@ from functools import lru_cache
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Literal, Optional
+from uuid import UUID
 
 import requests
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
@@ -22,7 +23,7 @@ from pydantic import BaseModel, Field, field_validator
 
 import re
 
-from . import astrology, constants, content_store, db, emailer, payments, seo, vedic
+from . import astrology, constants, content_store, db, emailer, interpretations, payments, sales, seo, vedic
 from . import api_language
 from .editorial_data import validate_required
 from .editorial_glossary import router as glossary_router
@@ -632,7 +633,22 @@ def require_entitlement(entitlement: str):
 # --------------------------------------------------------------------------- #
 #  Подписка (ЮKassa)
 # --------------------------------------------------------------------------- #
+class BillingAttribution(BaseModel):
+    device_id: UUID
+    session_id: UUID
+    source: Literal["web", "app"] = "web"
+    utm_source: str | None = Field(None, max_length=40, pattern=r"^[A-Za-z0-9_-]+$")
+    utm_medium: str | None = Field(None, max_length=40, pattern=r"^[A-Za-z0-9_-]+$")
+    utm_campaign: str | None = Field(None, max_length=40, pattern=r"^[A-Za-z0-9_-]+$")
+    utm_content: str | None = Field(None, max_length=40, pattern=r"^[A-Za-z0-9_-]+$")
+
+
+class BillingCheck(BaseModel):
+    attempt: UUID | None = None
+
+
 class BillingCreate(BaseModel):
+    attribution: BillingAttribution | None = None
     plan: str = Field(..., pattern="^(month|year|plus_month|plus_year|consult|report)$")
 
 
@@ -645,7 +661,8 @@ def api_billing_plans():
 def api_billing_create(body: BillingCreate, request: Request, uid: int = Depends(current_user_id)):
     return_url = str(request.base_url).rstrip("/") + "/?payment=check"
     try:
-        url = payments.create_payment(uid, body.plan, return_url)
+        url = payments.create_payment(uid, body.plan, return_url,
+                                      body.attribution.model_dump(mode="json", exclude_none=True) if body.attribution else None)
     except payments.NotConfiguredError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
     except Exception:
@@ -655,12 +672,14 @@ def api_billing_create(body: BillingCreate, request: Request, uid: int = Depends
 
 
 @app.post("/api/billing/check")
-def api_billing_check(uid: int = Depends(current_user_id)):
+def api_billing_check(body: BillingCheck | None = None, uid: int = Depends(current_user_id)):
     try:
-        result = payments.check_payments(uid)
+        result = payments.check_payments(uid, str(body.attempt) if body and body.attempt else None)
         result["consultation"] = db.has_consultation(uid)
         result["report_credits"] = db.get_report_credits(uid)
         return result
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Платёж не найден")
     except payments.NotConfiguredError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
     except Exception:
@@ -1179,8 +1198,24 @@ def api_events(body: EventBatch, request: Request, authorization: str | None = H
     uid = None
     if authorization and authorization.lower().startswith("bearer "):
         uid = db.verify_token(authorization.split(" ", 1)[1].strip())
-    n = db.record_events(body.device_id, uid, [e.model_dump() for e in body.events])
+    events = []
+    for event in body.events:
+        if event.name.startswith("server_"):
+            raise HTTPException(status_code=422, detail="Reserved event name")
+        props = event.props
+        if event.name.startswith("web_"):
+            try:
+                props = sales.clean_web_event(event.name, props, body.device_id)
+            except ValueError as exc:
+                raise HTTPException(status_code=422, detail=str(exc))
+        events.append({"name": event.name, "props": props})
+    n = db.record_events(body.device_id, uid, events)
     return {"ok": True, "accepted": n}
+
+
+@app.get("/api/admin/sales-funnel")
+def api_admin_sales_funnel(uid: int = Depends(require_admin), days: int = Query(30, ge=1, le=365)):
+    return sales.funnel(days)
 
 
 @app.get("/api/admin/events")

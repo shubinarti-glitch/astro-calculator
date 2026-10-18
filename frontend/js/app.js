@@ -474,6 +474,7 @@ async function renderSkyNow() {
         <div class="sky-sign">${skyEsc(tr.sign_symbol || "")} ${skyEsc(tr.sign_ru)}</div>
         <div class="sky-period">${skyMoment(tr.since_datetime, tr.since)} — ${skyMoment(tr.until_datetime, tr.until)}</div>
         <p class="sky-meaning">${skyEsc(tr.meaning)}</p>
+        ${tr.guidance ? `<p class="sky-guidance"><strong>${skyEsc(t("sky_focus"))}:</strong> ${skyEsc(tr.guidance)}</p>` : ""}
       </article>`;
     }).join("");
   } catch (e) {
@@ -598,7 +599,7 @@ function getCurrentLocation(birth) {
   const lng = parseFloat($("current-lng").value);
   if (Number.isNaN(lat) || Number.isNaN(lng)) {
     const fallback = { lat: birth.lat, lng: birth.lng, tz_str: birth.tz_str, city: birth.city };
-    localStorage.setItem("astro_current_location", JSON.stringify(fallback));
+    try { localStorage.setItem("astro_current_location", JSON.stringify(fallback)); } catch (_) {}
     return fallback;
   }
   const result = {
@@ -607,7 +608,7 @@ function getCurrentLocation(birth) {
     tz_str: $("current-tz").value || birth.tz_str,
     city: $("current-city").value.trim() || birth.city,
   };
-  localStorage.setItem("astro_current_location", JSON.stringify(result));
+  try { localStorage.setItem("astro_current_location", JSON.stringify(result)); } catch (_) {}
   return result;
 }
 
@@ -907,6 +908,7 @@ $("birth-form").addEventListener("submit", async (e) => {
       if (!IS_PREMIUM) {
         const prev = await postJSON("/api/synastry/preview", { person_a: birth, person_b: personB });
         renderSynastryTeaser(prev);
+        sales.track("web_chart_success", { kind: "synastry_preview" });
         return; // тизер — не полноценный расчёт: не пишем в историю и lastData
       }
       data = await postJSON("/api/synastry", { person_a: birth, person_b: personB });
@@ -1014,6 +1016,7 @@ $("birth-form").addEventListener("submit", async (e) => {
       data = await postJSON("/api/natal", birth);
       renderNatal(data);
     }
+    sales.track("web_chart_success", { kind: mode });
     lastData = data;
     lastMode = mode; // для перерисовки при смене языка
     recordHistory(birth);
@@ -3124,9 +3127,11 @@ function showCalendarDay(date) {
 const TOKEN_KEY = "astro_token";
 let authMode = "login";
 
-const getToken = () => localStorage.getItem(TOKEN_KEY);
-const setToken = (t) => localStorage.setItem(TOKEN_KEY, t);
-const clearToken = () => localStorage.removeItem(TOKEN_KEY);
+let memoryToken;
+const getToken = () => { if (memoryToken !== undefined) return memoryToken; try { return localStorage.getItem(TOKEN_KEY); } catch (_) { return null; } };
+const setToken = (token) => { memoryToken = token; try { localStorage.setItem(TOKEN_KEY, token); } catch (_) {} };
+const clearToken = () => { memoryToken = null; try { localStorage.removeItem(TOKEN_KEY); } catch (_) {} };
+sales.setHeaders(authHeaders);
 
 function authHeaders() {
   const t = getToken();
@@ -3197,6 +3202,7 @@ function showLockedPreview(m) {
 }
 
 function openPremiumModal() {
+  sales.track("web_pricing_view");
   const st = $("premium-status");
   if (IS_PREMIUM && PREMIUM_UNTIL) {
     st.textContent = `✦ ${t("premium_active_until")} ${formatDate(new Date(PREMIUM_UNTIL * 1000).toISOString().slice(0, 10))}`;
@@ -3289,11 +3295,15 @@ function openGlossary() {
 if (location.hash === "#glossary") setTimeout(openGlossary, 300);
 document.querySelectorAll("#premium-plans [data-plan]").forEach((btn) => {
   btn.addEventListener("click", async () => {
+    if (!getToken()) { $("premium-modal").classList.add("hidden"); openPaywall(401); return; }
     btn.disabled = true;
+    sales.track("web_checkout_start", { plan: btn.dataset.plan });
+    await Promise.race([sales.flush(), new Promise(resolve => setTimeout(resolve, 300))]);
     try {
-      const data = await postJSON("/api/billing/create", { plan: btn.dataset.plan });
+      const data = await postJSON("/api/billing/create", { plan: btn.dataset.plan, attribution: sales.attribution() });
       window.location.href = data.confirmation_url;
     } catch (err) {
+      sales.track("web_checkout_error", { plan: btn.dataset.plan });
       $("premium-error").textContent = err.message;
       $("premium-error").classList.remove("hidden");
       btn.disabled = false;
@@ -3308,24 +3318,72 @@ function premiumGate() {
   return false;
 }
 
+let paymentCheckBusy = false;
+function showPaymentNotice(text, retry, needsLogin = false, consultation = false) {
+  let notice = $("payment-notice");
+  if (!notice) {
+    notice = document.createElement("section");
+    notice.id = "payment-notice";
+    notice.className = "payment-notice";
+    notice.setAttribute("role", "status");
+    notice.setAttribute("aria-live", "polite");
+    document.body.insertBefore(notice, document.body.firstChild);
+  }
+  notice.replaceChildren();
+  const message = document.createElement("p");
+  message.textContent = text;
+  notice.append(message);
+  const button = (label, action) => {
+    const node = document.createElement("button"); node.type = "button"; node.className = "auth-btn";
+    node.textContent = label; node.addEventListener("click", action); notice.append(node);
+  };
+  if (retry) button(LANG === "en" ? "Check again" : "Проверить ещё раз", checkPaymentReturn);
+  if (needsLogin) button(LANG === "en" ? "Sign in" : "Войти", () => { $("auth-modal").classList.remove("hidden"); setAuthMode("login"); });
+  else button(LANG === "en" ? "View my access" : "Мои доступы", openPremiumModal);
+  if (consultation) {
+    const link = document.createElement("a"); link.href = ASTROLOGER_TG; link.target = "_blank"; link.rel = "noopener";
+    link.textContent = LANG === "en" ? "Schedule consultation" : "Записаться на консультацию";
+    notice.append(link);
+  }
+}
 async function checkPaymentReturn() {
-  if (!window.location.search.includes("payment=check") || !getToken()) return;
-  history.replaceState(null, "", window.location.pathname);
+  const url = new URL(window.location.href);
+  if (url.searchParams.get("payment") !== "check" || paymentCheckBusy) return;
+  if (!getToken()) {
+    showPaymentNotice(LANG === "en" ? "Sign in to the account used for this purchase to check payment." : "Для проверки оплаты войдите в аккаунт, с которого оформляли покупку.", false, true);
+    return;
+  }
+  paymentCheckBusy = true;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  showPaymentNotice(LANG === "en" ? "Checking payment…" : "Проверяем оплату…", false);
   try {
-    const data = await postJSON("/api/billing/check", {});
-    if (data.activated) {
-      // подписка и/или консультация — при «только консультации» premium не включается
-      IS_PREMIUM = !!data.premium;
-      PREMIUM_UNTIL = data.subscription && data.subscription.expires_at;
-      HAS_CONSULT = !!data.consultation;
-      REPORT_CREDITS = data.report_credits || 0;
-      refreshPremiumBtn();
-      alert(t("premium_activated"));
-      if (HAS_CONSULT) openPremiumModal(); // сразу показать контакт для консультации
-    } else {
-      alert(t("premium_pending"));
+    const attempt = url.searchParams.get("attempt");
+    const response = await fetch("/api/billing/check", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(attempt ? { attempt } : {}), signal: controller.signal });
+    if (response.status === 401) {
+      clearToken();
+      showPaymentNotice(LANG === "en" ? "Your session expired. Sign in to check this payment." : "Сессия истекла. Войдите, чтобы проверить оплату.", false, true);
+      return;
     }
-  } catch (e) {}
+    if (!response.ok) throw new Error(String(response.status));
+    const data = await response.json();
+    IS_PREMIUM = !!data.premium;
+    PREMIUM_UNTIL = data.subscription && data.subscription.expires_at;
+    HAS_CONSULT = !!data.consultation;
+    REPORT_CREDITS = data.report_credits || 0;
+    refreshPremiumBtn();
+    const result = AstroSales.paymentResult(data, LANG === "en");
+    showPaymentNotice(result.text, !result.terminal, false, data.payment && data.payment.status === "succeeded" && (data.payment.plan === "consult" || data.payment.plan.startsWith("plus_")));
+    if (result.terminal) {
+      url.searchParams.delete("payment"); url.searchParams.delete("attempt");
+      history.replaceState(null, "", url.pathname + url.search + url.hash);
+    }
+  } catch (error) {
+    const missing = error.message === "404" || error.message === "422";
+    showPaymentNotice(missing
+      ? (LANG === "en" ? "This payment was not found for this account. Sign in to the account used for purchase or contact support." : "Платёж не найден для этого аккаунта. Войдите в аккаунт покупки или обратитесь в поддержку.")
+      : (LANG === "en" ? "Could not check payment. Your return link is saved; please try again." : "Не удалось проверить оплату. Ссылка возврата сохранена — повторите проверку."), true);
+  } finally { clearTimeout(timeout); paymentCheckBusy = false; }
 }
 
 // Ссылки из писем: /?email-token=… (подтверждение почты) и /?reset-token=… (сброс пароля).
@@ -3561,6 +3619,7 @@ $("auth-form").addEventListener("submit", async (e) => {
         }
       : { username, password });
     setToken(data.token);
+    if (authMode === "register") sales.track("web_signup_success");
     updateAuthUI(data.username, data.is_admin);
     $("auth-modal").classList.add("hidden");
     $("auth-password").value = "";
@@ -3574,6 +3633,7 @@ $("auth-form").addEventListener("submit", async (e) => {
       REPORT_CREDITS = me.report_credits || 0;
       refreshPremiumBtn();
     } catch (e) {}
+    await checkPaymentReturn();
     if (PENDING_PAYWALL) {
       PENDING_PAYWALL = false;
       if (!IS_PREMIUM) openPremiumModal();
@@ -3939,6 +3999,7 @@ async function loadMobileReports() {
 $("admin-btn").addEventListener("click", () => {
   $("admin-modal").classList.remove("hidden");
   loadAdmin();
+  loadSalesFunnel();
   textLimit = 60;
   loadTexts();
 });
@@ -4228,11 +4289,12 @@ function escapeHtml(s) {
 // --- Инициализация при загрузке ---
 (async function initAuth() {
   await checkEmailLinks(); // ссылки из писем работают и без входа
-  if (!getToken()) return;
+  if (!getToken()) { await checkPaymentReturn(); return; }
   try {
     const r = await fetch("/api/auth/me", { headers: authHeaders() });
     if (!r.ok) {
       clearToken();
+      await checkPaymentReturn();
       return;
     }
     const me = await r.json();
@@ -4245,7 +4307,7 @@ function escapeHtml(s) {
     await loadProfiles();
     await checkPaymentReturn();
   } catch {
-    /* offline */
+    await checkPaymentReturn();
   }
 })();
 
@@ -4261,3 +4323,48 @@ if ('serviceWorker' in navigator) {
     if (e.target.closest && e.target.closest("#results, #daily-block")) e.preventDefault();
   });
 });
+
+// Web cohort conversion is separate from all purchases made during the period.
+async function loadSalesFunnel() {
+  const target = $("sales-funnel");
+  const en = LANG === "en";
+  const say = (ru, english) => en ? english : ru;
+  $("sales-funnel-title").textContent = say("Воронка продаж", "Sales funnel");
+  $("sales-period-label").textContent = say("Период (дней)", "Period (days)");
+  target.textContent = say("Загрузка…", "Loading…");
+  const period = $("sales-period").value;
+  try {
+    const response = await fetch(`/api/admin/sales-funnel?days=${period}`, { headers: authHeaders() });
+    if (!response.ok) throw new Error("report");
+    const data = await response.json();
+    if ($("sales-period").value !== period) return;
+    const number = value => Number.isFinite(Number(value)) ? String(Number(value)) : "—";
+    const date = value => {
+      if (!value) return say("ещё не начат", "not started");
+      const parsed = new Date(typeof value === "number" ? value * 1000 : value);
+      return Number.isNaN(parsed.getTime()) ? "—" : parsed.toLocaleString(en ? "en-GB" : "ru-RU", { timeZone: "UTC" }) + " UTC";
+    };
+    const labels = {
+      web_visit: say("Посещение", "Visit"), web_chart_success: say("Расчёт", "Chart calculated"),
+      web_pricing_view: say("Тарифы", "Plans viewed"), server_payment_created: say("Платёж создан", "Payment created"),
+      server_payment_succeeded: say("Оплата подтверждена", "Payment confirmed"),
+    };
+    const table = (headers, rows) => '<div class="table-wrap"><table><thead><tr>' + headers.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr></thead><tbody>' + rows.map(row => '<tr>' + row.map(cell => `<td>${escapeHtml(cell)}</td>`).join('') + '</tr>').join('') + '</tbody></table></div>';
+    target.innerHTML = `<p class="section-note">${escapeHtml(date(data.since))} — ${escapeHtml(date(data.until))}<br>${escapeHtml(say("Начало сбора: ", "Tracking began: ") + date(data.tracking_since))}</p>` +
+      table([say("Шаг по порядку", "Ordered step"), say("Сеансы", "Sessions"), say("От прошлого шага", "From previous step")], (data.steps || []).map(step => [labels[step.name] || step.name, number(step.sessions), step.conversion == null ? "—" : number(step.conversion) + "%"])) +
+      `<p class="section-note">${escapeHtml(say("Конверсии относятся к сеансам с последовательными шагами. Покупки ниже — все подтверждённые оплаты за период, включая другие сеансы и источники. Они не являются конверсией всех посетителей.", "Conversion follows sessions with ordered steps. Purchases below include all confirmed payments in this period, including other sessions and sources. They are not a conversion rate of all visitors."))}</p>` +
+      table([say("Показатель за период", "Period metric"), say("Количество", "Count")], [
+        [say("Регистрации", "Signups"), number(data.signups)], [say("Покупки", "Purchases"), number(data.purchases)],
+        [say("Повторные покупки", "Repeat purchases"), number(data.repeat_purchases)], [say("Вне полной воронки", "Outside complete funnel"), number(data.direct_purchases)],
+        [say("Без атрибуции", "Unattributed"), number(data.unattributed_purchases)],
+      ]) + table([say("Тариф", "Plan"), say("Покупки", "Purchases")], (data.by_plan || []).map(item => [["month", "year", "plus_month", "plus_year", "consult", "report"].includes(item.plan) ? t("plan_" + item.plan) : item.plan, number(item.purchases)])) +
+      table([say("Источник", "Source"), say("Кампания", "Campaign"), say("Покупки", "Purchases")], (data.by_source || []).map(item => [item.source || "—", item.campaign || "—", number(item.purchases)]));
+    if (data.note) {
+      const note = document.createElement("p"); note.className = "section-note"; note.textContent = say(
+        "Время указано в UTC. Воронка учитывает шаги по порядку внутри одного веб-сеанса за выбранный период. Покупки — подтверждённые сервером оплаты за период, включая другие сеансы и приложение. «Вне полной воронки» означает, что не зафиксирован весь путь от посещения до покупки. Исторические визиты и источники до начала сбора недоступны.",
+        "Times are UTC. The funnel counts ordered steps in one web session within the selected period. Purchases are server-confirmed payments in the period, including other sessions and app traffic. Outside complete funnel means that the full visit-to-purchase path was not observed. Historical visits and sources before tracking began are unavailable."
+      ); target.append(note);
+    }
+  } catch (_) { target.textContent = say("Не удалось загрузить отчёт. Выберите период ещё раз для повторной загрузки.", "Could not load the report. Select a period again to retry."); }
+}
+$("sales-period").addEventListener("change", loadSalesFunnel);
