@@ -515,6 +515,33 @@ def _short_text(value, limit: int):
     return cut + "…"
 
 
+def _brief_transit_text(aspect: dict, limit: int = 220) -> str:
+    """Return a complete authored preview without leaking the detailed overview."""
+    source = aspect.get("interp")
+    lang = "en" if isinstance(source, str) and source.startswith("Transit overview.") else "ru"
+    energy_marker, advice_marker, advice_label = (
+        ("\n\nEnergy of the period. ", "\n\nRecommendations. ", "Advice: ")
+        if lang == "en"
+        else ("\n\nЭнергия периода. ", "\n\nРекомендации. ", "Совет: ")
+    )
+    if not isinstance(source, str) or energy_marker not in source:
+        return _short_text(source, limit)
+
+    def first_sentence(value: str) -> str:
+        sentences = re.split(r"(?<=[.!?])\s+", value.strip())
+        return sentences[0] if sentences else ""
+
+    energy = source.split(energy_marker, 1)[1].split("\n\n", 1)[0]
+    meaning = first_sentence(energy)
+    advice = ""
+    if advice_marker in source:
+        advice = first_sentence(source.rsplit(advice_marker, 1)[1].split("\n\n", 1)[0])
+    if not meaning:
+        return _short_text(source, limit)
+    with_advice = f"{meaning}\n\n{advice_label}{advice}"
+    return with_advice if advice and len(with_advice) <= limit else meaning
+
+
 def _brief_report(report: dict, kind: str) -> dict:
     """Сокращает авторские тексты, сохраняя расчётные положения и структуру ответа."""
     result = copy.deepcopy(report)
@@ -557,7 +584,10 @@ def _brief_report(report: dict, kind: str) -> dict:
             result["aspects"] = aspects[:3]
             for aspect in result["aspects"]:
                 if isinstance(aspect, dict) and "interp" in aspect:
-                    aspect["interp"] = _short_text(aspect.get("interp"), 220)
+                    aspect["interp"] = _brief_transit_text(aspect)
+        # The overview duplicates every interpretation in key and sphere groups.
+        # Dropping it here ensures no full text bypasses the limited aspect list.
+        result.pop("overview", None)
     elif kind == "forecast":
         result["summary"] = _short_text(result.get("summary"), 500)
         spheres = result.get("sphere_forecast")
