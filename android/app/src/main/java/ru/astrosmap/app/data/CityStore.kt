@@ -28,12 +28,38 @@ class CityStore(private val context: Context) {
         // Версионированное имя гарантирует замену asset-базы у существующих установок.
         // При следующем обновлении справочника увеличить суффикс.
         val target = File(File(context.filesDir, "db").apply { mkdirs() }, "cities_v2.db")
-        if (!target.exists()) {
-            context.assets.open("db/cities.db").use { input ->
-                target.outputStream().use { input.copyTo(it) }
+        synchronized(copyLock) {
+            if (!isUsable(target)) {
+                val temporary = File.createTempFile("cities-", ".db", target.parentFile)
+                try {
+                    context.assets.open("db/cities.db").use { input ->
+                        temporary.outputStream().use { input.copyTo(it) }
+                    }
+                    check(isUsable(temporary)) { "Invalid city database asset" }
+                    check(temporary.renameTo(target)) { "Cannot install city database" }
+                } finally {
+                    temporary.delete()
+                }
             }
+            SQLiteDatabase.openDatabase(target.absolutePath, null, SQLiteDatabase.OPEN_READONLY)
         }
-        SQLiteDatabase.openDatabase(target.absolutePath, null, SQLiteDatabase.OPEN_READONLY)
+    }
+
+    companion object {
+        private val copyLock = Any()
+
+        private fun isUsable(file: File): Boolean = file.isFile && runCatching {
+            SQLiteDatabase.openDatabase(file.absolutePath, null, SQLiteDatabase.OPEN_READONLY).use { database ->
+                val intact = database.rawQuery("PRAGMA quick_check", null).use {
+                    it.moveToFirst() && it.getString(0) == "ok"
+                }
+                if (!intact) return@use false
+                database.rawQuery(
+                    "SELECT name_ru, name_en, country, lat, lng, tz, search_ru, search_en, population FROM cities LIMIT 0",
+                    null,
+                ).use { true }
+            }
+        }.getOrDefault(false)
     }
 
     fun search(query: String, limit: Int = 8): List<City> {

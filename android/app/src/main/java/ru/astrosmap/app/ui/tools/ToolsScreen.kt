@@ -155,6 +155,24 @@ fun ToolsScreen(
     ) {
         AppHeader(stringResource(R.string.section_tools))
 
+
+        AstroPanel {
+            Text(stringResource(R.string.personal_forecast_title), style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary)
+            if (selected != null) {
+                ru.astrosmap.app.ui.ChartPicker(
+                    charts = charts, selectedId = selected.id,
+                    onSelect = { selectedId = it }, modifier = Modifier.fillMaxWidth(),
+                    primaryId = primary?.id ?: 0L,
+                )
+                Button(onClick = { onForecast(selected.id) }, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.forecast_chart_open))
+                }
+            } else {
+                Text(stringResource(R.string.tools_need_saved), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+
         AstroPanel {
             Text(
                 stringResource(R.string.forecast_location_title),
@@ -246,7 +264,6 @@ fun ToolsScreen(
 
             ToolButton(stringResource(R.string.tools_transits)) { selected?.let { onTransits(it.id) } }
             ToolButton(stringResource(R.string.tools_progression)) { selected?.let { onProgression(it.id) } }
-            ToolButton(stringResource(R.string.tools_forecast)) { selected?.let { onForecast(it.id) } }
             ToolButton(stringResource(R.string.tools_solar) + " ✦") { selected?.let { onSolar(it.id) } }
             ToolButton(stringResource(R.string.tools_lunar) + " ✦") { selected?.let { onLunar(it.id) } }
             ToolButton(

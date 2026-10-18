@@ -37,6 +37,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -51,7 +52,7 @@ import ru.astrosmap.app.ui.view.ChartViewScreen
 enum class Section(val route: String, val titleRes: Int, val iconRes: Int) {
     Today("today", R.string.section_today, R.drawable.ic_today),
     Chart("chart", R.string.section_chart, R.drawable.ic_chart),
-    Saved("saved", R.string.section_saved, R.drawable.ic_saved),
+    Saved("saved", R.string.nav_cards_short, R.drawable.ic_saved),
     Tools("tools", R.string.section_tools, R.drawable.ic_tools),
     Account("account", R.string.section_account, R.drawable.ic_account),
 }
@@ -68,12 +69,12 @@ fun AstroRoot(notificationRoute: String? = null, onNotificationRouteHandled: () 
 
     LaunchedEffect(notificationRoute) {
         val route = notificationRoute ?: return@LaunchedEffect
+        navController.currentBackStackEntryFlow.first()
         navController.navigate(route) { launchSingleTop = true }
         onNotificationRouteHandled()
     }
 
-    // Один ненавязчивый проход после входа: показывает, что нижняя панель интерактивна.
-    // Любой тап немедленно прекращает подсказку.
+    // Повторяющаяся подсказка показывает, что нижняя панель интерактивна.
     LaunchedEffect(Unit) {
         delay(3_000)
         var index = 0
@@ -191,7 +192,7 @@ fun AstroRoot(notificationRoute: String? = null, onNotificationRouteHandled: () 
                 ru.astrosmap.app.ui.tools.ToolsScreen(
                     onTransits = { id -> navController.navigate("transit/$id") },
                     onProgression = { id -> navController.navigate("progression/$id") },
-                    onForecast = { id -> navController.navigate("forecast/$id") },
+                    onForecast = { id -> navController.navigate("forecast/$id") { launchSingleTop = true } },
                     onSolar = { id -> navController.navigate("return/solar/$id") },
                     onLunar = { id -> navController.navigate("return/lunar/$id") },
                     onSynastry = { a, b -> navController.navigate("synastry/$a/$b") },
@@ -204,7 +205,15 @@ fun AstroRoot(notificationRoute: String? = null, onNotificationRouteHandled: () 
             composable("journal") { ru.astrosmap.app.ui.journal.JournalScreen() }
             composable("transit/{id}") { ru.astrosmap.app.ui.tools.TransitScreen() }
             composable("progression/{id}") { ru.astrosmap.app.ui.tools.ProgressionScreen() }
-            composable("forecast/{id}") { ru.astrosmap.app.ui.tools.ForecastScreen() }
+            composable("forecast/{id}") {
+                ru.astrosmap.app.ui.tools.ForecastScreen(onSelectChart = {
+                    navController.navigate(Section.Saved.route) {
+                        popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                })
+            }
             composable("return/{type}/{id}") { ru.astrosmap.app.ui.tools.ReturnScreen() }
             composable("synastry/{a}/{b}") { ru.astrosmap.app.ui.tools.SynastryScreen() }
             composable("view/{id}") {
@@ -216,6 +225,7 @@ fun AstroRoot(notificationRoute: String? = null, onNotificationRouteHandled: () 
                         }
                     },
                     onClosed = { navController.popBackStack() },
+                    onForecast = { id -> navController.navigate("forecast/$id") { launchSingleTop = true } },
                 )
             }
             }

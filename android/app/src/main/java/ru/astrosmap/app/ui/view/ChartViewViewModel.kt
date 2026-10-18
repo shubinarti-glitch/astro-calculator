@@ -9,6 +9,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.CancellationException
 import ru.astrosmap.app.astro.AstroEngine
 import ru.astrosmap.app.astro.NatalChart
 import ru.astrosmap.app.data.ChartDao
@@ -29,6 +32,8 @@ data class ChartViewState(
     val texts: ChartTexts? = null,
     val textsOffline: Boolean = false, // трактовки не загрузились (нет сети)
     val access: AccessState = AccessState(),
+    val saving: Boolean = false,
+    val saveFailed: Boolean = false,
 )
 
 @HiltViewModel
@@ -46,6 +51,7 @@ class ChartViewViewModel @Inject constructor(
 
     /** Сырой JSON трактовок — сохраняется вместе с картой. */
     private var textsRaw: String? = null
+    private val saveMutex = Mutex()
     private val lang = if (AstroLabels.isRu()) "ru" else "en"
 
     init {
@@ -101,17 +107,35 @@ class ChartViewViewModel @Inject constructor(
     private fun parseSafe(raw: String): ChartTexts? =
         runCatching { ChartTexts.parse(raw) }.getOrNull()
 
-    fun save() {
-        val e = _state.value.entity ?: return
-        analytics.track("chart_saved")
+    fun save() = saveAndContinue(null)
+
+    fun openForecast(onSaved: (Long) -> Unit) = saveAndContinue(onSaved)
+
+    private fun saveAndContinue(onSaved: ((Long) -> Unit)?) {
         viewModelScope.launch {
-            var toSave = if (textsRaw != null) e.copy(textsJson = textsRaw, textsLang = lang) else e
-            // Правка уже синхронизированной карты — пометить для пересоздания на сервере.
-            if (toSave.serverId != null) toSave = toSave.copy(dirty = true)
-            val newId = dao.upsert(toSave.copy(updatedAt = System.currentTimeMillis()))
-            val saved = toSave.copy(id = if (e.id > 0) e.id else newId)
-            _state.value = _state.value.copy(entity = saved, savedId = saved.id)
-            syncManager.sync()
+            saveMutex.withLock {
+                val existingId = _state.value.savedId
+                if (existingId != null && onSaved != null) {
+                    onSaved(existingId)
+                    return@withLock
+                }
+                val e = _state.value.entity ?: return@withLock
+                _state.value = _state.value.copy(saving = true, saveFailed = false)
+                try {
+                    var toSave = if (textsRaw != null) e.copy(textsJson = textsRaw, textsLang = lang) else e
+                    if (toSave.serverId != null) toSave = toSave.copy(dirty = true)
+                    val newId = dao.upsert(toSave.copy(updatedAt = System.currentTimeMillis()))
+                    val saved = toSave.copy(id = if (e.id > 0) e.id else newId)
+                    _state.value = _state.value.copy(entity = saved, savedId = saved.id, saving = false)
+                    analytics.track("chart_saved")
+                    onSaved?.invoke(saved.id)
+                    viewModelScope.launch { syncManager.sync() }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    _state.value = _state.value.copy(saving = false, saveFailed = true)
+                }
+            }
         }
     }
 

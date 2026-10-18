@@ -25,7 +25,7 @@
     <string name="tools_need_saved">Сначала сохраните хотя бы одну карту</string>
     <string name="tools_transits">Транзиты сегодня</string>
     <string name="tools_progression">Прогрессии</string>
-    <string name="tools_forecast">Прогноз на месяц</string>
+    <string name="tools_forecast">Прогноз на период</string>
     <string name="tools_solar">Соляр — карта года</string>
     <string name="tools_lunar">Лунар — карта месяца</string>
     <string name="tools_synastry">Синастрия — совместимость</string>

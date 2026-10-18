@@ -45,6 +45,16 @@ def test_default_dry_run_is_read_only(source, tmp_path):
     assert "frontend/js/vendor/html2pdf.bundle.min.js.LICENSE.txt" in report["missing_notices"]
 
 
+def test_android_acceptance_sources_preserved_without_runtime_data(source, tmp_path):
+    code = "android/app/src/androidTest/java/ru/astrosmap/app/data/CityStoreAssetTest.kt"
+    private = "android/app/src/androidTest/assets/data/private.json"
+    put(source, code)
+    put(source, private)
+    report = exporter.export(source, tmp_path / "draft", write=True)
+    assert code in report["files"]
+    assert not (tmp_path / "draft" / private).exists()
+
+
 def test_allowlist_exclusions_and_notices(source, tmp_path):
     private = ("data/editorial/text-tables-v1.json", ".git/config", "docs/CONTENT-SOURCE-MAP.md",
                "frontend/media/private.js", "release_backups/original.zip",

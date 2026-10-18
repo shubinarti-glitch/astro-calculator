@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_cards_short">Cards</string>
+    <string name="personal_forecast_title">Personal forecast</string>
+    <string name="forecast_chart_open">View forecast</string>
+    <string name="forecast_chart_saving">Saving chart…</string>
+    <string name="forecast_chart_save_error">Could not save the chart. Please try again.</string>
+</resources>

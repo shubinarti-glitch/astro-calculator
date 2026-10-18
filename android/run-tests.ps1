@@ -2,7 +2,9 @@
 # кириллический путь репозитория ломает его classpath на Windows (ClassNotFoundException),
 # поэтому компилируем через Gradle, а JUnit запускаем напрямую.
 $ErrorActionPreference = "Stop"
-$env:JAVA_HOME = "$env:ProgramFiles\Android\Android Studio\jbr"
+if (-not $env:JAVA_HOME -or -not (Test-Path -LiteralPath (Join-Path $env:JAVA_HOME "bin/java.exe"))) {
+    $env:JAVA_HOME = Split-Path (Split-Path (Get-Command java.exe -ErrorAction Stop).Source -Parent) -Parent
+}
 Set-Location $PSScriptRoot
 
 .\gradlew.bat :astrocore:testClasses -q

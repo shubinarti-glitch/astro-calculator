@@ -30,6 +30,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -295,7 +296,7 @@ private fun TarotArchive(onBack: () -> Unit) {
     val history = remember(revision) { TarotStorage.history(context) }
     val dayCards = remember(revision) { TarotStorage.dayArchive(context) }
     val frequency = remember(revision) { TarotStorage.cardFrequency(context).take(10) }
-    val locale = context.resources.configuration.locales[0]
+    val locale = LocalConfiguration.current.locales[0]
     val dateFormatter = remember(locale) {
         DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)
     }

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="forecast_missing_chart">Chart not found. Return to your charts and select an existing chart.</string>
+    <string name="forecast_cached_at">Saved forecast: %1$s. Tap Retry to refresh.</string>
+    <string name="forecast_interpretation_label">What it means</string>
+    <string name="forecast_advice_label">Practical advice</string>
+    <string name="forecast_period_main">Period highlights</string>
+    <string name="forecast_opportunity">Opportunity</string>
+    <string name="forecast_attention">Pay attention</string>
+    <string name="forecast_choose_chart">Choose chart</string>
+</resources>

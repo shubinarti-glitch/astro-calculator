@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="forecast_missing_chart">Карта не найдена. Вернитесь к списку карт и выберите существующую карту.</string>
+    <string name="forecast_cached_at">Сохранённый прогноз: %1$s. Нажмите «Повторить», чтобы обновить.</string>
+    <string name="forecast_interpretation_label">Что это значит</string>
+    <string name="forecast_advice_label">Практический совет</string>
+    <string name="forecast_period_main">Главное на период</string>
+    <string name="forecast_opportunity">Возможность</string>
+    <string name="forecast_attention">На что обратить внимание</string>
+    <string name="forecast_choose_chart">Выбрать карту</string>
+</resources>

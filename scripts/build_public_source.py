@@ -37,6 +37,8 @@ EXACT = ROOT_FILES | {
     "android/gradle/wrapper/gradle-wrapper.jar", "android/run-tests.ps1",
     "android/test-ascii.init.gradle", "android/swisseph/README.orig",
     "android/EDITORIAL-CONTENT.md",
+    "android/run-app-tests.ps1", "android/tools/Test-ReleaseSigningGuard.ps1",
+    "android/UI_TESTS.md",
     "frontend/js/vendor/html2pdf.bundle.min.js.LICENSE.txt",
     "docs/PUBLIC-SOURCE-EXPORT.md",
 }
@@ -72,7 +74,7 @@ class ExportError(ValueError):
 def android_code_path(name):
     return any(name.startswith(f"android/{module}/src/{variant}/{language}/")
                for module in ("app", "astrocore")
-               for variant in ("main", "test")
+               for variant in ("main", "test", "androidTest")
                for language in ("java", "kotlin"))
 
 
