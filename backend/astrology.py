@@ -9,6 +9,7 @@ import warnings
 from datetime import datetime, timedelta
 from functools import lru_cache
 from typing import Any, Optional
+from pytz import timezone as _timezone
 
 # Путь к эфемеридам обязательно настраивается ДО импорта Kerykeion-расчётов.
 from .ephe import ensure_ephemeris
@@ -1019,11 +1020,25 @@ def _transit_pass_minima(moments, include) -> list[tuple[tuple, dict]]:
     return out
 
 
-def _refine_transit_pass(natal_model, loc: dict, tz: str, key: tuple, info: dict) -> dict:
+def _forecast_local_datetime(value: str, tz: str) -> datetime:
+    moment = datetime.fromisoformat(value)
+    if moment.tzinfo is not None:
+        moment = moment.astimezone(_timezone(tz))
+    return moment.replace(tzinfo=None)
+
+
+def _refine_transit_pass(natal_model, loc: dict, tz: str, key: tuple, info: dict,
+                         *, bounds: Optional[tuple[datetime, datetime]] = None) -> dict:
     """Уточняет суточный кандидат сначала до 2 часов, затем до 10 минут."""
-    center = datetime.fromisoformat(info["date"]).replace(tzinfo=None)
+    center = (_forecast_local_datetime(info["date"], tz) if bounds is not None
+              else datetime.fromisoformat(info["date"]).replace(tzinfo=None))
 
     def find_best(start_dt, end_dt, step_type, step):
+        if bounds is not None:
+            start_dt = max(start_dt, bounds[0])
+            end_dt = min(end_dt, bounds[1])
+            if end_dt < start_dt:
+                return None
         eph = EphemerisDataFactory(
             start_datetime=start_dt, end_datetime=end_dt,
             step_type=step_type, step=step,
@@ -1044,7 +1059,8 @@ def _refine_transit_pass(natal_model, loc: dict, tz: str, key: tuple, info: dict
     coarse = find_best(center - timedelta(hours=18), center + timedelta(hours=18), "hours", 2)
     if coarse is None:
         return info
-    fine_center = datetime.fromisoformat(coarse["date"]).replace(tzinfo=None)
+    fine_center = (_forecast_local_datetime(coarse["date"], tz) if bounds is not None
+                   else datetime.fromisoformat(coarse["date"]).replace(tzinfo=None))
     fine = find_best(
         fine_center - timedelta(hours=2), fine_center + timedelta(hours=2), "minutes", 10,
     )
@@ -1368,7 +1384,7 @@ def forecast_report(
 
     start_dt = datetime(start["year"], start["month"], start["day"], 12, 0)
     end_dt = datetime(end["year"], end["month"], end["day"], 12, 0)
-    if end_dt <= start_dt:
+    if end_dt < start_dt:
         raise ValueError(_editorial_text('astrology.9f1cdcd39d555297c2a729335eace939500a41dae51ecc017715d8fe17418be2'))
     if (end_dt - start_dt).days > 1100:
         raise ValueError(_editorial_text('astrology.08b959126104478ef88e140bd7fe0ec8e97fbbf729d7a67a580cf8f75346b856'))
@@ -1397,7 +1413,14 @@ def forecast_report(
     for (p1, kind, p2), info in passes:
         if info["orb"] > 3.0:
             continue  # аспект не становится точным в периоде — это фон, а не событие
-        info = _refine_transit_pass(natal_model, loc, tz, (p1, kind, p2), info)
+        info = _refine_transit_pass(
+            natal_model, loc, tz, (p1, kind, p2), info,
+            bounds=(start_dt.replace(hour=0, minute=0, second=0, microsecond=0),
+                    end_dt.replace(hour=23, minute=59, second=59, microsecond=999999)),
+        )
+        event_date = _forecast_local_datetime(info["date"], tz).date()
+        if not start_dt.date() <= event_date <= end_dt.date():
+            continue
         parts = I.transit_forecast_parts(p1, kind, p2, lang)
         if not parts:
             continue
@@ -1406,7 +1429,7 @@ def forecast_report(
         nature = C.ASPECTS.get(kind, {}).get("nature", "")
         tone = "positive" if nature == "harmonious" else ("negative" if nature == "tense" else "neutral")
         events.append({
-            "date": info["date"][:10],
+            "date": event_date.isoformat(),
             "exact_datetime": info["date"],
             "p1": p1,
             "p1_ru": C.point_name(p1, lang),
