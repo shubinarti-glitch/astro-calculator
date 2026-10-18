@@ -2867,24 +2867,38 @@ function renderForecast(data) {
   $("data-grids").classList.add("hidden");
   $("forecast-view").classList.remove("hidden");
 
-  const pf = data.profection;
-  const pm = data.progressed_moon;
-
-  $("forecast-summary").innerHTML =
-    `<h3>${t("t_fc_for")}: ${data.natal_meta.name}</h3>` +
-    summaryBlock(data.natal_meta, null, [
-      [t("t_fc_period"), `${formatDate(data.start)} — ${formatDate(data.end)}`],
-      [t("forecast_location"), data.location_meta?.city || "—"],
-      [t("sum_tz"), data.location_meta?.tz_str || "—"],
+  const pf = data.profection || null;
+  const pm = data.progressed_moon || null;
+  const summaryRows = [
+    [t("t_fc_period"), `${formatDate(data.start)} – ${formatDate(data.end)}`],
+    [t("forecast_location"), data.location_meta?.city || "—"],
+    [t("sum_tz"), data.location_meta?.tz_str || "—"],
+  ];
+  if (pf) {
+    summaryRows.push(
       [t("t_fc_age"), `${pf.age} ${t("t_fc_age_unit")}`],
       [t("t_fc_house_year"), `${houseShort(pf.house_num)} (${pf.sphere})`],
       [t("t_fc_lord_year"), pf.lord ? `${pf.lord.name_ru} ${pf.lord.sign_loc || pf.lord.sign_ru}` : "—"],
-    ]) +
+    );
+  }
+
+  $("forecast-summary").innerHTML =
+    `<h3>${t("t_fc_for")}: ${data.natal_meta.name}</h3>` +
+    summaryBlock(data.natal_meta, null, summaryRows) +
     `<p class="score-hint" style="margin-top:12px">${data.summary}</p>`;
 
-  $("forecast-blocks").innerHTML =
-    `<div class="portrait-card"><h3>${t("t_fc_profection")}</h3><p>${pf.text}</p></div>` +
-    `<div class="portrait-card"><h3>${t("t_fc_prog_moon")}</h3><p>${pm.text}</p></div>`;
+  const forecastCards = [];
+  if (pf) forecastCards.push(`<div class="portrait-card"><h3>${t("t_fc_profection")}</h3><p>${pf.text}</p></div>`);
+  if (pm) forecastCards.push(`<div class="portrait-card"><h3>${t("t_fc_prog_moon")}</h3><p>${pm.text}</p></div>`);
+  if (!pf || !pm) {
+    forecastCards.push(
+      `<div class="portrait-card forecast-locked-card"><h3>${t("fc_locked_title")}</h3>` +
+      `<p>${t("fc_locked_text")}</p><button class="btn-primary" id="forecast-unlock">${t("fc_unlock")}</button></div>`,
+    );
+  }
+  $("forecast-blocks").innerHTML = forecastCards.join("");
+  const unlock = $("forecast-unlock");
+  if (unlock) unlock.addEventListener("click", () => openPaywall(getToken() ? 402 : 401));
 
   // Прогноз по сферам жизни — главное: «что вас ждёт».
   const evTitle = document.querySelector("#forecast-view .forecast-events-title");
