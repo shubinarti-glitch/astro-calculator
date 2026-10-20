@@ -75,6 +75,50 @@ def test_fast_and_english_transits_keep_full_fallback(monkeypatch):
     assert "Recommendations." in english
 
 
+def test_english_planet_descriptions_use_natural_distinct_work_copy():
+    planets = ("Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto")
+    openings = []
+    for planet in planets:
+        work = next(block["text"] for block in I.interpret_sign_full(planet, "Ari", "en") if block["label"] == "Work and vocation")
+        openings.append(work.split(".", 1)[0])
+        assert not work.startswith("In work"), (planet, work)
+    assert len(set(openings)) == len(planets)
+
+    mercury_love = next(block["text"] for block in I.interpret_sign_full("Mercury", "Lib", "en") if block["label"] == "Love and closeness")
+    uranus_love = next(block["text"] for block in I.interpret_sign_full("Uranus", "Lib", "en") if block["label"] == "Love and closeness")
+    neptune_work = next(block["text"] for block in I.interpret_sign_full("Neptune", "Pis", "en") if block["label"] == "Work and vocation")
+    mars_work = next(block["text"] for block in I.interpret_sign_full("Mars", "Ari", "en") if block["label"] == "Work and vocation")
+    assert "half a word" not in mercury_love
+    assert "without having to explain yourself at length" in mercury_love
+    assert "frames and templates" not in uranus_love
+    assert "rigid expectations" in uranus_love
+    assert "healing practices" not in neptune_work
+    assert "contemplative work" in neptune_work
+    assert "you suit work demanding" not in mars_work
+
+
+def test_selected_english_natal_pilot_keeps_practical_context_and_caveats():
+    readings = [
+        I.authored_sign("Sun", "Ari", "en"),
+        I.authored_sign("Moon", "Can", "en"),
+        I.authored_sign("Mercury", "Lib", "en"),
+        I.authored_sign("Uranus", "Lib", "en"),
+        I.authored_house("Sun", 1, "en"),
+        I.authored_house("Moon", 4, "en"),
+        I.authored_house("Mercury", 7, "en"),
+        I.authored_house("Venus", 10, "en"),
+        I.interpret_aspect("Sun", "conjunction", "Moon", "en"),
+        I.interpret_aspect("Moon", "sextile", "Mars", "en"),
+        I.interpret_aspect("Mercury", "square", "Neptune", "en"),
+        I.interpret_aspect("Jupiter", "trine", "Saturn", "en"),
+    ]
+    assert all(len(text) >= 650 for text in readings)
+    assert all(not any("а" <= char.lower() <= "я" or char.lower() == "ё" for char in text) for text in readings)
+    assert "generational" in readings[3].lower()
+    assert "house and aspects" in readings[3].lower()
+    assert "not guaranteed" in readings[8].lower()
+
+
 def test_deep_transits_cover_fast_movers_and_quintile_without_authored_json(monkeypatch):
     monkeypatch.setattr(I, "AUTHORED_TRANSIT", {})
 

@@ -24,6 +24,16 @@ def test_neptune_to_five_natal_points_uses_distinct_energy_and_risk_openings():
             assert len(set(openings)) == len(targets), (field, openings)
 
 
+def test_mars_uranus_risks_warn_about_behavior_without_predicting_injury():
+    keys = ("transit|Mars|Uranus", "transit|Uranus|Mars")
+    for corpus in (I.AUTHORED_TRANSIT, I.AUTHORED_TRANSIT_EN):
+        for key in keys:
+            risk = corpus[key]["risks"].lower()
+            assert "accident" not in risk
+            assert "injur" not in risk
+            assert ("безопасност" in risk) if corpus is I.AUTHORED_TRANSIT else ("safety" in risk)
+
+
 def test_every_authored_translation_is_used_without_truncation():
     aliases = {"North_Node": "True_North_Lunar_Node", "South_Node": "True_South_Lunar_Node", "Lilith": "Mean_Lilith"}
     for key, record in I.AUTHORED_TRANSIT_EN.items():

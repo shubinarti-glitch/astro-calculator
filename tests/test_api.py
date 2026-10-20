@@ -222,6 +222,30 @@ def test_natal_house_interp_richer():
     assert len(sun["interp_house"]) > 120
 
 
+def test_planet_catalog_returns_natural_english_modal_copy():
+    response = client.get("/api/planets?lang=en")
+    assert response.status_code == 200
+    planets = response.json()
+    assert len(planets) == 10
+    work = [planet["work"] for planet in planets.values()]
+    assert all(value and not value.startswith("In work") for value in work)
+    assert {value.split(".", 1)[0] for value in work} == {
+        "Professionally, the Sun points to a desire for recognition, creative expression and a role you can take pride in",
+        "At work, the Moon may draw you toward caring roles, hospitality, food, public-facing work or fields shaped by mood and memory",
+        "Mercury is associated with work involving language, information, analysis, teaching, trade and communication",
+        "In professional life, Venus is linked with beauty, art, fashion, diplomacy, finance and work that brings people together",
+        "Mars may support roles that call for energy, initiative, courage and quick action",
+        "Jupiter is often linked with teaching, law, travel, publishing and work focused on growth or big-picture meaning",
+        "In a career, Saturn speaks to discipline, endurance and long-term achievement built through persistence and experience",
+        "Uranus may draw you to technology, science, reform and other fields that welcome new approaches",
+        "Neptune is associated with art, music, film, service and spiritual or contemplative work",
+        "Pluto is often linked with research, psychology, crisis management, finance and work involving deep change",
+    }
+    assert "without having to explain yourself at length" in planets["Mercury"]["love"]
+    assert "rigid expectations" in planets["Uranus"]["love"]
+    assert "contemplative work" in planets["Neptune"]["work"]
+
+
 # ---- Ректификация: расширенный движок (символические дирекции + режим окна) ----
 # Валидные события (после даты рождения 1990-05-15) для питания движка.
 RECT_EVENTS = [
