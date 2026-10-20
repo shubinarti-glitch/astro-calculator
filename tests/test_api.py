@@ -69,6 +69,29 @@ def test_natal_invalid_month():
     assert client.post("/api/natal", json=dict(NATAL, month=13)).status_code == 422
 
 
+def test_validation_errors_are_localized_for_both_languages():
+    ru = client.post("/api/natal?lang=ru", json=dict(NATAL, month=13)).json()["detail"]
+    en = client.post("/api/natal?lang=en", json=dict(NATAL, month=13)).json()["detail"]
+    assert any("не больше 12" in item["msg"] for item in ru)
+    assert any("less than or equal to 12" in item["msg"] for item in en)
+    assert all("Value error," not in item["msg"] for item in ru + en)
+
+
+def test_custom_validation_errors_are_serialized_and_localized():
+    payload = {
+        "username": "valid_user",
+        "password": "valid-password-123",
+        "email": "not-an-email",
+        **LEGAL_ACCEPTANCE,
+    }
+    ru = client.post("/api/auth/register?lang=ru", json=payload)
+    en = client.post("/api/auth/register?lang=en", json=payload)
+    assert ru.status_code == en.status_code == 422
+    assert any("Некорректный адрес почты" in item["msg"] for item in ru.json()["detail"])
+    assert any("Invalid email address" in item["msg"] for item in en.json()["detail"])
+    assert all("Value error," not in item["msg"] for item in ru.json()["detail"] + en.json()["detail"])
+
+
 def test_natal_no_svg():
     # svg=0 — режим мобильного приложения: тексты есть, SVG нет.
     d = client.post("/api/natal?svg=0", json=NATAL).json()
@@ -182,6 +205,30 @@ def test_login_throttle():
     codes = [client.post("/api/auth/login", json={"username": u, "password": "wrongpass123"}).status_code for _ in range(7)]
     assert codes.count(401) >= 5
     assert 429 in codes  # после 5 неудач — блокировка
+
+
+def test_login_throttle_applies_across_usernames_for_same_ip():
+    ip_key = "login-ip:testclient"
+    main_module._RATE.pop(ip_key, None)
+    for number in range(30):
+        response = client.post("/api/auth/login", json={
+            "username": f"spray_{number}", "password": "wrongpass123",
+        })
+        assert response.status_code == 401
+    blocked = client.post("/api/auth/login", json={
+        "username": "spray_last", "password": "wrongpass123",
+    })
+    assert blocked.status_code == 429
+    main_module._RATE.pop(ip_key, None)
+
+
+def test_rate_limiter_keeps_a_bounded_number_of_keys(monkeypatch):
+    main_module._RATE.clear()
+    monkeypatch.setattr(main_module, "_RATE_MAX_KEYS", 32)
+    for number in range(40):
+        main_module._rate_record(f"login:testclient:user-{number}")
+    assert len(main_module._RATE) <= 32
+    main_module._RATE.clear()
 
 
 def test_admin_requires_auth():

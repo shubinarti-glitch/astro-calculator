@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import copy
 import time
-from collections import defaultdict
+from collections import OrderedDict
 from datetime import date as date_type, datetime, timedelta, timezone
 import pytz
 from functools import lru_cache
@@ -25,6 +25,7 @@ import re
 
 from . import astrology, constants, content_store, db, emailer, interpretations, payments, sales, seo, vedic
 from . import api_language
+from .request_size_limit import RequestSizeLimitMiddleware
 from .editorial_data import validate_required
 from .editorial_glossary import router as glossary_router
 
@@ -80,16 +81,15 @@ async def localized_http_error(request: Request, exc: HTTPException):
 
 @app.exception_handler(RequestValidationError)
 async def localized_validation_error(request: Request, exc: RequestValidationError):
-    from fastapi.exception_handlers import request_validation_exception_handler
+    from fastapi.encoders import jsonable_encoder
     from fastapi.responses import JSONResponse
-    import json
-    response = await request_validation_exception_handler(request, exc)
-    if api_language.language(request) != "en":
-        return response
-    payload = json.loads(response.body)
-    for error in payload.get("detail", []):
-        error["msg"] = api_language.translate(error.get("msg", ""), "en")
-    return JSONResponse(status_code=response.status_code, content=payload)
+    lang = api_language.language(request)
+    details = []
+    for raw_error in exc.errors():
+        error = dict(raw_error)
+        error["msg"] = api_language.validation_message(raw_error, lang)
+        details.append(error)
+    return JSONResponse(status_code=422, content=jsonable_encoder({"detail": details}))
 
 # CORS-middleware нет намеренно: API и фронтенд на одном источнике,
 # кросс-доменные запросы не нужны — браузерный same-origin по умолчанию строже.
@@ -98,7 +98,21 @@ async def localized_validation_error(request: Request, exc: RequestValidationErr
 # --------------------------------------------------------------------------- #
 #  Простой лимитер попыток (в памяти) — защита логина/регистрации от перебора
 # --------------------------------------------------------------------------- #
-_RATE: dict[str, list[float]] = defaultdict(list)
+_RATE: OrderedDict[str, list[float]] = OrderedDict()
+_RATE_MAX_KEYS = 10_000
+_RATE_REAP_INTERVAL = 60
+_RATE_LAST_REAP = 0.0
+
+
+def _prune_rate_records(now: float) -> None:
+    global _RATE_LAST_REAP
+    if now - _RATE_LAST_REAP < _RATE_REAP_INTERVAL:
+        return
+    expired_before = now - 3600
+    for key, timestamps in list(_RATE.items()):
+        if not timestamps or timestamps[-1] <= expired_before:
+            _RATE.pop(key, None)
+    _RATE_LAST_REAP = now
 
 
 def _client_ip(request: Request) -> str:
@@ -107,25 +121,33 @@ def _client_ip(request: Request) -> str:
 
 def _rate_limited(key: str, max_n: int, window: int) -> bool:
     now = time.time()
-    times = _RATE[key]
+    _prune_rate_records(now)
+    times = _RATE.get(key)
+    if times is None:
+        return False
     times[:] = [t for t in times if t > now - window]
+    if not times:
+        _RATE.pop(key, None)
+        return False
+    _RATE.move_to_end(key)
     return len(times) >= max_n
 
 
 def _rate_record(key: str) -> None:
-    _RATE[key].append(time.time())
+    now = time.time()
+    _prune_rate_records(now)
+    if key not in _RATE and len(_RATE) >= _RATE_MAX_KEYS:
+        _RATE.popitem(last=False)
+    _RATE.setdefault(key, []).append(now)
+    _RATE.move_to_end(key)
 
 
 MAX_BODY_BYTES = 1_000_000  # самый крупный легитимный запрос (ректификация) — десятки КБ
+app.add_middleware(RequestSizeLimitMiddleware, max_bytes=MAX_BODY_BYTES)
 
 
 @app.middleware("http")
 async def _sync_content(request, call_next):
-    # Лимит размера тела: защита от гигантских JSON (uvicorn сам его не ограничивает).
-    cl = request.headers.get("content-length")
-    if cl and cl.isdigit() and int(cl) > MAX_BODY_BYTES:
-        from fastapi.responses import JSONResponse
-        return JSONResponse(status_code=413, content={"detail": api_language.translate("Слишком большой запрос", api_language.language(request))})
     # Синхронизировать правки текстов из файла (дёшево, по mtime) — чтобы изменения
     # были видны во всех воркерах uvicorn, а не только там, где был сделан POST.
     content_store.refresh_if_changed()
@@ -360,7 +382,9 @@ def api_register(req: RegisterRequest, request: Request):
 def api_login(req: AuthRequest, request: Request):
     ip = _client_ip(request)
     key = f"login:{ip}:{req.username.strip().lower()}"
-    if _rate_limited(key, max_n=5, window=300):
+    ip_key = f"login-ip:{ip}"
+    if (_rate_limited(key, max_n=5, window=300)
+            or _rate_limited(ip_key, max_n=30, window=300)):
         raise HTTPException(status_code=429, detail="Слишком много попыток входа. Попробуйте через несколько минут.")
     # Вход по имени пользователя или по почте. Проверяем обоих кандидатов:
     # username сам может выглядеть как e-mail, и тогда поиск только по почте
@@ -372,6 +396,7 @@ def api_login(req: AuthRequest, request: Request):
     user = next((u for u in candidates if u and db.verify_password(req.password, u["password_hash"])), None)
     if not user:
         _rate_record(key)  # учитываем только НЕудачные попытки
+        _rate_record(ip_key)
         raise HTTPException(status_code=401, detail="Неверное имя пользователя или пароль")
     if user["is_banned"]:
         raise HTTPException(status_code=403, detail="Аккаунт заблокирован")

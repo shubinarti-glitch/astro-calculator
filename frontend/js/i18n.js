@@ -235,6 +235,10 @@ const I18N = {
     dr_hemispheres: "Акцент полушарий",
 
     // Аутентификация
+    auth_dialog_title: "Вход и регистрация",
+    cabinet_dialog_title: "Личный кабинет",
+    chart_dialog_title: "Увеличенный вид карты",
+    deep_dialog_title: "Подробный отчёт",
     auth_login: "Вход",
     auth_register: "Регистрация",
     username: "Имя пользователя",
@@ -1063,6 +1067,10 @@ const I18N = {
     dr_retro: "Retrograde planets",
     dr_hemispheres: "Hemisphere emphasis",
 
+    auth_dialog_title: "Sign in or register",
+    cabinet_dialog_title: "Account",
+    chart_dialog_title: "Enlarged chart",
+    deep_dialog_title: "Detailed report",
     auth_login: "Sign in",
     auth_register: "Register",
     username: "Username",

@@ -17,7 +17,7 @@
   <meta name="twitter:card" content="summary" />
   <script>(function(){try{var t=localStorage.getItem('astro_theme')||'light';document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script>
   <link rel="stylesheet" href="/fonts/fonts.css?v=20" />
-  <link rel="stylesheet" href="/css/style.css?v=34" />
+  <link rel="stylesheet" href="/css/style.css?v=35" />
   <style>html[lang="en"] .chart-svg::after { content: "⤢ click to enlarge"; }</style>
 </head>
 <body>
@@ -57,8 +57,9 @@
     </div>
   </header>
 
-  <div class="modal-overlay hidden" id="auth-modal">
+  <div class="modal-overlay hidden" id="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-dialog-title">
     <div class="modal">
+      <h2 id="auth-dialog-title" class="sr-only" data-i18n="auth_dialog_title">Вход и регистрация</h2>
       <button class="modal-close" id="modal-close" aria-label="Закрыть">×</button>
       <div class="tabs auth-tabs">
         <button class="auth-tab active" data-auth="login" type="button" data-i18n="auth_login">Вход</button>
@@ -74,13 +75,13 @@
         <label id="auth-password-row" data-i18n="password">Пароль
           <span class="pw-wrap">
             <input type="password" id="auth-password" autocomplete="current-password" />
-            <button type="button" class="pw-eye" aria-label="Показать пароль" tabindex="-1">👁</button>
+            <button type="button" class="pw-eye" aria-label="Показать пароль">👁</button>
           </span>
         </label>
         <label id="auth-password2-row" class="hidden" data-i18n="password_repeat">Повторите пароль
           <span class="pw-wrap">
             <input type="password" id="auth-password2" autocomplete="new-password" />
-            <button type="button" class="pw-eye" aria-label="Показать пароль" tabindex="-1">👁</button>
+            <button type="button" class="pw-eye" aria-label="Показать пароль">👁</button>
           </span>
         </label>
         <a href="#" id="auth-forgot" class="auth-forgot" data-i18n="forgot_link">Забыли пароль?</a>
@@ -101,8 +102,9 @@
     </div>
   </div>
 
-  <div class="modal-overlay hidden" id="cabinet-modal">
+  <div class="modal-overlay hidden" id="cabinet-modal" role="dialog" aria-modal="true" aria-labelledby="cabinet-dialog-title">
     <div class="modal cabinet-modal">
+      <h2 id="cabinet-dialog-title" class="sr-only" data-i18n="cabinet_dialog_title">Личный кабинет</h2>
       <button class="modal-close" id="cabinet-close" aria-label="Закрыть">×</button>
       <div class="cab-head">
         <div class="cab-avatar" id="cab-avatar">👤</div>
@@ -133,10 +135,10 @@
     </div>
   </div>
 
-  <div class="modal-overlay hidden" id="premium-modal">
+  <div class="modal-overlay hidden" id="premium-modal" role="dialog" aria-modal="true" aria-labelledby="premium-dialog-title">
     <div class="modal premium-modal-card">
       <button class="modal-close" id="premium-close" aria-label="Закрыть">×</button>
-      <h3 data-i18n="premium_title">Подписка «Премиум»</h3>
+      <h3 id="premium-dialog-title" data-i18n="premium_title">Подписка «Премиум»</h3>
       <p class="section-note" data-i18n="premium_desc">Глубокий отчёт, ректификация, синастрия, прогнозы и PDF-экспорт.</p>
       <ul class="premium-benefits">
         <li data-i18n="premium_ben_1">Транзиты, синастрия, соляр/лунар, прогрессии и прогноз</li>
@@ -194,10 +196,10 @@
     </div>
   </div>
 
-  <div class="modal-overlay hidden" id="privacy-modal">
+  <div class="modal-overlay hidden" id="privacy-modal" role="dialog" aria-modal="true" aria-labelledby="privacy-dialog-title">
     <div class="modal modal-wide">
       <button class="modal-close" id="privacy-close" aria-label="Закрыть">×</button>
-      <h2 class="privacy-title" data-i18n="privacy_title">Политика обработки персональных данных</h2>
+      <h2 id="privacy-dialog-title" class="privacy-title" data-i18n="privacy_title">Политика обработки персональных данных</h2>
       <div class="privacy-text">
         <p data-i18n="privacy_p_intro">Редакция от 01.09.2026. Настоящая Политика определяет порядок обработки персональных данных пользователей сайта astrosmap.ru и мобильного приложения AstroSMap (далее — Сервис) в соответствии с Федеральным законом № 152-ФЗ «О персональных данных».</p>
         <p data-i18n-html="privacy_p_operator"><strong>Оператор.</strong> Обработку персональных данных осуществляет Шубин Артём Иванович, применяющий специальный налоговый режим «Налог на профессиональный доход» (самозанятый), ИНН 245010711934. Адрес для запросов по вопросам обработки персональных данных (удаление, отзыв согласия): astrosmap@yandex.ru.</p>
@@ -217,10 +219,10 @@
     </div>
   </div>
 
-  <div class="modal-overlay hidden" id="terms-modal">
+  <div class="modal-overlay hidden" id="terms-modal" role="dialog" aria-modal="true" aria-labelledby="terms-dialog-title">
     <div class="modal modal-wide">
       <button class="modal-close" id="terms-close" aria-label="Закрыть">×</button>
-      <h2 class="privacy-title" data-i18n="terms_title">Пользовательское соглашение</h2>
+      <h2 id="terms-dialog-title" class="privacy-title" data-i18n="terms_title">Пользовательское соглашение</h2>
       <div class="privacy-text">
         <p data-i18n="terms_p_intro">Редакция от 01.09.2026, версия 2026-09-01. Настоящее Пользовательское соглашение регулирует отношения между Шубиным Артёмом Ивановичем, применяющим НПД (самозанятый), ИНН 245010711934, и пользователем сервиса «Project Artemisa» на astrosmap.ru. Начиная использовать Сервис, пользователь принимает Соглашение в полном объёме.</p>
         <p data-i18n-html="terms_p1"><strong>1. Предмет.</strong> Сервис предоставляет пользователю доступ к астрологическим расчётам (натальная карта, транзиты, синастрия, прогнозы, ректификация и др.) и текстовым интерпретациям на основе алгоритмов и эфемерид Swiss Ephemeris.</p>
@@ -236,10 +238,10 @@
     </div>
   </div>
 
-  <div class="modal-overlay hidden" id="offer-modal">
+  <div class="modal-overlay hidden" id="offer-modal" role="dialog" aria-modal="true" aria-labelledby="offer-dialog-title">
     <div class="modal modal-wide">
       <button class="modal-close" id="offer-close" aria-label="Закрыть">×</button>
-      <h2 class="privacy-title" data-i18n="offer_title">Публичная оферта</h2>
+      <h2 id="offer-dialog-title" class="privacy-title" data-i18n="offer_title">Публичная оферта</h2>
       <div class="privacy-text">
         <p data-i18n="offer_intro">Настоящая Публичная оферта (далее — Оферта) является предложением Шубина Артёма Ивановича, применяющего специальный налоговый режим «Налог на профессиональный доход» (самозанятый), ИНН 245010711934, e-mail: astrosmap@yandex.ru (далее — Исполнитель), заключить договор возмездного оказания услуг с любым лицом, оплатившим услуги на сервисе «Project Artemisa», размещённом по адресу astrosmap.ru (далее — Сервис). Оплата услуги означает полное принятие условий Оферты (акцепт).</p>
         <p data-i18n-html="offer_p1"><strong>1. Услуги и тарифы.</strong> Подписка «Премиум» — расширенный доступ к функциям Сервиса (глубокий отчёт, ректификация, синастрия, прогнозы, PDF-экспорт): месяц — 299 ₽, год — 1990 ₽. Подписка «Премиум+» — подписка и одна консультация астролога: месяц — 1799 ₽, год — 3490 ₽. Консультация астролога без подписки — 3500 ₽.</p>
@@ -254,8 +256,9 @@
     </div>
   </div>
 
-  <div class="modal-overlay hidden" id="chart-modal">
+  <div class="modal-overlay hidden" id="chart-modal" role="dialog" aria-modal="true" aria-labelledby="chart-dialog-title">
     <div class="chart-modal-inner">
+      <h2 id="chart-dialog-title" class="sr-only" data-i18n="chart_dialog_title">Увеличенный вид карты</h2>
       <button class="modal-close" id="chart-modal-close" aria-label="Закрыть">×</button>
       <div id="chart-modal-svg"></div>
       <div class="chart-zoom-controls">
@@ -266,18 +269,18 @@
     </div>
   </div>
 
-  <div class="modal-overlay hidden" id="passwd-modal">
+  <div class="modal-overlay hidden" id="passwd-modal" role="dialog" aria-modal="true" aria-labelledby="passwd-dialog-title">
     <div class="modal">
       <button class="modal-close" id="passwd-close" aria-label="Закрыть">×</button>
-      <h2 class="privacy-title" data-i18n="passwd_title">Сменить пароль</h2>
+      <h2 id="passwd-dialog-title" class="privacy-title" data-i18n="passwd_title">Сменить пароль</h2>
       <form id="passwd-form">
         <span class="pw-wrap">
           <input type="password" id="passwd-old" data-i18n-ph="passwd_old" placeholder="Текущий пароль" autocomplete="current-password" required minlength="1" />
-          <button type="button" class="pw-eye" aria-label="Показать пароль" tabindex="-1">👁</button>
+          <button type="button" class="pw-eye" aria-label="Показать пароль">👁</button>
         </span>
         <span class="pw-wrap">
           <input type="password" id="passwd-new" data-i18n-ph="passwd_new" placeholder="Новый пароль (мин. 8 символов)" autocomplete="new-password" required minlength="8" />
-          <button type="button" class="pw-eye" aria-label="Показать пароль" tabindex="-1">👁</button>
+          <button type="button" class="pw-eye" aria-label="Показать пароль">👁</button>
         </span>
         <p id="passwd-msg" class="hint hidden"></p>
         <button type="submit" class="vedic-btn" data-i18n="passwd_submit">Сменить</button>
@@ -285,10 +288,10 @@
     </div>
   </div>
 
-  <div class="modal-overlay hidden" id="admin-modal">
+  <div class="modal-overlay hidden" id="admin-modal" role="dialog" aria-modal="true" aria-labelledby="admin-dialog-title">
     <div class="modal modal-wide">
       <button class="modal-close" id="admin-close" aria-label="Закрыть">×</button>
-      <h2 class="privacy-title" data-i18n="admin_panel">Админ-панель</h2>
+      <h2 id="admin-dialog-title" class="privacy-title" data-i18n="admin_panel">Админ-панель</h2>
       <div class="tabs adm-tabs">
         <button class="adm-tab active" data-atab="overview" type="button" data-i18n="admin_tab_overview">Обзор</button>
         <button class="adm-tab" data-atab="users" type="button" data-i18n="admin_tab_users">Пользователи</button>
@@ -335,8 +338,9 @@
     </div>
   </div>
 
-  <div class="modal-overlay hidden" id="deep-modal">
+  <div class="modal-overlay hidden" id="deep-modal" role="dialog" aria-modal="true" aria-labelledby="deep-dialog-title">
     <div class="modal modal-report">
+      <h2 id="deep-dialog-title" class="sr-only" data-i18n="deep_dialog_title">Подробный отчёт</h2>
       <button class="modal-close" id="deep-close" aria-label="Закрыть">×</button>
       <div class="report-actions">
         <button id="deep-pdf" class="vedic-btn" data-i18n="deep_pdf">📄 Скачать PDF</button>
@@ -893,8 +897,8 @@
     <p id="support-status" class="support-status hidden"></p>
   </div>
 
-  <script src="/js/i18n.js?v=35"></script>
+  <script src="/js/i18n.js?v=36"></script>
   <script src="/js/sales.js?v=1"></script>
-  <script src="/js/app.js?v=37"></script>
+  <script src="/js/app.js?v=38"></script>
 </body>
 </html>

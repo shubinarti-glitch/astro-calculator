@@ -23,6 +23,78 @@ let lastMode = null; // режим последнего результата (д
 
 const $ = (id) => document.getElementById(id);
 
+function configureAccessibleModal(root) {
+  if (!root || root.dataset.modalA11yReady) return;
+  root.dataset.modalA11yReady = "true";
+  root.setAttribute("role", "dialog");
+  root.setAttribute("aria-modal", "true");
+  const panel = root.querySelector(".modal, .chart-modal-inner") || root.firstElementChild;
+  if (panel && !panel.hasAttribute("tabindex")) panel.setAttribute("tabindex", "-1");
+
+  root.addEventListener("keydown", (event) => {
+    const openModals = [...document.querySelectorAll(".modal-overlay:not(.hidden)")];
+    if (openModals[openModals.length - 1] !== root) return;
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      root.classList.add("hidden");
+      return;
+    }
+    if (event.key !== "Tab") return;
+
+    const focusable = [...root.querySelectorAll(
+      'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )].filter((element) => element.getClientRects().length > 0 && element.getAttribute("aria-hidden") !== "true");
+    if (!focusable.length) {
+      event.preventDefault();
+      panel?.focus();
+      return;
+    }
+    const first = focusable[0], last = focusable[focusable.length - 1];
+    if (event.shiftKey && (document.activeElement === first || !root.contains(document.activeElement))) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && (document.activeElement === last || !root.contains(document.activeElement))) {
+      event.preventDefault();
+      first.focus();
+    }
+    event.stopPropagation();
+  });
+}
+
+function syncAccessibleModal(root) {
+  configureAccessibleModal(root);
+  const isOpen = !root.classList.contains("hidden");
+  if (isOpen && !root._modalA11yOpen) {
+    root._modalA11yOpen = true;
+    root._modalReturnFocus = document.activeElement;
+    requestAnimationFrame(() => {
+      if (root.classList.contains("hidden")) return;
+      const initial = root.querySelector("[autofocus], .modal-close, input:not([type='hidden']), button:not([disabled]), a[href]");
+      (initial || root.querySelector(".modal, .chart-modal-inner") || root.firstElementChild)?.focus();
+    });
+  } else if (!isOpen && root._modalA11yOpen) {
+    root._modalA11yOpen = false;
+    const target = root._modalReturnFocus;
+    root._modalReturnFocus = null;
+    if (target?.isConnected) requestAnimationFrame(() => target.focus());
+  }
+}
+
+document.querySelectorAll(".modal-overlay").forEach(syncAccessibleModal);
+new MutationObserver((records) => {
+  for (const record of records) {
+    if (record.type === "attributes" && record.target.matches(".modal-overlay")) {
+      syncAccessibleModal(record.target);
+    }
+    for (const node of record.addedNodes || []) {
+      if (node.nodeType !== Node.ELEMENT_NODE) continue;
+      if (node.matches(".modal-overlay")) syncAccessibleModal(node);
+      node.querySelectorAll?.(".modal-overlay").forEach(syncAccessibleModal);
+    }
+  }
+}).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ["class"] });
+
 // ---------- Тема (тёмная / светлая) ----------
 let lastChart = { dark: "", light: "" }; // SVG-колесо в обеих темах
 
@@ -212,14 +284,18 @@ function ensurePlanetModal() {
   const ov = document.createElement("div");
   ov.className = "modal-overlay hidden";
   ov.id = "planet-modal";
+  ov.setAttribute("role", "dialog");
+  ov.setAttribute("aria-modal", "true");
+  ov.setAttribute("aria-labelledby", "planet-dialog-title");
   ov.innerHTML =
     `<div class="modal planet-modal">
        <button class="modal-close" id="planet-modal-close" aria-label="${t("arc_close")}">×</button>
-       <h3 class="planet-modal-title"><span id="planet-modal-sym"></span> <span id="planet-modal-name"></span></h3>
+       <h3 id="planet-dialog-title" class="planet-modal-title"><span id="planet-modal-sym"></span> <span id="planet-modal-name"></span></h3>
        <p id="planet-modal-role" class="planet-modal-role"></p>
        <div id="planet-modal-spheres"></div>
      </div>`;
   document.body.appendChild(ov);
+  syncAccessibleModal(ov);
   ov.addEventListener("click", (e) => {
     if (e.target === ov || e.target.id === "planet-modal-close") closePlanetModal();
   });
@@ -1097,9 +1173,20 @@ async function postJSON(url, body) {
       throw e;
     }
     const detail = await r.json().catch(() => ({}));
-    throw new Error(detail.detail || `${t("ui_server_error")} (${r.status})`);
+    throw new Error(formatApiError(detail.detail, `${t("ui_server_error")} (${r.status})`));
   }
   return r.json();
+}
+
+function formatApiError(detail, fallback) {
+  if (typeof detail === "string" && detail.trim()) return detail.trim();
+  if (Array.isArray(detail)) {
+    const messages = detail
+      .map((item) => typeof item?.msg === "string" ? item.msg.trim() : "")
+      .filter(Boolean);
+    if (messages.length) return [...new Set(messages)].join(" ");
+  }
+  return fallback;
 }
 
 // ---------- Управление отображением ----------

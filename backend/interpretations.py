@@ -170,6 +170,33 @@ _TRANSIT_ASPECT_RU = {
     "quintile": _editorial_text('interpretations.04b3e9546f168068e4161fae210769f573ae5bf97581ba6642fe20be08f0ae77'),
 }
 
+_FORECAST_ASPECT_NOTE = {
+    "conjunction": (
+        "Соединение связывает обе темы напрямую и делает их взаимодействие заметнее; итог зависит от планет и жизненного контекста.",
+        "A conjunction links both themes directly and makes their interaction more noticeable; the result depends on the planets and life context.",
+    ),
+    "sextile": (
+        "Секстиль открывает возможность для сотрудничества этих тем; результат легче получить, если сделать первый шаг.",
+        "A sextile opens an opportunity for these themes to work together; it is easier to use when you take the first step.",
+    ),
+    "square": (
+        "Квадрат добавляет трение между темами: напряжение полезно направить на конкретную задачу, а не считать неизбежным препятствием.",
+        "A square adds friction between the themes: channel the tension into a concrete task instead of treating it as an unavoidable obstacle.",
+    ),
+    "trine": (
+        "Тригон облегчает взаимодействие тем и поддерживает естественный ход событий; для результата всё равно потребуется ваше участие.",
+        "A trine makes the themes work together more easily, though making use of that flow still takes your participation.",
+    ),
+    "opposition": (
+        "Оппозиция высвечивает баланс между двумя темами, иногда через людей или обстоятельства; полезно учитывать обе стороны.",
+        "An opposition highlights the balance between two themes, sometimes through people or circumstances; consider both sides.",
+    ),
+    "quintile": (
+        "Квинтиль помогает найти необычный или творческий способ связать эти темы; идею важно превратить в конкретный шаг.",
+        "A quintile can suggest an unusual or creative way to connect these themes; turn the idea into a practical step.",
+    ),
+}
+
 _TRANSIT_TIMING_RU = {
     "Sun": _editorial_text('interpretations.8f72eb0654b4f081f1a4d64737579ca2e8a9401201172aa900e3f4f643fe530e'),
     "Moon": _editorial_text('interpretations.da19a1a0c74619832580637d400e3c3556611c4f14d2467565ec9e97ed29a4d1'),
@@ -286,6 +313,7 @@ def transit_forecast_parts(t_name: str, aspect: str, n_name: str,
     interpretation = " ".join(filter(None, (
         _first_sentences(pair["energy"]),
         _first_sentences(pair["realization"]),
+        _FORECAST_ASPECT_NOTE[aspect][1 if lang == "en" else 0],
     )))
     advice = _first_sentences(pair["advice"], 2)
     return {"interpretation": interpretation, "advice": advice}

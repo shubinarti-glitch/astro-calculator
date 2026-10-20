@@ -42,6 +42,14 @@ def test_forecast_sphere_uses_strongest_event_as_interpretation():
     assert sphere["highlights"][0] is pluto
 
 
+def test_forecast_sphere_labels_cover_shared_resources_and_personal_resources():
+    labels = {key: pair for key, pair, _icon, _points in A._LIFE_SPHERES}
+    assert "общие ресурсы" in labels["love"][0].lower()
+    assert "личные ресурсы" in labels["career"][0].lower()
+    assert "shared resources" in labels["love"][1].lower()
+    assert "personal resources" in labels["career"][1].lower()
+
+
 def test_transit_forecast_parts_have_authored_interpretation_and_advice_ru_en():
     for lang, label in (("ru", "Совет:"), ("en", "Advice:")):
         parts = I.transit_forecast_parts("Neptune", "square", "Venus", lang)
@@ -51,6 +59,19 @@ def test_transit_forecast_parts_have_authored_interpretation_and_advice_ru_en():
         rendered = f"{parts['interpretation']}\n\n{label} {parts['advice']}"
         assert label in rendered
         assert "В наступающем периоде эта сфера" not in rendered
+
+
+def test_forecast_interpretation_explains_aspect_in_both_languages():
+    for lang, square_note, trine_note in (
+        ("ru", "Квадрат добавляет трение", "Тригон облегчает взаимодействие"),
+        ("en", "A square adds friction", "A trine makes the themes work together"),
+    ):
+        square = I.transit_forecast_parts("Saturn", "square", "Sun", lang)
+        trine = I.transit_forecast_parts("Saturn", "trine", "Sun", lang)
+        assert square and trine
+        assert square["interpretation"] != trine["interpretation"]
+        assert square_note in square["interpretation"]
+        assert trine_note in trine["interpretation"]
 
 
 def test_forecast_house_mapping_is_unique():
