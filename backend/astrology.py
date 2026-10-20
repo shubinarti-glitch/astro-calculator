@@ -439,9 +439,18 @@ def _build_psych_portrait(model, aspects_ser: list, chart_data, lang: str = "ru"
 def _render_chart_svgs(chart_data, lang: str = "ru") -> dict:
     """Рендерит колесо карты в двух темах (тёмная и светлая) на нужном языке."""
     chart_lang = "EN" if str(lang).lower() == "en" else "RU"
+
+    def render(theme: str) -> str:
+        svg = ChartDrawer(chart_data, chart_language=chart_lang, theme=theme).generate_svg_string()
+        if chart_lang == "RU":
+            # Kerykeion currently falls back to English for these two comparison labels.
+            svg = svg.replace("Transit Point", "Транзитная точка")
+            svg = svg.replace("Natal House", "Натальный дом")
+        return svg
+
     return {
-        "svg": ChartDrawer(chart_data, chart_language=chart_lang, theme="dark").generate_svg_string(),
-        "svg_light": ChartDrawer(chart_data, chart_language=chart_lang, theme="light").generate_svg_string(),
+        "svg": render("dark"),
+        "svg_light": render("light"),
     }
 
 

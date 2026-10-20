@@ -13,6 +13,17 @@ def test_english_transit_corpus_is_complete():
             assert value.strip() and not re.search("[а-яА-ЯёЁ]", value), (key, field)
 
 
+def test_neptune_to_five_natal_points_uses_distinct_energy_and_risk_openings():
+    targets = ("Medium_Coeli", "Pluto", "Saturn", "Sun", "Venus")
+    for corpus in (I.AUTHORED_TRANSIT, I.AUTHORED_TRANSIT_EN):
+        for field in ("energy", "risks"):
+            openings = [
+                tuple(re.findall(r"[\w’'-]+", corpus[f"transit|Neptune|{target}"][field].lower())[:6])
+                for target in targets
+            ]
+            assert len(set(openings)) == len(targets), (field, openings)
+
+
 def test_every_authored_translation_is_used_without_truncation():
     aliases = {"North_Node": "True_North_Lunar_Node", "South_Node": "True_South_Lunar_Node", "Lilith": "Mean_Lilith"}
     for key, record in I.AUTHORED_TRANSIT_EN.items():

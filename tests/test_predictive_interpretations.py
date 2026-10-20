@@ -133,6 +133,42 @@ def test_all_transit_points_and_aspects_have_russian_interpretations():
     assert missing == []
 
 
+def test_chiron_angle_aspects_have_distinct_authored_text_in_both_languages():
+    pairs = [
+        ("sextile", "Ascendant"),
+        ("sextile", "Medium_Coeli"),
+        ("trine", "Descendant"),
+        ("trine", "Imum_Coeli"),
+    ]
+    for lang in ("ru", "en"):
+        texts = [I.interpret_aspect("Chiron", aspect, angle, lang) for aspect, angle in pairs]
+        assert all(texts)
+        assert len(set(texts)) == len(pairs)
+        if lang == "ru":
+            assert all("привнося глубинная рана" not in text.lower() for text in texts)
+        else:
+            assert all("bringing deep wound" not in text.lower() for text in texts)
+
+
+def test_russian_transit_chart_svg_localizes_library_fallback_labels(monkeypatch):
+    class FakeChartDrawer:
+        def __init__(self, chart_data, chart_language, theme):
+            self.chart_language = chart_language
+
+        def generate_svg_string(self):
+            return "<svg><text>Transit Point</text><text>Natal House</text></svg>"
+
+    monkeypatch.setattr(astrology, "ChartDrawer", FakeChartDrawer)
+
+    ru = astrology._render_chart_svgs(object(), "ru")
+    en = astrology._render_chart_svgs(object(), "en")
+
+    assert "Транзитная точка" in ru["svg"]
+    assert "Натальный дом" in ru["svg"]
+    assert "Transit Point" in en["svg"]
+    assert "Natal House" in en["svg"]
+
+
 def test_direction_interpretation_is_separate_in_both_languages():
     ru = I.interpret_direction("Sun", "square", "Moon", "ru")
     en = I.interpret_direction("Sun", "square", "Moon", "en")
