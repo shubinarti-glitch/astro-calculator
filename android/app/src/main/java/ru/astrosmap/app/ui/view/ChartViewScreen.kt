@@ -1,5 +1,9 @@
 package ru.astrosmap.app.ui.view
 
+import ru.astrosmap.app.ui.assistant.AssistantPhase
+import ru.astrosmap.app.ui.assistant.AssistantUiState
+import ru.astrosmap.app.ui.assistant.PublishAssistantState
+
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.FilterChip
@@ -55,6 +59,45 @@ import ru.astrosmap.app.ui.saved.SaveMaterialButton
 import ru.astrosmap.app.ui.theme.GoodColor
 import ru.astrosmap.app.data.access.SubscriptionPlan
 
+internal fun chartAssistantUiState(
+    state: ChartViewState,
+    onRetry: () -> Unit,
+    onSave: () -> Unit,
+    onForecast: () -> Unit,
+): AssistantUiState {
+    val assistantPhase = when {
+        state.calculationFailed || state.saveFailed -> AssistantPhase.ERROR
+        state.chart == null -> AssistantPhase.LOADING
+        state.saving -> AssistantPhase.SAVING
+        state.saveRevision > 0 -> AssistantPhase.SAVED
+        else -> AssistantPhase.READY
+    }
+    val assistantHint = when {
+        state.calculationFailed -> R.string.assistant_chart_error_v177
+        state.saveFailed && state.savedId != null -> R.string.assistant_chart_operation_error_v177
+        state.saveFailed -> R.string.assistant_save_error_v177
+        state.chart == null -> R.string.assistant_chart_loading_v177
+        state.saving -> R.string.assistant_saving_v177
+        state.saveRevision > 0 -> R.string.assistant_chart_saved_v177
+        state.savedId == null -> R.string.assistant_chart_unsaved_v177
+        else -> R.string.assistant_chart_ready_v177
+    }
+    val assistantAction: (() -> Unit)? = when {
+        state.calculationFailed -> onRetry
+        state.saveFailed && state.savedId != null -> null
+        state.saveFailed || (state.chart != null && state.savedId == null && !state.saving) -> onSave
+        state.chart != null && !state.saving -> onForecast
+        else -> null
+    }
+    val actionRes = when {
+        assistantAction == null -> null
+        state.calculationFailed || state.saveFailed -> R.string.retry
+        state.savedId == null -> R.string.save
+        else -> R.string.forecast_chart_open
+    }
+    return AssistantUiState(assistantPhase, assistantHint, actionRes, assistantAction, state.saveRevision)
+}
+
 /** Экран карты: колесо, позиции и аспекты (раскрываются в трактовку), текстовые разделы. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,12 +106,18 @@ fun ChartViewScreen(
     onClosed: () -> Unit,
     onForecast: (Long) -> Unit,
     viewModel: ChartViewViewModel = hiltViewModel(),
+    onAssistantState: ((AssistantUiState?) -> Unit)? = null,
 ) {
     val state by viewModel.state.collectAsState()
     var selectedPoint by rememberSaveable(state.entity?.id) { mutableStateOf<String?>(null) }
     var confirmDelete by remember { mutableStateOf(false) }
     var mode by remember { mutableStateOf(InterpretationMode.BRIEF) }
     val expanded = remember { mutableStateOf(setOf<String>()) }
+    val assistant = chartAssistantUiState(state, viewModel::retryCalculation, viewModel::save) {
+        viewModel.openForecast(onForecast)
+    }
+    PublishAssistantState(onAssistantState, assistant.phase, assistant.hintRes,
+        assistant.actionRes, assistant.onAction, assistant.eventKey)
 
     if (confirmDelete) {
         AlertDialog(
@@ -152,7 +201,7 @@ fun ChartViewScreen(
                         modifier = Modifier.fillMaxWidth(),
                     ) { Text(stringResource(if (state.saving) R.string.forecast_chart_saving else R.string.forecast_chart_open)) }
                     if (state.saveFailed) Text(
-                        stringResource(R.string.forecast_chart_save_error),
+                        stringResource(if (state.savedId != null) R.string.assistant_chart_operation_error_v177 else R.string.forecast_chart_save_error),
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall,
                     )

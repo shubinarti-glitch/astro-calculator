@@ -1,5 +1,9 @@
 package ru.astrosmap.app.ui.form
 
+import ru.astrosmap.app.ui.assistant.AssistantPhase
+import ru.astrosmap.app.ui.assistant.AssistantUiState
+import ru.astrosmap.app.ui.assistant.PublishAssistantState
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -56,6 +60,7 @@ import java.time.ZoneOffset
 fun ChartFormScreen(
     onCalculated: () -> Unit,
     viewModel: ChartFormViewModel = hiltViewModel(),
+    onAssistantState: ((AssistantUiState?) -> Unit)? = null,
 ) {
     LaunchedEffect(Unit) { viewModel.maybeConsumeEdit() }
     val focusManager = LocalFocusManager.current
@@ -64,6 +69,16 @@ fun ChartFormScreen(
     val resultGap = with(LocalDensity.current) { 12.dp.roundToPx() }
     var showDate by remember { mutableStateOf(false) }
     var showTime by remember { mutableStateOf(false) }
+    val calculate = {
+        if (viewModel.calculate()) { focusManager.clearFocus(); keyboard?.hide(); onCalculated() }
+    }
+    val empty = viewModel.day.isBlank() || viewModel.month.isBlank() || viewModel.year.isBlank() || viewModel.selectedCity == null
+    PublishAssistantState(onAssistantState,
+        if (viewModel.errorRes != null) AssistantPhase.ERROR else if (empty) AssistantPhase.EMPTY else AssistantPhase.READY,
+        when { viewModel.errorRes != null -> R.string.assistant_form_error_v177
+            empty -> R.string.assistant_form_empty_v177
+            else -> R.string.assistant_form_ready_v177 },
+        R.string.form_calculate, calculate)
 
     if (showDate) {
         val initial = runCatching {
@@ -177,7 +192,7 @@ fun ChartFormScreen(
                 Text(stringResource(it), color = MaterialTheme.colorScheme.error)
             }
             Button(
-                onClick = { if (viewModel.calculate()) { focusManager.clearFocus(); keyboard?.hide(); onCalculated() } },
+                onClick = calculate,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(stringResource(R.string.form_calculate))

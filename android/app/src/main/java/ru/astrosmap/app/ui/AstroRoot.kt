@@ -1,5 +1,8 @@
 package ru.astrosmap.app.ui
 
+import ru.astrosmap.app.ui.assistant.AssistantUiState
+import androidx.compose.runtime.rememberUpdatedState
+
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -76,6 +79,8 @@ private fun AstroSessionRoot(notificationRoute: String?, onNotificationRouteHand
     val sessionOwner by adviceNavigation.owners.collectAsState()
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
+    val assistantState = remember(backStack?.id) { mutableStateOf<AssistantUiState?>(null) }
+    val activeAssistantEntry = rememberUpdatedState(backStack?.id)
     var hintedIndex by remember { mutableIntStateOf(-1) }
     val compactLabels = LocalDensity.current.fontScale >= 1.3f
 
@@ -195,8 +200,12 @@ private fun AstroSessionRoot(notificationRoute: String?, onNotificationRouteHand
                     },
                 )
             }
-            composable(Section.Chart.route) {
-                ChartFormScreen(onCalculated = { navController.navigate("view/0") })
+            composable(Section.Chart.route) { entry ->
+                val publishAssistant = remember(assistantState, entry.id) {
+                    { state: AssistantUiState? -> if (activeAssistantEntry.value == entry.id) assistantState.value = state }
+                }
+                ChartFormScreen(onCalculated = { navController.navigate("view/0") },
+                    onAssistantState = publishAssistant)
             }
             composable(Section.Saved.route) {
                 SavedScreen(onOpen = { id -> navController.navigate("view/$id") })
@@ -220,13 +229,24 @@ private fun AstroSessionRoot(notificationRoute: String?, onNotificationRouteHand
                 )
             }
             composable("luncal") { ru.astrosmap.app.ui.tools.LunarCalendarScreen() }
-            composable("journal") {
-                ru.astrosmap.app.ui.journal.JournalScreen(adviceDraft = adviceDraft, onAdviceConsumed = adviceNavigation::clear)
+            composable("journal") { entry ->
+                val publishAssistant = remember(assistantState, entry.id) {
+                    { state: AssistantUiState? -> if (activeAssistantEntry.value == entry.id) assistantState.value = state }
+                }
+                ru.astrosmap.app.ui.journal.JournalScreen(adviceDraft = adviceDraft, onAdviceConsumed = adviceNavigation::clear,
+                    onAssistantState = publishAssistant)
             }
             composable("transit/{id}") { ru.astrosmap.app.ui.tools.TransitScreen() }
             composable("progression/{id}") { ru.astrosmap.app.ui.tools.ProgressionScreen() }
-            composable("forecast/{id}") {
-                ru.astrosmap.app.ui.tools.ForecastScreen(onJournalAdvice = { date, advice, source ->
+            composable("forecast/{id}") { entry ->
+                val publishAssistant = remember(assistantState, entry.id) {
+                    { state: AssistantUiState? -> if (activeAssistantEntry.value == entry.id) assistantState.value = state }
+                }
+                ru.astrosmap.app.ui.tools.ForecastScreen(
+                    onAssistantState = publishAssistant,
+                    onOpenJournal = { navController.navigate("journal") { launchSingleTop = true } },
+                    onOpenAccount = { navController.navigate(Section.Account.route) { launchSingleTop = true } },
+                    onJournalAdvice = { date, advice, source ->
                     adviceNavigation.prepare(date, advice, sessionOwner, source) { navController.navigate("journal") { launchSingleTop = true } }
                 }, onSelectChart = {
                     navController.navigate(Section.Saved.route) {
@@ -238,8 +258,12 @@ private fun AstroSessionRoot(notificationRoute: String?, onNotificationRouteHand
             }
             composable("return/{type}/{id}") { ru.astrosmap.app.ui.tools.ReturnScreen() }
             composable("synastry/{a}/{b}") { ru.astrosmap.app.ui.tools.SynastryScreen() }
-            composable("view/{id}") {
+            composable("view/{id}") { entry ->
+                val publishAssistant = remember(assistantState, entry.id) {
+                    { state: AssistantUiState? -> if (activeAssistantEntry.value == entry.id) assistantState.value = state }
+                }
                 ChartViewScreen(
+                    onAssistantState = publishAssistant,
                     onEdit = {
                         navController.navigate(Section.Chart.route) {
                             popUpTo(navController.graph.findStartDestination().id)
@@ -251,7 +275,7 @@ private fun AstroSessionRoot(notificationRoute: String?, onNotificationRouteHand
                 )
             }
             }
-            ru.astrosmap.app.ui.assistant.FloatingAssistant(currentRoute, onNavigate = { destination ->
+            ru.astrosmap.app.ui.assistant.FloatingAssistant(currentRoute, uiState = assistantState.value, onNavigate = { destination ->
                 navController.navigate(destination) { launchSingleTop = true }
             })
         }

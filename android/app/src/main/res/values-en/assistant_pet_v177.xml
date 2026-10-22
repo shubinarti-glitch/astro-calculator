@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="assistant_hint_close_v177">Got it</string>
+    <string name="assistant_hint_open_v177">Show a hint</string>
+    <string name="assistant_pet_sleep_v177">Sleeping. Tap to wake up.</string>
+    <string name="assistant_pet_busy_v177">Calculation or saving is in progress.</string>
+    <string name="assistant_pet_attention_v177">A hint explains how to continue.</string>
+    <string name="assistant_pet_awake_v177">Here and ready to help. Can be dragged.</string>
+    <string name="assistant_pet_interact_v177">Play with the companion</string>
+</resources>

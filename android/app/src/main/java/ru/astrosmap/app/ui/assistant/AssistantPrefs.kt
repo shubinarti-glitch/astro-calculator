@@ -32,10 +32,10 @@ object AssistantPrefs {
     fun size(context: Context) = prefs(context).getInt("size_dp", 88).coerceIn(64, 104)
     fun setSize(context: Context, value: Int) = prefs(context).edit().putInt("size_dp", value.coerceIn(64, 104)).apply()
     fun setHints(context: Context, value: Boolean) = prefs(context).edit().putBoolean(HINTS, value).apply()
-    fun positionX(context: Context) = prefs(context).getFloat(POSITION_X, 0.92f).coerceIn(0f, 1f)
-    fun positionY(context: Context) = prefs(context).getFloat(POSITION_Y, 0.72f).coerceIn(0f, 1f)
+    fun positionX(context: Context) = prefs(context).getFloat(POSITION_X, 0.92f).let { if (it.isFinite()) it.coerceIn(0f, 1f) else 0.92f }
+    fun positionY(context: Context) = prefs(context).getFloat(POSITION_Y, 0.72f).let { if (it.isFinite()) it.coerceIn(0f, 1f) else 0.72f }
     fun setPosition(context: Context, x: Float, y: Float) = prefs(context).edit()
-        .putFloat(POSITION_X, x.coerceIn(0f, 1f))
-        .putFloat(POSITION_Y, y.coerceIn(0f, 1f))
+        .putFloat(POSITION_X, if (x.isFinite()) x.coerceIn(0f, 1f) else 0.92f)
+        .putFloat(POSITION_Y, if (y.isFinite()) y.coerceIn(0f, 1f) else 0.72f)
         .apply()
 }

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="assistant_form_empty_v177">Укажи дату, время и город рождения. Я помогу открыть твою карту.</string>
+    <string name="assistant_form_ready_v177">Проверь время и выбранный город. Когда всё верно, можно рассчитать карту.</string>
+    <string name="assistant_form_error_v177">В данных есть неточность. Посмотри сообщение в форме, исправь данные и попробуй снова.</string>
+    <string name="assistant_chart_loading_v177">Рассчитываю карту. Можно немного подождать — или продолжить пользоваться меню.</string>
+    <string name="assistant_chart_error_v177">Не удалось рассчитать карту. Попробуем ещё раз? Твои введённые данные остаются в форме.</string>
+    <string name="assistant_chart_ready_v177">Карта готова. Нажми на планету для пояснения или открой личный прогноз.</string>
+    <string name="assistant_chart_unsaved_v177">Карта рассчитана, но изменения ещё не сохранены. Сохраним её?</string>
+    <string name="assistant_saving_v177">Сохраняю. Дождись подтверждения — тогда всё будет записано.</string>
+    <string name="assistant_chart_saved_v177">Карта сохранена! Можно открыть прогноз для этой карты.</string>
+    <string name="assistant_save_error_v177">Не получилось сохранить. Данные ещё на экране — попробуй сохранить снова.</string>
+    <string name="assistant_forecast_loading_v177">Загружаю прогноз на выбранный период. Пока можно открыть другой раздел.</string>
+    <string name="assistant_forecast_ready_v177">Прогноз готов. Начни с трактовки и совета; наблюдения можно записать в дневник.</string>
+    <string name="assistant_forecast_cached_v177">Сейчас открыт сохранённый прогноз. Его можно обновить, когда появится связь.</string>
+    <string name="assistant_report_offline_v177">Нет связи с сервером. Проверь интернет и попробуй загрузить прогноз снова.</string>
+    <string name="assistant_report_error_v177">Прогноз пока не загрузился. Можно повторить запрос или выбрать другую карту.</string>
+    <string name="assistant_report_missing_v177">Для прогноза нужна сохранённая карта. Давай выберем её в списке.</string>
+    <string name="assistant_report_auth_v177">Для этого раздела нужно войти в аккаунт. Открой кабинет и проверь вход.</string>
+    <string name="assistant_report_access_v177">Для выбранного отчёта сейчас нет доступа. Можно вернуться к выбору карт.</string>
+    <string name="assistant_journal_loading_v177">Открываю дневник. Подожди, пока загрузятся твои записи.</string>
+    <string name="assistant_journal_ready_v177">Здесь можно отметить настроение, события и мысли. Сохрани запись, когда закончишь.</string>
+    <string name="assistant_journal_saved_v177">Запись сохранена! К ней можно вернуться, выбрав эту дату в дневнике.</string>
+    <string name="assistant_open_account_v177">Открыть кабинет</string>
+    <string name="assistant_chart_operation_error_v177">Не удалось завершить операцию с картой. Проверь список сохранённых карт перед повторной попыткой.</string>
+</resources>

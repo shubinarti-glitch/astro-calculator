@@ -35,6 +35,7 @@ data class ChartViewState(
     val access: AccessState = AccessState(),
     val saving: Boolean = false,
     val saveFailed: Boolean = false,
+    val saveRevision: Int = 0,
 )
 
 @HiltViewModel
@@ -168,7 +169,7 @@ class ChartViewViewModel @Inject constructor(
                     if (toSave.serverId != null) toSave = toSave.copy(dirty = true)
                     val newId = dao.upsert(toSave.copy(updatedAt = System.currentTimeMillis()))
                     val saved = toSave.copy(id = if (e.id > 0) e.id else newId)
-                    _state.value = _state.value.copy(entity = saved, savedId = saved.id, saving = false)
+                    _state.value = _state.value.copy(entity = saved, savedId = saved.id, saving = false, saveRevision = _state.value.saveRevision + 1)
                     analytics.track("chart_saved")
                     onSaved?.invoke(saved.id)
                     viewModelScope.launch { syncManager.sync() }
