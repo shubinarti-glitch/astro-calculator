@@ -32,6 +32,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -102,11 +103,14 @@ class TodayViewModel @Inject constructor(
     private val engine: AstroEngine,
     private val api: AstroApi,
     private val analytics: Analytics,
+    private val tokenStore: ru.astrosmap.app.data.TokenStore,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(TodayState())
     val state: StateFlow<TodayState> = _state
     private var loadJob: Job? = null
+    private var completedCalculationKey: String? = null
+    private var completedAtElapsed: Long = 0
 
     init {
         analytics.track("today_viewed")
@@ -139,11 +143,19 @@ class TodayViewModel @Inject constructor(
     }
 
     private suspend fun calculate(all: List<ChartEntity>) {
-            val now = java.time.ZonedDateTime.now()
+            val requestToken = tokenStore.get()
+            val chart = PrimaryChart.resolve(context, all)
+            val location = ForecastLocationStore.get(context)
+            val now = java.time.ZonedDateTime.now(ru.astrosmap.app.ui.tools.forecastZone(location?.tzStr, chart?.tz))
             val today = now.toLocalDate()
+            val calculationKey = "$today:${now.zone}:$chart:$location:${AstroLabels.isRu()}:$all"
+            val elapsed = android.os.SystemClock.elapsedRealtime()
+            // Polling detects midnight/location changes, but unchanged results need no full
+            // fourteen-day recalculation or repeated editorial request every minute.
+            val freshness = if (_state.value.textsOffline) 5 * 60_000L else 15 * 60_000L
+            if (calculationKey == completedCalculationKey && elapsed - completedAtElapsed in 0 until freshness) return
             val moon = withContext(Dispatchers.Default) { moonOnly(now) }
             // Карта «это я»: выбранная пользователем, иначе самая ранняя.
-            val chart = PrimaryChart.resolve(context, all)
             if (chart == null) {
                 // Без карты показываем только лунную часть — она считается без данных рождения.
                 _state.value = TodayState(
@@ -155,10 +167,11 @@ class TodayViewModel @Inject constructor(
                     lunarDay = moon.third,
                     charts = all,
                 )
+                completedCalculationKey = calculationKey
+                completedAtElapsed = elapsed
                 return
             }
             val natal = chart.toBirthInput()
-            val location = ForecastLocationStore.get(context)
             val transitInput = BirthInput(
                 year = today.year, month = today.monthValue, day = today.dayOfMonth,
                 hour = 12, minute = 0,
@@ -183,7 +196,7 @@ class TodayViewModel @Inject constructor(
                 chartId = chart.id,
                 upcomingEventLoading = true,
             )
-            loadTexts(chart.name, natal, chart.city, today)
+            loadTexts(chart.name, natal, chart.city, today, requestToken, chart.ownerKey)
             val upcomingEvent = withContext(Dispatchers.Default) {
                 val future = (1..14).map { offset ->
                     val date = today.plusDays(offset.toLong())
@@ -202,6 +215,8 @@ class TodayViewModel @Inject constructor(
                     upcomingEvent = upcomingEvent,
                     upcomingEventLoading = false,
                 )
+                completedCalculationKey = calculationKey
+                completedAtElapsed = elapsed
             }
     }
 
@@ -215,8 +230,10 @@ class TodayViewModel @Inject constructor(
             ru.astrosmap.app.ui.tools.PersonalCalendarEventCalculator.lunarDay(chart.lunarPhase.degreesBetween))
     }
 
-    private suspend fun loadTexts(name: String, natal: BirthInput, city: String, date: LocalDate) {
+    private suspend fun loadTexts(name: String, natal: BirthInput, city: String, date: LocalDate, token: String?, owner: String) {
         try {
+            if (tokenStore.get() != token || dao.owner() != owner) return
+            kotlinx.coroutines.currentCoroutineContext().ensureActive()
             val resp = api.transit(
                 TransitApiRequest(
                     natal = NatalRequest(
@@ -228,7 +245,9 @@ class TodayViewModel @Inject constructor(
                     transitDate = TransitDateDto(date.year, date.monthValue, date.dayOfMonth),
                     transitLocation = ForecastLocationStore.get(context),
                 ),
+                authorization = token?.let { "Bearer $it" } ?: "",
             )
+            if (tokenStore.get() != token || dao.owner() != owner) return
             val texts = resp["aspects"]?.jsonArray.orEmpty().mapNotNull { a ->
                 val o = a.jsonObject
                 fun str(k: String) = (o[k] as? JsonPrimitive)?.takeIf { it.isString }?.content

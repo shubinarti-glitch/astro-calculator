@@ -1,11 +1,8 @@
 package ru.astrosmap.app.ui
 
 import android.Manifest
-import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
-import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.AlertDialog
@@ -26,25 +23,24 @@ import ru.astrosmap.app.data.DailyNotify
 
 /** Однократное понятное приглашение вместо спрятанного переключателя в кабинете. */
 @Composable
-fun NotificationOptInPrompt() {
+fun NotificationOptInPrompt(eligible: Boolean = false) {
     val context = LocalContext.current
     var showOffer by remember { mutableStateOf(false) }
-    var showSettings by remember { mutableStateOf(false) }
 
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) {
             DailyNotify.setEnabled(context, true)
-        } else {
-            showSettings = true
-        }
+        } // A refusal closes the invitation; settings remain available in Account.
     }
 
-    LaunchedEffect(Unit) {
-        if (DailyNotify.shouldShowPrompt(context)) {
+    LaunchedEffect(eligible) {
+        if (eligible && DailyNotify.shouldShowPrompt(context)) {
             delay(1_500)
             showOffer = true
         }
     }
+
+    LaunchedEffect(eligible) { if (!eligible) showOffer = false }
 
     fun dismissOffer() {
         DailyNotify.markPromptShown(context)
@@ -82,30 +78,4 @@ fun NotificationOptInPrompt() {
         )
     }
 
-    if (showSettings) {
-        AlertDialog(
-            onDismissRequest = { showSettings = false },
-            title = { Text(stringResource(R.string.notify_settings_title)) },
-            text = { Text(stringResource(R.string.notify_denied)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    showSettings = false
-                    // Расписание уже готово: если пользователь разрешит уведомления в настройках,
-                    // напоминание начнёт работать без второго скрытого переключателя.
-                    DailyNotify.setEnabled(context, true)
-                    context.startActivity(
-                        Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                            data = Uri.parse("package:${context.packageName}")
-                            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                        },
-                    )
-                }) { Text(stringResource(R.string.notify_open_settings)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showSettings = false }) {
-                    Text(stringResource(R.string.notify_offer_later))
-                }
-            },
-        )
-    }
 }

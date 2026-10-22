@@ -236,6 +236,7 @@ private fun Profile(me: MeResponse, viewModel: AccountViewModel, onMaterials: ()
             stringResource(R.string.acc_charts_count, chartsCount),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        GuestChartImport(viewModel)
         RecoveryButton(viewModel, me.email.orEmpty(), true)
         OutlinedButton(onClick = viewModel::logout, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.auth_logout))
@@ -511,4 +512,42 @@ private fun OfflineNote(viewModel: AccountViewModel) {
         Button(onClick = viewModel::retry) { Text(stringResource(R.string.retry)) }
         TextButton(onClick = viewModel::logout) { Text(stringResource(R.string.auth_logout)) }
     }
+}
+
+
+/** Guest data is never uploaded implicitly on login; the user selects exact copies. */
+@Composable
+private fun GuestChartImport(viewModel: AccountViewModel) {
+    val guests by viewModel.guestCharts.collectAsState()
+    var show by rememberSaveable { mutableStateOf(false) }
+    var selected by remember { mutableStateOf(setOf<Long>()) }
+    val ru = AstroLabels.isRu()
+    if (guests.isNotEmpty()) {
+        Text(if (ru) "На устройстве есть гостевые карты. Они не синхронизируются без вашего выбора." else "Guest charts stay on this device until you choose to copy them into your account.", style = MaterialTheme.typography.bodySmall)
+        OutlinedButton(onClick = { selected = emptySet(); show = true }, enabled = !viewModel.busy) {
+            Text(if (ru) "Выбрать гостевые карты" else "Choose guest charts")
+        }
+    }
+    viewModel.importMessage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+    if (show) AlertDialog(
+        onDismissRequest = { show = false },
+        title = { Text(if (ru) "Скопировать в этот аккаунт" else "Copy into this account") },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                Text(if (ru) "Оригиналы останутся на устройстве. Выбранные копии будут синхронизированы с аккаунтом." else "Originals remain on this device. Selected copies will sync with this account.")
+                guests.forEach { chart ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = chart.id in selected, onCheckedChange = { checked ->
+                            selected = if (checked) selected + chart.id else selected - chart.id
+                        })
+                        Text(chart.name, modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(enabled = selected.isNotEmpty() && !viewModel.busy, onClick = {
+            viewModel.importGuests(selected); show = false
+        }) { Text(if (ru) "Скопировать выбранные" else "Copy selected") } },
+        dismissButton = { TextButton(onClick = { show = false }) { Text(stringResource(R.string.cancel)) } },
+    )
 }

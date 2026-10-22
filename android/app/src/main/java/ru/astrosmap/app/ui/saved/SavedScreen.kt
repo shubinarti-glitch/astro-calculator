@@ -28,6 +28,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -78,6 +80,8 @@ fun SavedScreen(
     val query by viewModel.query.collectAsState()
     val charts by viewModel.charts.collectAsState()
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
     var primaryId by remember { mutableStateOf(PrimaryChart.get(context)) }
 
     LaunchedEffect(charts) {
@@ -130,7 +134,11 @@ fun SavedScreen(
                             PrimaryChart.set(context, chart.id)
                             primaryId = chart.id
                         },
-                        onClick = { onOpen(chart.id) },
+                        onClick = {
+                            focusManager.clearFocus()
+                            keyboard?.hide()
+                            onOpen(chart.id)
+                        },
                     )
                 }
             }

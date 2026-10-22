@@ -12,10 +12,15 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.TextButton
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -34,6 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -105,7 +111,7 @@ private fun cloudBubbleShape(tailOnRight: Boolean) = GenericShape { size, _ ->
 }
 
 @Composable
-fun FloatingAssistant(route: String?, modifier: Modifier = Modifier) {
+fun FloatingAssistant(route: String?, modifier: Modifier = Modifier, onNavigate: ((String) -> Unit)? = null) {
     val context = LocalContext.current
     val darkTheme = isSystemInDarkTheme()
     var revision by remember { mutableIntStateOf(0) }
@@ -191,6 +197,7 @@ fun FloatingAssistant(route: String?, modifier: Modifier = Modifier) {
         val bubbleLiftPx = with(density) { 112.dp.toPx() }
         var offset by remember { mutableStateOf(IntOffset.Zero) }
         var initialized by remember { mutableStateOf(false) }
+        var bubbleHeight by remember { mutableIntStateOf(0) }
 
         LaunchedEffect(maxX, maxY) {
             if (!initialized) {
@@ -210,10 +217,13 @@ fun FloatingAssistant(route: String?, modifier: Modifier = Modifier) {
             } else {
                 offset.x + with(density) { assistantSize.toPx() } + bubbleGapPx
             }.coerceIn(8f, (with(density) { maxWidth.toPx() } - bubbleWidthPx - 8f).coerceAtLeast(8f))
-            val bubbleY = (offset.y - bubbleLiftPx).coerceIn(8f, maxY.coerceAtLeast(8f))
+            val bubbleBottomLimit = with(density) { maxHeight.toPx() } - bubbleHeight - 8f
+            val bubbleY = (offset.y - bubbleLiftPx).coerceIn(8f, bubbleBottomLimit.coerceAtLeast(8f))
             val tailOnRight = offset.x > maxX / 2f
             Surface(
-                modifier = Modifier.widthIn(max = bubbleWidth).graphicsLayer {
+                modifier = Modifier.widthIn(max = bubbleWidth)
+                    .heightIn(max = (maxHeight - 16.dp).coerceAtLeast(80.dp))
+                    .onSizeChanged { bubbleHeight = it.height }.graphicsLayer {
                     translationX = bubbleX
                     translationY = bubbleY
                 }.clickable { showHint = false },
@@ -227,12 +237,16 @@ fun FloatingAssistant(route: String?, modifier: Modifier = Modifier) {
                 tonalElevation = 2.dp,
                 shadowElevation = 12.dp,
             ) {
-                Text(
-                    hint,
-                    Modifier.padding(start = 32.dp, end = 32.dp, top = 30.dp, bottom = 42.dp),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFF29223D),
-                )
+                Column(Modifier.verticalScroll(rememberScrollState())
+                    .padding(start = 32.dp, end = 32.dp, top = 30.dp, bottom = 42.dp)) {
+                    Text(hint, style = MaterialTheme.typography.bodyMedium, color = Color(0xFF29223D))
+                    val action = assistantAction(route)
+                    if (onNavigate != null && action != null) {
+                        TextButton(onClick = { showHint = false; onNavigate(action.first) }) {
+                            Text(stringResource(action.second), color = Color(0xFF5A49B0))
+                        }
+                    }
+                }
             }
         }
 
@@ -299,9 +313,21 @@ private fun assistantHint(context: Context, route: String?): String {
         route == "chart" -> R.string.assistant_hint_chart
         route == "saved" || route == "materials" -> R.string.assistant_hint_saved
         route == "account" -> R.string.assistant_hint_account
+        route == "journal" -> R.string.assistant_hint_journal_v176
+        route == "luncal" -> R.string.assistant_hint_calendar_v176
+        route?.startsWith("return/") == true -> R.string.assistant_hint_return_v176
+        route?.startsWith("synastry/") == true -> R.string.assistant_hint_synastry_v176
+        route?.startsWith("progression/") == true -> R.string.assistant_hint_progression_v176
         route?.startsWith("forecast") == true || route?.startsWith("transit") == true -> R.string.assistant_hint_forecast
         route == "tools" -> R.string.assistant_hint_tools
         else -> R.string.assistant_hint_default
     }
     return stringResource(textRes)
+}
+
+internal fun assistantAction(route: String?): Pair<String, Int>? = when {
+    route?.startsWith("forecast/") == true -> "journal" to R.string.assistant_open_diary_v176
+    route == "tools" -> "saved" to R.string.assistant_open_charts_v176
+    route?.startsWith("view/") == true -> "tools" to R.string.assistant_open_tools_v176
+    else -> null
 }

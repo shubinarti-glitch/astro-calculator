@@ -9,6 +9,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.runtime.mutableIntStateOf
+import ru.astrosmap.app.ui.keepEditorAboveIme
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -50,6 +58,10 @@ fun ChartFormScreen(
     viewModel: ChartFormViewModel = hiltViewModel(),
 ) {
     LaunchedEffect(Unit) { viewModel.maybeConsumeEdit() }
+    val focusManager = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+    var firstSuggestionHeight by remember { mutableIntStateOf(0) }
+    val resultGap = with(LocalDensity.current) { 12.dp.roundToPx() }
     var showDate by remember { mutableStateOf(false) }
     var showTime by remember { mutableStateOf(false) }
 
@@ -104,6 +116,7 @@ fun ChartFormScreen(
     Column(
         Modifier
             .fillMaxSize()
+            .imePadding()
             .verticalScroll(rememberScrollState())
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -141,14 +154,18 @@ fun ChartFormScreen(
                 label = { Text(stringResource(R.string.form_city)) },
                 singleLine = true,
                 isError = viewModel.errorRes != null && viewModel.selectedCity == null,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().testTag("chart-city-editor")
+                    .keepEditorAboveIme(if (viewModel.suggestions.isEmpty()) 0 else firstSuggestionHeight + resultGap,
+                        viewModel.suggestions.firstOrNull()),
             )
-            viewModel.suggestions.forEach { city ->
+            viewModel.suggestions.forEachIndexed { index, city ->
                 Surface(
-                    onClick = { viewModel.pickCity(city) },
+                    onClick = { viewModel.pickCity(city); focusManager.clearFocus(); keyboard?.hide() },
                     color = MaterialTheme.colorScheme.surface,
                     shape = MaterialTheme.shapes.medium,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().then(if (index == 0)
+                        Modifier.testTag("chart-city-first-suggestion").onSizeChanged { firstSuggestionHeight = it.height }
+                        else Modifier),
                 ) {
                     Text(
                         city.label(AstroLabels.isRu()),
@@ -160,7 +177,7 @@ fun ChartFormScreen(
                 Text(stringResource(it), color = MaterialTheme.colorScheme.error)
             }
             Button(
-                onClick = { if (viewModel.calculate()) onCalculated() },
+                onClick = { if (viewModel.calculate()) { focusManager.clearFocus(); keyboard?.hide(); onCalculated() } },
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(stringResource(R.string.form_calculate))

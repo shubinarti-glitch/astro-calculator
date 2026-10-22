@@ -54,6 +54,7 @@ data class AuthResponse(
 
 @Serializable
 data class MeResponse(
+    val id: Long? = null,
     val username: String,
     val email: String? = null,
     @SerialName("email_verified") val emailVerified: Boolean = false,
@@ -171,10 +172,10 @@ interface AstroApi {
     suspend fun register(@Body body: RegisterRequest): AuthResponse
 
     @GET("api/auth/me")
-    suspend fun me(): MeResponse
+    suspend fun me(@retrofit2.http.Header("Authorization") authorization: String? = null): MeResponse
 
     @POST("api/auth/logout")
-    suspend fun logout()
+    suspend fun logout(@retrofit2.http.Header("Authorization") authorization: String? = null)
 
     @retrofit2.http.HTTP(method = "DELETE", path = "api/auth/account", hasBody = true)
     suspend fun deleteAccount(@Body body: DeleteAccountRequest)
@@ -184,6 +185,7 @@ interface AstroApi {
     suspend fun natal(
         @Body body: NatalRequest,
         @retrofit2.http.Query("svg") svg: Int = 0,
+        @retrofit2.http.Header("Authorization") authorization: String? = null,
     ): kotlinx.serialization.json.JsonObject
 
     /** Транзиты на дату (бесплатно): тексты аспектов транзит→натал. */
@@ -191,6 +193,7 @@ interface AstroApi {
     suspend fun transit(
         @Body body: TransitApiRequest,
         @retrofit2.http.Query("svg") svg: Int = 0,
+        @retrofit2.http.Header("Authorization") authorization: String? = null,
     ): kotlinx.serialization.json.JsonObject
 
     /** Соляр/лунар — премиум (402 без подписки). */
@@ -198,20 +201,22 @@ interface AstroApi {
     suspend fun solarReturn(
         @Body body: ReturnApiRequest,
         @retrofit2.http.Query("svg") svg: Int = 0,
+        @retrofit2.http.Header("Authorization") authorization: String? = null,
     ): kotlinx.serialization.json.JsonObject
 
     @POST("api/progression")
     suspend fun progression(
         @Body body: ProgressionApiRequest,
         @retrofit2.http.Query("svg") svg: Int = 0,
+        @retrofit2.http.Header("Authorization") authorization: String? = null,
     ): kotlinx.serialization.json.JsonObject
 
     @POST("api/forecast")
-    suspend fun forecast(@Body body: ForecastApiRequest): kotlinx.serialization.json.JsonObject
+    suspend fun forecast(@Body body: ForecastApiRequest, @retrofit2.http.Header("Authorization") authorization: String? = null): kotlinx.serialization.json.JsonObject
 
     /** История расчётов на сайте (для кабинета). */
     @POST("api/events")
-    suspend fun events(@Body body: EventBatch)
+    suspend fun events(@Body body: EventBatch, @retrofit2.http.Header("Authorization") authorization: String = "")
 
     @GET("api/history")
     suspend fun history(): List<kotlinx.serialization.json.JsonObject>
@@ -225,19 +230,26 @@ interface AstroApi {
     suspend fun synastry(
         @Body body: SynastryApiRequest,
         @retrofit2.http.Query("svg") svg: Int = 0,
+        @retrofit2.http.Header("Authorization") authorization: String? = null,
     ): kotlinx.serialization.json.JsonObject
 
     @POST("api/synastry/preview")
-    suspend fun synastryPreview(@Body body: SynastryApiRequest): kotlinx.serialization.json.JsonObject
+    suspend fun synastryPreview(@Body body: SynastryApiRequest, @retrofit2.http.Header("Authorization") authorization: String? = null): kotlinx.serialization.json.JsonObject
 
     @GET("api/profiles")
-    suspend fun profiles(): List<ProfileDto>
+    suspend fun profiles(@retrofit2.http.Header("Authorization") authorization: String? = null): List<ProfileDto>
 
     @POST("api/profiles")
-    suspend fun addProfile(@Body body: ProfileUpload): ProfileDto
+    suspend fun addProfile(@Body body: ProfileUpload, @retrofit2.http.Header("Authorization") authorization: String? = null): ProfileDto
+
+    @retrofit2.http.PUT("api/profiles/{id}")
+    suspend fun updateProfile(@retrofit2.http.Path("id") id: Long, @Body body: ProfileUpload, @retrofit2.http.Header("Authorization") authorization: String? = null): ProfileDto
+
+    @retrofit2.http.DELETE("api/profiles/by-client")
+    suspend fun discardProfile(@retrofit2.http.Query("client_id") clientId: String, @retrofit2.http.Header("Authorization") authorization: String? = null)
 
     @retrofit2.http.DELETE("api/profiles/{id}")
-    suspend fun deleteProfile(@retrofit2.http.Path("id") id: Long)
+    suspend fun deleteProfile(@retrofit2.http.Path("id") id: Long, @retrofit2.http.Header("Authorization") authorization: String? = null)
 }
 
 /** Профиль кабинета сайта: label + свободный data (данные формы рождения). */
@@ -251,6 +263,7 @@ data class ProfileDto(
 
 @Serializable
 data class ProfileUpload(
+    @SerialName("client_id") val clientId: String? = null,
     val label: String,
     val data: NatalRequest,
 )

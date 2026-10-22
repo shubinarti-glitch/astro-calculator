@@ -42,7 +42,12 @@ data class ForecastComparison(
     val continued: Int,
     val favorableDelta: Int,
     val summaryChanged: Boolean,
+    val themes: List<ForecastThemeChange> = emptyList(),
+    val baselineStart: String? = null,
+    val baselineEnd: String? = null,
 )
+
+data class ForecastThemeChange(val name: String, val previous: String?, val current: String?, val advice: String?)
 
 object ForecastHistory {
     private const val PREFS = "forecast_history_v1"
@@ -68,6 +73,34 @@ object ForecastHistory {
     fun matching(items: List<ForecastSnapshot>, period: ForecastPeriod, range: Pair<LocalDate, LocalDate>, scope: String): ForecastSnapshot? =
         items.firstOrNull { it.accessScope == scope && it.period == period.name &&
             it.start == range.first.toString() && it.end == range.second.toString() }
+
+    /** Caller supplies snapshots already filtered to one chart. Cache matching stays separate. */
+    fun comparisonBaseline(items: List<ForecastSnapshot>, period: ForecastPeriod,
+        range: Pair<LocalDate, LocalDate>, scope: String): ForecastSnapshot? {
+        fun family(value: ForecastPeriod) = when (value) {
+            ForecastPeriod.TODAY, ForecastPeriod.TOMORROW -> 0
+            ForecastPeriod.THIS_WEEK, ForecastPeriod.NEXT_WEEK -> 1
+            ForecastPeriod.THIS_MONTH, ForecastPeriod.NEXT_MONTH -> 2
+        }
+        val compatible = items.filter { snapshot ->
+            if (snapshot.accessScope != scope || snapshot.createdAt <= 0) return@filter false
+            val savedPeriod = runCatching { ForecastPeriod.valueOf(snapshot.period) }.getOrNull() ?: return@filter false
+            if (family(savedPeriod) != family(period)) return@filter false
+            val start = runCatching { LocalDate.parse(snapshot.start) }.getOrNull() ?: return@filter false
+            val end = runCatching { LocalDate.parse(snapshot.end) }.getOrNull() ?: return@filter false
+            val validWindow = when (family(savedPeriod)) {
+                0 -> start == end
+                1 -> start.dayOfWeek == DayOfWeek.MONDAY && end == start.plusDays(6)
+                else -> start.dayOfMonth == 1 && end == start.withDayOfMonth(start.lengthOfMonth())
+            }
+            if (!validWindow) return@filter false
+            val data = payload(snapshot) ?: return@filter false
+            ("start" !in data || data.s("start") == snapshot.start) &&
+                ("end" !in data || data.s("end") == snapshot.end)
+        }.sortedByDescending { it.createdAt }
+        return compatible.firstOrNull { it.start != range.first.toString() || it.end != range.second.toString() }
+            ?: compatible.firstOrNull { it.period == period.name && it.start == range.first.toString() && it.end == range.second.toString() }
+    }
 
     fun scope(token: String?, entitlements: Set<String>): String {
         val identity = token?.let { java.security.MessageDigest.getInstance("SHA-256")
@@ -124,9 +157,41 @@ object ForecastHistory {
             continued = (newKeys intersect oldKeys).size,
             favorableDelta = favorable(current) - favorable(previous),
             summaryChanged = previous.s("summary") != current.s("summary"),
+            themes = compareForecastThemes(previous, current),
         )
     }
 }
 
 internal fun accessCacheExpiry(now: Long, premium: Boolean, premiumUntil: Long?): Long =
     if (premium) minOf(now + 86_400_000L, premiumUntil ?: now) else now + 86_400_000L
+
+/** Resolve dates from an instant in the forecast city, including DST and date-line changes. */
+internal fun forecastZone(selected: String?, birth: String?): java.time.ZoneId =
+    sequenceOf(selected, birth).filterNotNull().mapNotNull {
+        runCatching { java.time.ZoneId.of(it) }.getOrNull()
+    }.firstOrNull() ?: java.time.ZoneId.systemDefault()
+
+internal fun forecastToday(selected: String?, birth: String?, clock: java.time.Clock = java.time.Clock.systemUTC()): LocalDate =
+    LocalDate.now(clock.withZone(forecastZone(selected, birth)))
+
+internal fun readableForecastDate(raw: String, locale: java.util.Locale): String =
+    runCatching { LocalDate.parse(raw).format(java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM).withLocale(locale)) }.getOrDefault(raw)
+
+/** Uses only actual runtime interpretations and advice; never invents a life prediction. */
+internal fun compareForecastThemes(previous: JsonObject, current: JsonObject): List<ForecastThemeChange> {
+    fun topics(data: JsonObject) = data.a("sphere_forecast").associateBy { it.s("key") ?: it.s("name").orEmpty() }
+    val old = topics(previous)
+    val fresh = topics(current)
+    return (fresh.keys + old.keys).mapNotNull { key ->
+        val before = old[key]
+        val after = fresh[key]
+        fun meaning(sphere: JsonObject?) = sphere?.a("highlights")?.firstNotNullOfOrNull {
+            it.s("interpretation")?.takeIf(String::isNotBlank) ?: it.s("text")?.takeIf(String::isNotBlank)
+        }
+        val previousMeaning = meaning(before)
+        val currentMeaning = meaning(after)
+        val advice = after?.a("highlights")?.firstNotNullOfOrNull { it.s("advice")?.takeIf(String::isNotBlank) }
+        if (previousMeaning == currentMeaning || (previousMeaning == null && currentMeaning == null)) null
+        else ForecastThemeChange(after?.s("name") ?: before?.s("name").orEmpty(), previousMeaning, currentMeaning, advice)
+    }.take(3)
+}

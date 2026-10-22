@@ -8,7 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 // Палитра сайта astrosmap.ru (frontend/css/style.css).
-// internal: AstroPanel всегда тёмная, поэтому внутри панелей эта палитра нужна и в светлой теме.
+// Shared dark palette; AstroPanel adapts to the active color scheme.
 internal val DarkColors = darkColorScheme(
     primary = Color(0xFFC9A86A),          // --accent (золото)
     onPrimary = Color(0xFF16132B),
@@ -39,7 +39,9 @@ private val LightColors = lightColorScheme(
     outline = Color(0x477A6EAA),
 )
 
-val GoodColor = Color(0xFF5FC98A)   // --good: гармоничные аспекты
+val GoodColor: Color
+    @Composable get() = if (MaterialTheme.colorScheme.background == DarkColors.background)
+        Color(0xFF5FC98A) else Color(0xFF187A49)
 val NeutralColor = Color(0xFF8B9BD8) // --neutral
 
 @Composable

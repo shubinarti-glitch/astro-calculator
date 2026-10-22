@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chart_wheel_description">Natal chart. Select a planet on the wheel or in the list below.</string>
+    <string name="chart_select_hint">Tap a planet to read its interpretation and highlight its connections. Tap again to clear selection.</string>
+    <string name="chart_interpretation_unavailable">An interpretation for this point is not available. Its position and calculated connections are shown below.</string>
+    <string name="chart_related_aspects">Connections of this planet</string>
+    <string name="chart_no_aspects">No connections were found for this point in the calculated set.</string>
+    <string name="chart_reset_selection">Show full chart</string>
+</resources>

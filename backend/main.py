@@ -318,6 +318,7 @@ class RegisterRequest(AuthRequest):
 class ProfileIn(BaseModel):
     label: str = Field(..., min_length=1, max_length=120)
     data: dict
+    client_id: Optional[str] = Field(None, min_length=8, max_length=80, pattern=r"^[A-Za-z0-9_-]+$")
 
 
 # --------------------------------------------------------------------------- #
@@ -490,7 +491,7 @@ def api_me(uid: int = Depends(current_user_id)):
     if not user:
         raise HTTPException(status_code=401, detail="Пользователь не найден")
     access = db.get_access_state(uid)
-    return {"username": user["username"], "is_admin": bool(user["is_admin"]),
+    return {"id": uid, "username": user["username"], "is_admin": bool(user["is_admin"]),
             "email": user["email"], "email_verified": bool(user["email_verified"]),
             "premium": access["premium"],
             "premium_until": access["premium_until"],
@@ -925,15 +926,35 @@ def api_list_profiles(uid: int = Depends(current_user_id)):
 
 @app.post("/api/profiles")
 def api_add_profile(profile: ProfileIn, uid: int = Depends(current_user_id)):
-    # Бесплатный тариф — одна карта. Уже сохранённые не удаляются: подписка снова
-    # открывает их все (см. db.list_profiles, поле locked).
-    if not db.is_premium(uid) and db.count_profiles(uid) >= FREE_PROFILE_LIMIT:
-        raise HTTPException(
-            status_code=402,
-            detail="На бесплатном тарифе можно сохранить одну карту. "
-                   "Подписка «Премиум» снимает ограничение и вернёт доступ ко всем сохранённым.",
-        )
-    return db.add_profile(uid, profile.label, profile.data)
+    try:
+        return db.add_profile(uid, profile.label, profile.data, profile.client_id,
+                              limit=None if db.is_premium(uid) else FREE_PROFILE_LIMIT)
+    except db.ProfileDeletedError as exc:
+        raise HTTPException(status_code=409, detail="Создание карты отменено: карта была удалена.") from exc
+    except ValueError as exc:
+        if str(exc) != "profile_limit":
+            raise
+        raise HTTPException(status_code=402, detail="На бесплатном тарифе можно сохранить одну карту. "
+                            "Подписка «Премиум» снимает ограничение и вернёт доступ ко всем сохранённым.") from exc
+
+
+@app.put("/api/profiles/{profile_id}")
+def api_update_profile(profile_id: int, profile: ProfileIn, uid: int = Depends(current_user_id)):
+    updated = db.update_profile(uid, profile_id, profile.label, profile.data)
+    if updated is None:
+        raise HTTPException(status_code=404, detail="Карта не найдена")
+    return updated
+
+
+@app.delete("/api/profiles/by-client")
+def api_discard_profile(client_id: str = Query(..., min_length=8, max_length=80, pattern=r"^[A-Za-z0-9_-]+$"),
+                        uid: int = Depends(current_user_id)):
+    key = f"profile-discard:{uid}"
+    if _rate_limited(key, max_n=120, window=60):
+        raise HTTPException(status_code=429, detail="Слишком много запросов. Попробуйте позже.")
+    _rate_record(key)
+    db.delete_profile_by_client(uid, client_id)
+    return {"ok": True}
 
 
 @app.delete("/api/profiles/{profile_id}")

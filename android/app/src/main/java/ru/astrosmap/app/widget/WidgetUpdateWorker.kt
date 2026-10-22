@@ -18,6 +18,8 @@ import ru.astrosmap.app.astro.AstroEngine
 import ru.astrosmap.app.astro.BirthInput
 import ru.astrosmap.app.data.ChartDao
 import ru.astrosmap.app.data.DailyNotify
+import ru.astrosmap.app.data.TokenStore
+import kotlinx.coroutines.CancellationException
 import ru.astrosmap.app.data.PrimaryChart
 import ru.astrosmap.app.ui.AstroLabels
 import ru.astrosmap.app.ui.LangPref
@@ -41,6 +43,7 @@ class WidgetUpdateWorker @AssistedInject constructor(
     private val engine: AstroEngine,
     private val dao: ChartDao,
     private val api: ru.astrosmap.app.data.api.AstroApi,
+    private val tokens: TokenStore,
 ) : CoroutineWorker(context, params) {
 
     private data class DayData(
@@ -52,6 +55,8 @@ class WidgetUpdateWorker @AssistedInject constructor(
     )
 
     override suspend fun doWork(): Result {
+        val owner = tokens.owner()
+        val token = tokens.get()
         ru.astrosmap.app.editorial.RemoteEditorial.refresh(api)
         // Язык виджета следует за выбором в приложении.
         val lang = LangPref.get(context)
@@ -59,8 +64,13 @@ class WidgetUpdateWorker @AssistedInject constructor(
         val res = localizedContext(lang)
 
         val mgr = AppWidgetManager.getInstance(context)
-        val data = runCatching { enrich(compute()) }.getOrNull()
-        if (data != null) {
+        val data = try {
+            val general = compute()
+            if (owner == null || owner == TokenStore.GUEST) general else enrich(general)
+        } catch (e: CancellationException) { throw e }
+        catch (_: Exception) { null }
+        if (data != null) tokens.withCurrentSession(owner, token) {
+            if (isStopped) return@withCurrentSession
             updateType(mgr, TodayWidgetProvider::class.java) { dayViews(data) }
             updateType(mgr, MoonWidgetProvider::class.java) { moonViews(data) }
             updateType(mgr, AdviceWidgetProvider::class.java) { adviceViews(res, data) }
@@ -71,6 +81,24 @@ class WidgetUpdateWorker @AssistedInject constructor(
         }
         WidgetUpdater.scheduleMidnight(context) // следующий показ — в полночь
         return Result.success()
+    }
+
+    companion object {
+        /** Only these two text fields can contain names/transits. Retain widget artwork and clicks. */
+        fun clearPersonalizedViews(context: Context) {
+            val manager = AppWidgetManager.getInstance(context)
+            val text = context.getString(R.string.widget_session_refresh)
+            listOf(
+                Triple(AdviceWidgetProvider::class.java, R.layout.widget_advice, R.id.wa_text),
+                Triple(CalendarWidgetProvider::class.java, R.layout.widget_calendar, R.id.wc_event),
+            ).forEach { (provider, layout, field) ->
+                val ids = manager.getAppWidgetIds(ComponentName(context, provider))
+                if (ids.isNotEmpty()) {
+                    val update = RemoteViews(context.packageName, layout).apply { setTextViewText(field, text) }
+                    manager.partiallyUpdateAppWidget(ids, update)
+                }
+            }
+        }
     }
 
     private fun localizedContext(lang: String): Context {

@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <full-backup-content>
+    <!-- Sessions/entitlements are revalidated after restore. User charts and pet preferences remain recoverable. -->
+    <exclude domain="file" path="datastore/auth.preferences_pb" />
+    <exclude domain="sharedpref" path="settings.xml" />
+    <exclude domain="sharedpref" path="forecast_history_v1.xml" />
+    <exclude domain="sharedpref" path="forecast_access_v1.xml" />
     <exclude domain="database" path="journal_v2.db" />
     <exclude domain="database" path="journal_v2.db-shm" />
     <exclude domain="database" path="journal_v2.db-wal" />
     <exclude domain="sharedpref" path="journal_owner.xml" />
+        <exclude domain="sharedpref" path="event_reminders_v176.xml" />
 </full-backup-content>

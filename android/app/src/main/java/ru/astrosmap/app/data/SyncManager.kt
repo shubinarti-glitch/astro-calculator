@@ -1,11 +1,8 @@
 package ru.astrosmap.app.data
 
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.doubleOrNull
-import kotlinx.serialization.json.intOrNull
 import retrofit2.HttpException
 import ru.astrosmap.app.data.api.AstroApi
 import ru.astrosmap.app.data.api.NatalRequest
@@ -13,13 +10,7 @@ import ru.astrosmap.app.data.api.ProfileUpload
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Двусторонняя синхронизация сохранённых карт с кабинетом сайта (/api/profiles).
- *
- * У API нет правки профиля, поэтому изменение = удалить + создать заново.
- * Правила: локальные dirty-правки побеждают; иначе сервер — источник истины
- * (карта, пропавшая на сервере, удаляется и локально).
- */
+/** Account-scoped sync. Updates are atomic; retries retain stable client identity. */
 @Singleton
 class SyncManager @Inject constructor(
     private val api: AstroApi,
@@ -28,65 +19,80 @@ class SyncManager @Inject constructor(
     private val cities: CityStore,
 ) {
     private val mutex = Mutex()
+    private val backgroundScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO)
+
+    /** A confirmed local deletion must keep syncing even after its screen closes. */
+    fun requestSync() { backgroundScope.launch { sync() } }
 
     /** true — синхронизация прошла (или не нужна: нет входа); false — сеть/сервер недоступны. */
     suspend fun sync(): Boolean = mutex.withLock {
-        tokenStore.get() ?: return true
+        val token = tokenStore.get() ?: return true
+        val authorization = "Bearer $token"
         try {
+            val me = api.me(authorization)
+            val uid = me.id ?: return false // Older server: fail closed, never guess ownership.
+            if (!tokenStore.bindOwner(token, uid)) return false
+            val owner = "user:$uid"
+            suspend fun current() = tokenStore.get() == token && tokenStore.owner() == owner
+            if (!current()) return false
+            var complete = true
             val local = dao.allOnce()
-
-            // 1. Отложенные удаления.
             for (e in local.filter { it.pendingDelete }) {
+                if (!current()) return false
+                // This acknowledgement installs a server-side cancellation nonce even if
+                // POST's response was lost or its transaction has not reached the server yet.
+                // Older servers return 404/405/422: keep the local tombstone and retry later.
+                api.discardProfile(e.clientId, authorization)
+                if (!current()) return false
                 e.serverId?.let { sid ->
-                    try {
-                        api.deleteProfile(sid)
-                    } catch (ex: HttpException) {
-                        if (ex.code() != 404) throw ex // 404 = уже удалена, ок
-                    }
+                    try { api.deleteProfile(sid, authorization) }
+                    catch (ex: HttpException) { if (ex.code() != 404) throw ex }
                 }
+                if (!current()) return false
                 dao.delete(e.id)
             }
-
-            // 2. Правки синхронизированных карт: пересоздаём профиль.
-            for (e in local.filter { it.dirty && !it.pendingDelete && it.serverId != null }) {
-                try {
-                    api.deleteProfile(e.serverId!!)
+            for (e in local.filter { !it.pendingDelete && (it.dirty || it.serverId == null) }) {
+                if (!current()) return false
+                val created = try {
+                    if (e.serverId != null) {
+                        // No destructive delete/create fallback, even against an older server.
+                        api.updateProfile(e.serverId, upload(e), authorization)
+                    } else api.addProfile(upload(e), authorization)
                 } catch (ex: HttpException) {
-                    if (ex.code() != 404) throw ex
+                    if (ex.code() == 402) { complete = false; continue } else throw ex
                 }
-                val created = api.addProfile(upload(e))
-                dao.markSynced(e.id, created.id)
+                if (!current()) return false
+                dao.markSynced(e, created.id)
             }
-
-            // 3. Новые локальные — на сервер.
-            for (e in local.filter { it.serverId == null && !it.pendingDelete }) {
-                val created = api.addProfile(upload(e))
-                dao.markSynced(e.id, created.id)
-            }
-
-            // 4. Забираем сервер: новое добавляем, пропавшее удаляем.
-            val server = api.profiles()
+            if (!current()) return false
+            val server = api.profiles(authorization)
+            if (!current()) return false
             val fresh = dao.allOnce()
             val localByServerId = fresh.filter { it.serverId != null }.associateBy { it.serverId!! }
             for (p in server) {
-                if (p.id !in localByServerId) {
-                    fromServer(p.id, p.label, p.data)?.let { dao.upsert(it) }
+                if (!current()) return false
+                val incoming = ProfileChartMapper.fromServer(p.id, p.label, p.data, owner, cities::nearestTz) ?: continue
+                val existing = localByServerId[p.id]
+                if (existing == null) dao.upsert(incoming)
+                else if (!existing.dirty && !existing.pendingDelete) {
+                    dao.mergeServer(incoming.copy(id = existing.id), existing.updatedAt)
                 }
             }
-            val serverIds = server.map { it.id }.toSet()
-            for (e in fresh) {
-                if (e.serverId != null && e.serverId !in serverIds && !e.dirty) dao.delete(e.id)
-            }
-            true
+            // Retain absent records locally. A stale/partial response must never erase user data.
+            // Explicit local deletion remains supported above.
+            complete
+        } catch (ex: kotlinx.coroutines.CancellationException) {
+            throw ex
         } catch (ex: HttpException) {
-            if (ex.code() == 401) tokenStore.clear()
+            if (ex.code() == 401) tokenStore.clearIf(token)
             false
         } catch (ex: Exception) {
-            false // офлайн — попробуем в следующий раз
+            false
         }
     }
 
     private fun upload(e: ChartEntity) = ProfileUpload(
+        clientId = e.clientId,
         label = e.name,
         data = NatalRequest(
             name = e.name, year = e.year, month = e.month, day = e.day,
@@ -95,26 +101,4 @@ class SyncManager @Inject constructor(
         ),
     )
 
-    /** Профиль сайта -> локальная карта; кривые данные пропускаем. */
-    private fun fromServer(serverId: Long, label: String, data: JsonObject): ChartEntity? {
-        fun int(key: String): Int? = (data[key] as? JsonPrimitive)?.intOrNull
-        fun dbl(key: String): Double? = (data[key] as? JsonPrimitive)?.doubleOrNull
-        fun str(key: String): String? = (data[key] as? JsonPrimitive)?.takeIf { it.isString }?.content
-
-        val year = int("year") ?: return null
-        val month = int("month") ?: return null
-        val day = int("day") ?: return null
-        val lat = dbl("lat") ?: return null
-        val lng = dbl("lng") ?: return null
-        // Сайт может не хранить таймзону — берём зону ближайшего города из офлайн-базы.
-        val tz = str("tz_str").takeUnless { it.isNullOrBlank() } ?: cities.nearestTz(lat, lng) ?: "UTC"
-        return ChartEntity(
-            serverId = serverId,
-            name = label,
-            year = year, month = month, day = day,
-            hour = int("hour") ?: 12, minute = int("minute") ?: 0,
-            lat = lat, lng = lng, tz = tz,
-            city = str("city").orEmpty(),
-        )
-    }
 }

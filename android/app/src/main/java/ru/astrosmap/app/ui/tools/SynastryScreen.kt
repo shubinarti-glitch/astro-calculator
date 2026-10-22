@@ -29,6 +29,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.ensureActive
 import ru.astrosmap.app.R
 import ru.astrosmap.app.data.ChartDao
 import ru.astrosmap.app.data.api.AstroApi
@@ -47,6 +48,7 @@ class SynastryViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val dao: ChartDao,
     private val api: AstroApi,
+    private val tokenStore: ru.astrosmap.app.data.TokenStore,
 ) : ViewModel() {
 
     private val idA: Long = savedStateHandle.get<String>("a")?.toLongOrNull() ?: 0L
@@ -65,21 +67,40 @@ class SynastryViewModel @Inject constructor(
     val history: StateFlow<List<SynastrySnapshot>> = _history
     private var currentData: JsonObject? = null
 
+    private var loadJob: kotlinx.coroutines.Job? = null
+
     init {
         load()
     }
 
     fun load() {
+        loadJob?.cancel()
         _state.value = ReportState.Loading
-        viewModelScope.launch {
-            val a = dao.byId(idA) ?: return@launch
-            val b = dao.byId(idB) ?: return@launch
+        loadJob = viewModelScope.launch {
+            val token = tokenStore.get()
+            val a = dao.byId(idA) ?: run {
+                if (tokenStore.get() == token) _state.value = ReportState.MissingChart
+                return@launch
+            }
+            val b = dao.byId(idB) ?: run {
+                if (tokenStore.get() == token) _state.value = ReportState.MissingChart
+                return@launch
+            }
+            if (a.ownerKey != b.ownerKey || dao.owner() != a.ownerKey || tokenStore.get() != token) return@launch
             title = "${a.name} + ${b.name}"
-            _access.value = runCatching { api.me().accessState() }.getOrDefault(AccessState())
+            _access.value = if (token == null) AccessState() else try {
+                api.me(authorization = "Bearer $token").accessState()
+            } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+            catch (_: Exception) { AccessState() }
+            if (dao.owner() != a.ownerKey || tokenStore.get() != token) return@launch
             val request = SynastryApiRequest(a.toNatalRequest(), b.toNatalRequest())
             val loaded = loadReport {
-                if (_access.value.premium) api.synastry(request) else api.synastryPreview(request)
+                ensureActive()
+                val authorization = token?.let { "Bearer $it" } ?: ""
+                if (_access.value.premium) api.synastry(request, authorization = authorization) else api.synastryPreview(request, authorization)
             }
+            ensureActive()
+            if (tokenStore.get() != token || dao.owner() != a.ownerKey) return@launch
             _state.value = loaded
             if (loaded is ReportState.Ready) {
                 currentData = loaded.data

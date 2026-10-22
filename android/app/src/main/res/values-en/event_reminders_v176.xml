@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="event_reminder_add">Remind me about this event</string>
+    <string name="event_reminder_cancel">Cancel reminder</string>
+    <string name="event_reminder_title">Event reminder</string>
+    <string name="event_reminder_time">Time: %1$02d:%2$02d</string>
+    <string name="event_reminder_approximate">The notification will arrive around the selected time in this city. Android may delay it to save battery.</string>
+    <string name="event_reminder_invalid">Choose a future time on this date. Ambiguous or missing clock times during daylight saving changes cannot be used.</string>
+    <string name="event_reminder_confirm">Create reminder</string>
+    <string name="event_reminder_saved">Reminder created. You can cancel it using the same button.</string>
+    <string name="event_reminder_failed">Could not create the reminder. Check notification permission and the current profile; up to 50 events are supported.</string>
+    <string name="event_reminder_permission">Notifications are not allowed. Enable them in the system app settings if you want this reminder.</string>
+</resources>

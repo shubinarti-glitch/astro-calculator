@@ -25,6 +25,7 @@ object ChartDraftHolder {
 @HiltViewModel
 class ChartFormViewModel @Inject constructor(
     private val cities: CityStore,
+    private val tokens: ru.astrosmap.app.data.TokenStore,
     private val analytics: ru.astrosmap.app.data.Analytics,
 ) : ViewModel() {
 
@@ -39,11 +40,31 @@ class ChartFormViewModel @Inject constructor(
     var selectedCity by mutableStateOf<CityStore.City?>(null)
     var errorRes by mutableStateOf<Int?>(null)
 
+    private var citySearch: kotlinx.coroutines.Job? = null
+    private var cityRequest = 0
+    private fun cancelCitySearch() { citySearch?.cancel(); citySearch = null; cityRequest++ }
+
     private var editingId = 0L
     private var serverId: Long? = null
+    private var editingOwner: String? = null
+    private var clientId = java.util.UUID.randomUUID().toString()
 
     init {
         maybeConsumeEdit()
+        viewModelScope.launch {
+            var previous = tokens.owner()
+            tokens.owners.collect { owner ->
+                if (owner != previous) {
+                    previous = owner
+                    cancelCitySearch()
+                    name = ""; day = ""; month = ""; year = ""; hour = "12"; minute = "0"
+                    cityQuery = ""; selectedCity = null; suggestions = emptyList()
+                    editingId = 0; serverId = null; editingOwner = null
+                    clientId = java.util.UUID.randomUUID().toString()
+                    ChartDraftHolder.pending = null; ChartDraftHolder.editRequest = null
+                }
+            }
+        }
     }
 
     /** Подхватывает запрос «Редактировать». Зовётся и из init, и при каждом показе формы —
@@ -51,8 +72,13 @@ class ChartFormViewModel @Inject constructor(
     fun maybeConsumeEdit() {
         ChartDraftHolder.editRequest?.let { e ->
             ChartDraftHolder.editRequest = null
+            cancelCitySearch()
+            suggestions = emptyList()
+            if (tokens.owners.value != e.ownerKey) return
             editingId = e.id
             serverId = e.serverId
+            editingOwner = e.ownerKey
+            clientId = e.clientId
             name = e.name
             day = e.day.toString(); month = e.month.toString(); year = e.year.toString()
             hour = e.hour.toString(); minute = e.minute.toString()
@@ -63,14 +89,24 @@ class ChartFormViewModel @Inject constructor(
     }
 
     fun onCityQuery(q: String) {
+        cancelCitySearch()
         cityQuery = q
         selectedCity = null
-        viewModelScope.launch {
-            suggestions = withContext(Dispatchers.IO) { cities.search(q) }
+        suggestions = emptyList()
+        val owner = tokens.owners.value ?: return
+        if (q.isBlank()) return
+        val request = cityRequest
+        citySearch = viewModelScope.launch {
+            kotlinx.coroutines.delay(200)
+            val result = withContext(Dispatchers.IO) { cities.search(q) }
+            if (cityRequest == request && cityQuery == q && selectedCity == null && tokens.owners.value == owner) {
+                suggestions = result
+            }
         }
     }
 
     fun pickCity(city: CityStore.City) {
+        cancelCitySearch()
         selectedCity = city
         cityQuery = city.label(AstroLabels.isRu())
         suggestions = emptyList()
@@ -82,6 +118,8 @@ class ChartFormViewModel @Inject constructor(
     /** Проверяет ввод и кладёт черновик; true — можно открывать экран карты. */
     fun calculate(): Boolean {
         errorRes = null
+        val owner = tokens.owners.value ?: run { errorRes = R.string.net_error; return false }
+        if (editingOwner != null && editingOwner != owner) { errorRes = R.string.net_error; return false }
         val city = selectedCity ?: run { errorRes = R.string.form_pick_city; return false }
         val d = day.toIntOrNull(); val mo = month.toIntOrNull(); val y = year.toIntOrNull()
         val h = hour.toIntOrNull(); val mi = minute.toIntOrNull()
@@ -90,14 +128,14 @@ class ChartFormViewModel @Inject constructor(
         if (!valid) { errorRes = R.string.form_bad_date; return false }
 
         ChartDraftHolder.pending = ChartEntity(
-            id = editingId,
+            id = editingId, ownerKey = owner, clientId = clientId,
             serverId = serverId,
             name = name.ifBlank { if (AstroLabels.isRu()) "Без имени" else "Untitled" },
             year = y!!, month = mo!!, day = d!!, hour = h!!, minute = mi!!,
             lat = city.lat, lng = city.lng, tz = city.tz,
             city = cityQuery,
         )
-        analytics.track("chart_created", mapOf("edit" to (editingId != 0L).toString()))
+        analytics.track("chart_requested", mapOf("edit" to (editingId != 0L).toString()))
         return true
     }
 }

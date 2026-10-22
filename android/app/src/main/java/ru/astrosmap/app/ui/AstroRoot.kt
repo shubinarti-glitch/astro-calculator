@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
@@ -18,6 +19,8 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.key
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -59,16 +62,31 @@ enum class Section(val route: String, val titleRes: Int, val iconRes: Int) {
 
 @Composable
 fun AstroRoot(notificationRoute: String? = null, onNotificationRouteHandled: () -> Unit = {}) {
+    val session = androidx.hilt.navigation.compose.hiltViewModel<ru.astrosmap.app.ui.journal.AdviceNavigationViewModel>()
+    val owner by session.owners.collectAsState()
+    // A fresh graph discards old account ViewModels and saved report back stacks.
+    key(owner) { AstroSessionRoot(notificationRoute, onNotificationRouteHandled) }
+}
+
+@Composable
+private fun AstroSessionRoot(notificationRoute: String?, onNotificationRouteHandled: () -> Unit) {
     val navController = rememberNavController()
+    val adviceNavigation = androidx.hilt.navigation.compose.hiltViewModel<ru.astrosmap.app.ui.journal.AdviceNavigationViewModel>()
+    val adviceDraft by adviceNavigation.draft.collectAsState()
+    val sessionOwner by adviceNavigation.owners.collectAsState()
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
     var hintedIndex by remember { mutableIntStateOf(-1) }
     val compactLabels = LocalDensity.current.fontScale >= 1.3f
 
-    NotificationOptInPrompt()
+    NotificationOptInPrompt(eligible = currentRoute == Section.Today.route)
 
     LaunchedEffect(notificationRoute) {
         val route = notificationRoute ?: return@LaunchedEffect
+        if (route !in setOf("today", "tarot", "luncal")) {
+            onNotificationRouteHandled()
+            return@LaunchedEffect
+        }
         navController.currentBackStackEntryFlow.first()
         navController.navigate(route) { launchSingleTop = true }
         onNotificationRouteHandled()
@@ -160,7 +178,7 @@ fun AstroRoot(notificationRoute: String? = null, onNotificationRouteHandled: () 
             }
         },
     ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding)) {
+        Box(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
             ru.astrosmap.app.ui.theme.StarryBackground()
             NavHost(
                 navController = navController,
@@ -202,11 +220,15 @@ fun AstroRoot(notificationRoute: String? = null, onNotificationRouteHandled: () 
                 )
             }
             composable("luncal") { ru.astrosmap.app.ui.tools.LunarCalendarScreen() }
-            composable("journal") { ru.astrosmap.app.ui.journal.JournalScreen() }
+            composable("journal") {
+                ru.astrosmap.app.ui.journal.JournalScreen(adviceDraft = adviceDraft, onAdviceConsumed = adviceNavigation::clear)
+            }
             composable("transit/{id}") { ru.astrosmap.app.ui.tools.TransitScreen() }
             composable("progression/{id}") { ru.astrosmap.app.ui.tools.ProgressionScreen() }
             composable("forecast/{id}") {
-                ru.astrosmap.app.ui.tools.ForecastScreen(onSelectChart = {
+                ru.astrosmap.app.ui.tools.ForecastScreen(onJournalAdvice = { date, advice, source ->
+                    adviceNavigation.prepare(date, advice, sessionOwner, source) { navController.navigate("journal") { launchSingleTop = true } }
+                }, onSelectChart = {
                     navController.navigate(Section.Saved.route) {
                         popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                         launchSingleTop = true
@@ -229,7 +251,9 @@ fun AstroRoot(notificationRoute: String? = null, onNotificationRouteHandled: () 
                 )
             }
             }
-            ru.astrosmap.app.ui.assistant.FloatingAssistant(currentRoute)
+            ru.astrosmap.app.ui.assistant.FloatingAssistant(currentRoute, onNavigate = { destination ->
+                navController.navigate(destination) { launchSingleTop = true }
+            })
         }
     }
 }

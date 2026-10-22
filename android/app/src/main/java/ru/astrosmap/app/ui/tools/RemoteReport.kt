@@ -31,23 +31,43 @@ sealed interface ReportState {
     data object NeedPremium : ReportState
     data object NeedAuth : ReportState
     data object Offline : ReportState
+    data object Forbidden : ReportState
+    data object RateLimited : ReportState
+    data object InvalidRequest : ReportState
+    data object ServerError : ReportState
+    data object UnexpectedError : ReportState
     data object MissingChart : ReportState
     data class Ready(val data: JsonObject) : ReportState
 }
 
-/** Единая обработка ошибок серверных отчётов: 402 — подписка, 401 — вход, прочее — офлайн. */
+/** Distinguish transport, access and server failures without exposing server response bodies. */
+internal fun reportFailure(error: Exception): ReportState = when (error) {
+    is HttpException -> when (error.code()) {
+        401 -> ReportState.NeedAuth
+        402 -> ReportState.NeedPremium
+        403 -> ReportState.Forbidden
+        429 -> ReportState.RateLimited
+        400, 404, 409, 422 -> ReportState.InvalidRequest
+        in 500..599 -> ReportState.ServerError
+        else -> ReportState.UnexpectedError
+    }
+    is java.io.IOException -> ReportState.Offline
+    else -> ReportState.UnexpectedError
+}
+
+/** Identity denial is terminal even for a free snapshot with an empty entitlement set. */
+internal fun reportIdentityDenied(state: ReportState, authenticated: Boolean): Boolean =
+    authenticated && (state == ReportState.NeedAuth || state == ReportState.Forbidden)
+
+internal fun reportAllowsCachedResult(state: ReportState): Boolean =
+    state == ReportState.Offline || state == ReportState.ServerError
+
 suspend fun loadReport(block: suspend () -> JsonObject): ReportState = try {
     ReportState.Ready(block())
 } catch (e: CancellationException) {
     throw e
-} catch (e: HttpException) {
-    when (e.code()) {
-        402 -> ReportState.NeedPremium
-        401 -> ReportState.NeedAuth
-        else -> ReportState.Offline
-    }
 } catch (e: Exception) {
-    ReportState.Offline
+    reportFailure(e)
 }
 
 /** Каркас экрана отчёта: гейты подписки/входа/сети, контент — только для Ready. */
@@ -78,7 +98,19 @@ fun ReportScaffold(
         ReportState.Offline -> CenteredNote(stringResource(R.string.net_error)) {
             Button(onClick = onRetry) { Text(stringResource(R.string.retry)) }
         }
+        ReportState.Forbidden -> CenteredNote(stringResource(R.string.report_forbidden_v176)) {}
+        ReportState.RateLimited -> RetryNote(R.string.report_rate_limit_v176, onRetry)
+        ReportState.InvalidRequest -> CenteredNote(stringResource(R.string.report_invalid_v176)) {}
+        ReportState.ServerError -> RetryNote(R.string.report_server_v176, onRetry)
+        ReportState.UnexpectedError -> RetryNote(R.string.report_unexpected_v176, onRetry)
         is ReportState.Ready -> content(state.data)
+    }
+}
+
+@Composable
+private fun RetryNote(message: Int, onRetry: () -> Unit) {
+    CenteredNote(stringResource(message)) {
+        Button(onClick = onRetry) { Text(stringResource(R.string.retry)) }
     }
 }
 

@@ -15,6 +15,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
 import org.junit.Assume.assumeTrue
@@ -36,21 +38,10 @@ class ForecastOfflineJourneyTest {
     )
 
     companion object {
-        private fun launchIntent(): Intent {
-            val context = InstrumentationRegistry.getInstrumentation().targetContext
-            val intent = Intent(context, MainActivity::class.java)
-            val name = InstrumentationRegistry.getArguments().getString("qaName")
-            if (name?.matches(Regex("QA-forecast-[0-9a-f-]{36}")) != true) return intent
-            val id = SQLiteDatabase.openDatabase(context.getDatabasePath("charts.db").absolutePath, null, SQLiteDatabase.OPEN_READONLY).use { db ->
-                db.rawQuery("SELECT id FROM charts WHERE name = ?", arrayOf(name)).use { cursor ->
-                    check(cursor.moveToFirst())
-                    val result = cursor.getLong(0)
-                    check(!cursor.moveToNext())
-                    result
-                }
-            }
-            return intent.putExtra("notification_route", "forecast/$id")
-        }
+        private fun launchIntent(): Intent = Intent(
+            InstrumentationRegistry.getInstrumentation().targetContext,
+            MainActivity::class.java,
+        )
     }
     private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
     private fun label(id: Int) = compose.activity.getString(id)
@@ -69,6 +60,40 @@ class ForecastOfflineJourneyTest {
             compose.onAllNodesWithText(text, substring = substring).fetchSemanticsNodes().isNotEmpty()
         }
     }
+    /** Follow the same route as a person; notification destinations remain production-restricted. */
+    private fun openExactForecast(name: String) {
+        check(name.matches(Regex("QA-forecast-[0-9a-f-]{36}")))
+        val context = instrumentation.targetContext
+        SQLiteDatabase.openDatabase(context.getDatabasePath("charts.db").absolutePath, null, SQLiteDatabase.OPEN_READONLY).use { db ->
+            db.rawQuery("SELECT id FROM charts WHERE name = ?", arrayOf(name)).use { cursor ->
+                check(cursor.moveToFirst()) { "Synthetic acceptance chart missing" }
+                check(!cursor.moveToNext()) { "Synthetic acceptance chart duplicated" }
+            }
+        }
+        waitForText(label(R.string.nav_cards_short))
+        compose.onNodeWithText(label(R.string.nav_cards_short)).performClick()
+        waitForText(label(R.string.search))
+        compose.onNode(androidx.compose.ui.test.hasSetTextAction()).performClick()
+        compose.waitUntil(15_000) {
+            androidx.core.view.ViewCompat.getRootWindowInsets(compose.activity.window.decorView)
+                ?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime()) == true
+        }
+        compose.onNode(androidx.compose.ui.test.hasSetTextAction()).performTextReplacement(name)
+        val card = hasText(name) and !androidx.compose.ui.test.hasSetTextAction()
+        compose.waitUntil(90_000) { compose.onAllNodes(card).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(card).performScrollTo().performClick()
+        waitForText(label(R.string.forecast_chart_open))
+        compose.waitUntil(5_000) {
+            androidx.core.view.ViewCompat.getRootWindowInsets(compose.activity.window.decorView)
+                ?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime()) != true
+        }
+        compose.onNodeWithText(label(R.string.forecast_chart_open)).performScrollTo().performClick()
+        compose.waitUntil(90_000) {
+            compose.onAllNodesWithText(label(R.string.forecast_period_this_month)).fetchSemanticsNodes().isNotEmpty()
+        }
+        waitForText(label(R.string.tools_forecast) + " · ", substring = true)
+    }
+
     private fun selectPeriod(labelRes: Int) {
         compose.onNodeWithText(label(labelRes)).performScrollTo().performClick()
     }
@@ -78,24 +103,19 @@ class ForecastOfflineJourneyTest {
         assumeTrue("Explicit synthetic card is required", name?.matches(Regex("QA-forecast-[0-9a-f-]{36}")) == true)
         assumeTrue("Local API only", BuildConfig.BASE_URL == "http://10.0.2.2:8000/")
         val context = instrumentation.targetContext
-        val id = SQLiteDatabase.openDatabase(context.getDatabasePath("charts.db").absolutePath, null, SQLiteDatabase.OPEN_READONLY).use { db ->
-            db.rawQuery("SELECT id FROM charts WHERE name = ?", arrayOf(name!!)).use { cursor ->
-                check(cursor.moveToFirst()) { "Synthetic acceptance chart missing" }
-                val result = cursor.getLong(0)
-                check(!cursor.moveToNext()) { "Synthetic acceptance chart duplicated" }
-                result
-            }
-        }
         val resolver = context.contentResolver
         val previousFont = Settings.System.getFloat(resolver, Settings.System.FONT_SCALE, 1f)
         val wifi = Settings.Global.getInt(resolver, "wifi_on", 1) != 0
         val mobile = Settings.Global.getInt(resolver, "mobile_data", 1) != 0
         val previousSize = Regex("Override size: (\\d+x\\d+)").find(shell("wm size"))?.groupValues?.get(1)
         try {
-            // The rule launches the actual activity with the exact synthetic card route.
+            openExactForecast(name!!)
+            // The actual saved-chart and forecast controls opened the synthetic report.
             compose.waitUntil(90_000) { compose.onAllNodes(hasScrollToIndexAction()).fetchSemanticsNodes().isNotEmpty() }
             compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText(label(R.string.forecast_interpretation_label)))
             capture("forecast-live.png")
+            // The cache banner is the first lazy item, outside the interpretation viewport.
+            compose.onNode(hasScrollToIndexAction()).performScrollToIndex(0)
             shell("svc wifi disable")
             shell("svc data disable")
             selectPeriod(R.string.forecast_period_this_month)
@@ -124,11 +144,14 @@ class ForecastOfflineJourneyTest {
         assumeTrue(name?.matches(Regex("QA-forecast-[0-9a-f-]{36}")) == true)
         assumeTrue(captureName in setOf("forecast-small-screen.png", "forecast-light-theme.png"))
         assumeTrue(BuildConfig.BASE_URL == "http://10.0.2.2:8000/")
+        openExactForecast(name!!)
         compose.waitUntil(90_000) { compose.onAllNodes(hasScrollToIndexAction()).fetchSemanticsNodes().isNotEmpty() }
         val cachedPrefix = label(R.string.forecast_cached_at).substringBefore('%').trim()
         waitForText(cachedPrefix, true)
         if (captureName == "forecast-small-screen.png") {
             org.junit.Assert.assertEquals(840f, compose.onRoot().fetchSemanticsNode().boundsInRoot.width, 1f)
+            org.junit.Assert.assertTrue("Configured large-text test requires 200% font",
+                compose.activity.resources.configuration.fontScale >= 1.9f)
         } else {
             org.junit.Assert.assertEquals(android.content.res.Configuration.UI_MODE_NIGHT_NO,
                 compose.activity.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK)

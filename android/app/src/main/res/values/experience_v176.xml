@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="journal_legacy_title_v176">Прежние записи на устройстве</string>
+    <string name="journal_legacy_explain_v176">На устройстве есть записи старой версии с таким же именем аккаунта. Это не подтверждает, что они принадлежат текущему аккаунту. Импортируйте их только если это ваши записи. Существующие записи не будут заменены.</string>
+    <string name="journal_legacy_confirm_v176">Это мои записи — импортировать</string>
+    <string name="assistant_hint_journal_v176">Здесь можно отметить настроение и события дня. Выберите дату, добавьте заметку и сохраните её. Это ваш личный дневник.</string>
+    <string name="assistant_hint_calendar_v176">Выберите день в календаре, чтобы посмотреть лунный фон и личные события. В прогнозах можно отдельно указать город пребывания.</string>
+    <string name="assistant_hint_return_v176">Здесь показаны темы выбранного цикла. Начните с трактовки и совета; технические данные помогут разобраться в основании расчёта.</string>
+    <string name="assistant_hint_synastry_v176">Это сравнение двух карт. Читайте трактовки взаимодействия, а не только список аспектов. Они помогают обсудить различия и ожидания.</string>
+    <string name="assistant_hint_progression_v176">Здесь можно посмотреть долгосрочные изменения. Выберите дату, затем прочитайте трактовку и практический совет.</string>
+    <string name="assistant_open_diary_v176">Открыть дневник</string>
+    <string name="assistant_open_charts_v176">Выбрать карту</string>
+    <string name="assistant_open_tools_v176">Открыть прогнозы</string>
+    <string name="journal_advice_title_v176">Совет из прогноза</string>
+    <string name="journal_advice_add_v176">Добавить к заметке</string>
+    <string name="journal_advice_added_v176">Совет добавлен к заметке. Сохраните запись, когда закончите.</string>
+    <string name="journal_session_loading_v176">Проверяем доступ к дневнику…</string>
+</resources>

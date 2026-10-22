@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="event_reminder_add">Напомнить об этом событии</string>
+    <string name="event_reminder_cancel">Отменить напоминание</string>
+    <string name="event_reminder_title">Напоминание о событии</string>
+    <string name="event_reminder_time">Время: %1$02d:%2$02d</string>
+    <string name="event_reminder_approximate">Уведомление придёт примерно в выбранное время по указанному городу. Android может задержать его для экономии батареи.</string>
+    <string name="event_reminder_invalid">Выберите будущее время этой даты. Неоднозначное или отсутствующее время при переводе часов не подходит.</string>
+    <string name="event_reminder_confirm">Создать напоминание</string>
+    <string name="event_reminder_saved">Напоминание создано. Его можно отменить этой же кнопкой.</string>
+    <string name="event_reminder_failed">Не удалось создать напоминание. Проверьте разрешение на уведомления и текущий профиль; максимум — 50 событий.</string>
+    <string name="event_reminder_permission">Уведомления не разрешены. Включите их в системных настройках приложения, если хотите получить напоминание.</string>
+</resources>

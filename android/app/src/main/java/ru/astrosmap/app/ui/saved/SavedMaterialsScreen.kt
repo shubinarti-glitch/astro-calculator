@@ -34,7 +34,6 @@ import ru.astrosmap.app.data.SavedMaterial
 import ru.astrosmap.app.data.SavedMaterialDb
 import ru.astrosmap.app.data.SavedMaterialPolicy
 
-private const val LOCAL_OWNER = "local"
 
 @Composable
 fun SaveMaterialButton(
@@ -44,20 +43,24 @@ fun SaveMaterialButton(
     body: String,
     premium: Boolean,
     modifier: Modifier = Modifier,
+    ownerViewModel: SavedMaterialsViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val owner by ownerViewModel.tokens.owners.collectAsState()
     var message by remember { mutableStateOf<Int?>(null) }
     TextButton(
         onClick = {
             scope.launch {
+                val capturedOwner = owner ?: return@launch
+                if (ownerViewModel.tokens.owner() != capturedOwner) return@launch
                 val dao = SavedMaterialDb.get(context).dao()
-                if (!SavedMaterialPolicy.canAdd(dao.count(LOCAL_OWNER), premium)) {
+                if (!SavedMaterialPolicy.canAdd(dao.count(capturedOwner), premium)) {
                     message = R.string.material_limit
                 } else {
                     dao.upsert(
                         SavedMaterial(
-                            sourceType = sourceType.take(32), sourceId = sourceId.take(100),
+                            ownerKey = capturedOwner, sourceType = sourceType.take(32), sourceId = sourceId.take(100),
                             title = title.take(160), body = body.take(20_000),
                         ),
                     )
@@ -65,7 +68,7 @@ fun SaveMaterialButton(
                 }
             }
         },
-        enabled = body.isNotBlank(),
+        enabled = body.isNotBlank() && owner != null,
         modifier = modifier,
     ) { Text(stringResource(R.string.material_save)) }
     message?.let { Text(stringResource(it), style = MaterialTheme.typography.bodySmall) }
@@ -75,13 +78,16 @@ fun SaveMaterialButton(
 fun SavedMaterialsScreen(viewModel: SavedMaterialsViewModel = hiltViewModel()) {
     val context = LocalContext.current
     val dao = remember { SavedMaterialDb.get(context).dao() }
-    val all by remember { dao.observe(LOCAL_OWNER) }.collectAsState(initial = emptyList())
+    val owner by viewModel.tokens.owners.collectAsState()
+    val all by remember(owner) { owner?.let { dao.observe(it) } ?: kotlinx.coroutines.flow.flowOf(emptyList()) }.collectAsState(initial = emptyList())
+    val scope = rememberCoroutineScope()
     val access by viewModel.access.collectAsState()
     var query by remember { mutableStateOf("") }
     var folder by remember { mutableStateOf("") }
     var expandedIds by remember { mutableStateOf(emptySet<String>()) }
     var editing by remember { mutableStateOf<SavedMaterial?>(null) }
     var deleting by remember { mutableStateOf<SavedMaterial?>(null) }
+    androidx.compose.runtime.LaunchedEffect(owner) { editing = null; deleting = null; expandedIds = emptySet() }
     val folders = remember(all) { all.map { it.folder.trim() }.filter { it.isNotEmpty() }.distinct().sorted() }
     val visible = remember(all, query, folder) {
         all.filter { value ->
@@ -139,7 +145,10 @@ fun SavedMaterialsScreen(viewModel: SavedMaterialsViewModel = hiltViewModel()) {
     }
 
     editing?.let { current -> MaterialEditor(current, access.pdfAllowed, onClose = { editing = null }) { updated ->
-        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch { dao.upsert(updated) }
+        scope.launch {
+            val active = viewModel.tokens.owner()
+            if (active != null && (updated.ownerKey == active || active == "guest" && updated.ownerKey == "local")) dao.upsert(updated)
+        }
         editing = null
     } }
     deleting?.let { current ->
@@ -148,7 +157,10 @@ fun SavedMaterialsScreen(viewModel: SavedMaterialsViewModel = hiltViewModel()) {
             title = { Text(stringResource(R.string.delete_confirm)) },
             confirmButton = {
                 Button(onClick = {
-                    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch { dao.delete(current.id, LOCAL_OWNER) }
+                    scope.launch {
+                        val active = viewModel.tokens.owner()
+                        if (active != null && (current.ownerKey == active || active == "guest" && current.ownerKey == "local")) dao.delete(current.id, current.ownerKey)
+                    }
                     deleting = null
                 }) { Text(stringResource(R.string.delete)) }
             },

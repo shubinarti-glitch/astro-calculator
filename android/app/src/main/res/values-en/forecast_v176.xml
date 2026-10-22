@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="report_forbidden_v176">This account cannot access this report. Check your account and access settings.</string>
+    <string name="report_rate_limit_v176">Too many requests. Please wait a moment before trying again.</string>
+    <string name="report_invalid_v176">Cannot calculate this report with the selected data. Check the chart and period.</string>
+    <string name="report_server_v176">The service is temporarily unavailable. Please try again later.</string>
+    <string name="report_unexpected_v176">Could not read the service response. Please try again.</string>
+    <string name="forecast_basis_show_v176">Astrological basis</string>
+    <string name="forecast_basis_hide_v176">Hide basis</string>
+    <string name="forecast_journal_v176">Save advice to journal</string>
+    <string name="forecast_top_v176">Back to forecast start</string>
+    <string name="forecast_before_v176">Previous calculation</string>
+    <string name="forecast_now_v176">Latest calculation</string>
+    <string name="forecast_compare_baseline_v176">Compared with %1$s — %2$s</string>
+</resources>

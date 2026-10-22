@@ -42,11 +42,24 @@ class AccountViewModel @Inject constructor(
     private val api: AstroApi,
     private val tokenStore: TokenStore,
     private val syncManager: SyncManager,
-    dao: ru.astrosmap.app.data.ChartDao,
+    private val dao: ru.astrosmap.app.data.ChartDao,
 ) : ViewModel() {
 
     val chartsCount = dao.search("").map { it.size }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    val guestCharts = dao.guestCharts().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    var importMessage by mutableStateOf<String?>(null)
+        private set
+    fun importGuests(ids: Set<Long>) = submit {
+        val count = dao.importGuests(ids)
+        val complete = syncManager.sync()
+        importMessage = if (lang() == "ru") {
+            "Добавлено карт: $count. Оригиналы сохранены на устройстве." + if (complete) "" else " Копии сохранены локально, синхронизация пока не завершена. Проверьте доступ и соединение."
+        } else {
+            "Charts added: $count. Device originals are preserved." + if (complete) "" else " Copies are saved locally; sync is not complete. Check access and connection."
+        }
+    }
 
     var state by mutableStateOf<AccountState>(AccountState.Loading)
         private set
@@ -68,16 +81,27 @@ class AccountViewModel @Inject constructor(
     }
 
     private suspend fun refreshMe() {
+        val token = tokenStore.get()
+        if (token == null) { state = AccountState.LoggedOut; return }
         state = try {
-            api.me().also { ru.astrosmap.app.data.DailyNotify.setPremium(context, it.premium) }
-                .let { AccountState.LoggedIn(it) }
+            val me = api.me("Bearer $token")
+            if (tokenStore.get() != token) return
+            if (me.id == null || !tokenStore.bindOwner(token, me.id)) {
+                AccountState.Offline
+            } else {
+                ru.astrosmap.app.data.DailyNotify.setPremium(context, me.premium, "user:${me.id}")
+                AccountState.LoggedIn(me)
+            }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
         } catch (e: HttpException) {
-            if (e.code() == 401) tokenStore.clear() // токен отозван на сервере
-            AccountState.LoggedOut
-        } catch (e: IOException) {
-            AccountState.Offline
+            if (tokenStore.get() != token) return
+            if (e.code() == 401) {
+                tokenStore.clearIf(token)
+                AccountState.LoggedOut
+            } else AccountState.Offline
         } catch (e: Exception) {
-            // Неожиданный формат ответа и т.п. — никогда не роняем приложение.
+            if (tokenStore.get() != token) return
             AccountState.Offline
         }
     }
@@ -123,8 +147,9 @@ class AccountViewModel @Inject constructor(
 
     fun logout() {
         viewModelScope.launch {
-            runCatching { api.logout() } // сеть могла пропасть — локальный выход всё равно делаем
+            val token = tokenStore.get()
             tokenStore.clear()
+            runCatching { if (token != null) api.logout("Bearer $token") }
             ru.astrosmap.app.data.DailyNotify.setPremium(context, false)
             state = AccountState.LoggedOut
         }

@@ -56,7 +56,10 @@ object DailyNotify {
     private const val KEY_HOUR = "notify_hour"
     private const val KEY_MIN = "notify_min"
     private const val KEY_PROMPT_SHOWN = "notify_prompt_shown_v1"
+    private const val KEY_USEFUL_ACTION = "notify_useful_action_v1"
     private const val KEY_PREMIUM = "notify_cached_premium"
+    private const val KEY_PREMIUM_OWNER = "notify_premium_owner_v176"
+    private const val KEY_SESSION_OWNER = "notify_session_owner_v176"
     private const val KEY_LAST_EVENT = "notify_last_event"
     const val CATEGORY_FORECAST = "notify_forecast"
     const val CATEGORY_MOON = "notify_moon"
@@ -70,9 +73,32 @@ object DailyNotify {
     fun hour(context: Context): Int = prefs(context).getInt(KEY_HOUR, 9)
     fun minute(context: Context): Int = prefs(context).getInt(KEY_MIN, 0)
     fun category(context: Context, key: String): Boolean = prefs(context).getBoolean(key, true)
-    fun cachedPremium(context: Context): Boolean = prefs(context).getBoolean(KEY_PREMIUM, false)
-    fun setPremium(context: Context, premium: Boolean) {
-        prefs(context).edit().putBoolean(KEY_PREMIUM, premium).apply()
+    fun cachedPremium(context: Context): Boolean {
+        val p = prefs(context)
+        val owner = p.getString(KEY_SESSION_OWNER, null)
+        return SessionDerivedState.premiumAllowed(owner, p.getString(KEY_PREMIUM_OWNER, null),
+            p.getBoolean(KEY_PREMIUM, false))
+    }
+    fun setPremium(context: Context, premium: Boolean, owner: String? = null) {
+        // Only verified account access can enable derived premium behavior.
+        prefs(context).edit().putBoolean(KEY_PREMIUM, SessionDerivedState.premiumAllowed(owner, owner, premium))
+            .putString(KEY_PREMIUM_OWNER, owner).apply()
+    }
+
+    /** Clear account-derived state only. Notification consent, time and categories stay intact. */
+    fun onSessionChanged(context: Context, owner: String?) {
+        val p = prefs(context)
+        val previous = p.getString(KEY_SESSION_OWNER, null)
+        val edit = p.edit().putString(KEY_SESSION_OWNER, owner)
+        if (owner == null || p.getString(KEY_PREMIUM_OWNER, null) != owner) {
+            edit.remove(KEY_PREMIUM).remove(KEY_PREMIUM_OWNER)
+        }
+        if (SessionDerivedState.clearNotices(previous, owner)) {
+            edit.remove(KEY_LAST_EVENT)
+            NotificationManagerCompat.from(context).cancel(1)
+            NotificationManagerCompat.from(context).cancel(2)
+        }
+        edit.apply()
     }
     fun markEventShown(context: Context, key: String): Boolean {
         val settings = prefs(context)
@@ -84,7 +110,12 @@ object DailyNotify {
         prefs(context).edit().putBoolean(key, enabled).apply()
     }
     fun shouldShowPrompt(context: Context): Boolean =
-        !isEnabled(context) && !prefs(context).getBoolean(KEY_PROMPT_SHOWN, false)
+        !isEnabled(context) && prefs(context).getBoolean(KEY_USEFUL_ACTION, false) &&
+            !prefs(context).getBoolean(KEY_PROMPT_SHOWN, false)
+
+    fun markUsefulAction(context: Context) {
+        prefs(context).edit().putBoolean(KEY_USEFUL_ACTION, true).apply()
+    }
 
     fun markPromptShown(context: Context) {
         prefs(context).edit().putBoolean(KEY_PROMPT_SHOWN, true).apply()
@@ -165,22 +196,37 @@ class DailyWorker @AssistedInject constructor(
     private val engine: AstroEngine,
     private val analytics: Analytics,
     private val api: ru.astrosmap.app.data.api.AstroApi,
+    private val tokens: TokenStore,
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
         if (!DailyNotify.isEnabled(context)) return Result.success()
+        val owner = tokens.owner()
+        val token = tokens.get()
+        // Unresolved authenticated identity must not read or deliver personalized data.
+        if (owner == null) {
+            DailyNotify.schedule(context)
+            return Result.success()
+        }
         ru.astrosmap.app.editorial.RemoteEditorial.refresh(api)
         val (title, text) = runCatching { buildText() }.getOrElse {
             // Сбой расчёта не роняет задачу, но должен быть виден в логах, а не проглатываться.
+            if (it is kotlinx.coroutines.CancellationException) throw it
             Log.w("DailyWorker", "Не удалось собрать текст напоминания", it)
             return Result.success()
         }
-        show(1, DailyNotify.CHANNEL_ID, title, text, DailyNotify.ROUTE_TODAY)
-        if (DailyNotify.category(context, DailyNotify.CATEGORY_EVENTS)) {
-            runCatching { buildEvent() }.getOrNull()
-                ?.takeIf { DailyNotify.markEventShown(context, it.key) }
-                ?.let { show(2, DailyNotify.EVENT_CHANNEL_ID, context.getString(R.string.notify_event_title), it.text, it.route) }
+        val event = if (DailyNotify.category(context, DailyNotify.CATEGORY_EVENTS)) {
+            try { buildEvent() } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+            catch (_: Exception) { null }
+        } else null
+        val delivered = tokens.withCurrentSession(owner, token) {
+            if (!isStopped && DailyNotify.isEnabled(context)) {
+                show(1, DailyNotify.CHANNEL_ID, title, text, DailyNotify.ROUTE_TODAY)
+                event?.takeIf { DailyNotify.markEventShown(context, it.key) }
+                    ?.let { show(2, DailyNotify.EVENT_CHANNEL_ID, context.getString(R.string.notify_event_title), it.text, it.route) }
+            }
         }
+        if (!delivered) return Result.success()
         analytics.track("notif_shown")
         DailyNotify.schedule(context) // ставим завтрашний показ
         return Result.success()

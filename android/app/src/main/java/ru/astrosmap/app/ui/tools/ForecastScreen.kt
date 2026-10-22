@@ -66,6 +66,7 @@ class ForecastViewModel @Inject constructor(
     private val journalDao: JournalDao,
     private val api: AstroApi,
     private val tokenStore: TokenStore,
+    private val analytics: ru.astrosmap.app.data.Analytics,
 ) : ViewModel() {
 
     private val chartId: Long = savedStateHandle.get<String>("id")?.toLongOrNull() ?: 0L
@@ -87,9 +88,42 @@ class ForecastViewModel @Inject constructor(
     private val _cachedAt = MutableStateFlow<Long?>(null)
     val cachedAt: StateFlow<Long?> = _cachedAt
 
-    init { load() }
+    private var reportToken: String? = null
+    var reportOwner by mutableStateOf<String?>(null)
+        private set
+    var reportCity by mutableStateOf("")
+        private set
+    var reportZone by mutableStateOf("UTC")
+        private set
 
-    fun load() {
+    init {
+        viewModelScope.launch {
+            tokenStore.owners.collect { owner ->
+                if (_state.value is ReportState.Ready && owner != reportOwner) {
+                    loadJob?.cancel()
+                    _state.value = ReportState.NeedAuth
+                    _history.value = emptyList()
+                    _journalCount.value = 0
+                }
+            }
+        }
+        load()
+    }
+
+    fun journalAdvice(date: String, advice: String, action: (String, String) -> Unit) {
+        val expectedOwner = reportOwner ?: return
+        val expectedToken = reportToken
+        viewModelScope.launch {
+            tokenStore.withCurrentSession(expectedOwner, expectedToken) { action(date, advice) }
+        }
+    }
+
+    fun retry() {
+        analytics.track("forecast_retry")
+        load(isRetry = true)
+    }
+
+    fun load(isRetry: Boolean = false) {
         loadJob?.cancel()
         val selectedPeriod = _period.value
         _state.value = ReportState.Loading
@@ -99,27 +133,35 @@ class ForecastViewModel @Inject constructor(
         _history.value = emptyList()
         loadJob = viewModelScope.launch {
             val token = tokenStore.get()
-            _access.value = verifiedAccess(token)
+            _access.value = verifiedAccess(token) ?: return@launch
             val entity = dao.byId(chartId)
             if (entity == null) {
                 _state.value = ReportState.MissingChart
                 return@launch
             }
             val location = ForecastLocationStore.get(context)
+            val natal = entity.toNatalRequest().copy(lang = forecastLanguage())
             currentScope = ForecastHistory.scope(token, _access.value.entitlements.map { it.wireName }.toSet()) +
-                ":" + entity.toNatalRequest().toString() + ":" + location.toString()
-            val range = selectedPeriod.range()
+                ":" + natal.toString() + ":" + location.toString() + ":lang=" + natal.lang
+            val range = selectedPeriod.range(forecastToday(location?.tzStr, entity.tz))
             val snapshots = ForecastHistory.list(context, chartId).filter { it.accessScope == currentScope }
             _history.value = snapshots
             val previous = ForecastHistory.matching(snapshots, selectedPeriod, range, currentScope)
+            val baseline = ForecastHistory.comparisonBaseline(snapshots, selectedPeriod, range, currentScope)
+            if (dao.owner() != entity.ownerKey || tokenStore.get() != token) {
+                _state.value = ReportState.NeedAuth
+                return@launch
+            }
             val loaded = loadReport {
+                ensureActive()
                 api.forecast(
                     ForecastApiRequest(
-                        natal = entity.toNatalRequest(),
+                        natal = natal,
                         start = DateDto(range.first.year, range.first.monthValue, range.first.dayOfMonth),
                         end = DateDto(range.second.year, range.second.monthValue, range.second.dayOfMonth),
                         location = location,
                     ),
+                    authorization = token?.let { "Bearer $it" } ?: "",
                 )
             }
             ensureActive()
@@ -137,25 +179,47 @@ class ForecastViewModel @Inject constructor(
                 _state.value = loaded
                 return@launch
             }
-            val cached = if (loaded == ReportState.Offline) previous?.let(ForecastHistory::payload) else null
-            _state.value = if (cached != null) ReportState.Ready(cached) else loaded
+            val cached = if (reportAllowsCachedResult(loaded)) previous?.let(ForecastHistory::payload) else null
+            analytics.track(if (isRetry) "forecast_retry_result" else "forecast_result", mapOf(
+                "result" to when {
+                    loaded is ReportState.Ready -> "loaded"
+                    cached != null -> "cached"
+                    else -> loaded.javaClass.simpleName
+                }, "period" to selectedPeriod.name,
+            ))
+            if (loaded is ReportState.Ready) analytics.track("forecast_loaded", mapOf("period" to selectedPeriod.name))
+            val responseOwner = tokenStore.owner()
+            if (!tokenStore.withCurrentSession(responseOwner, token) {
+                reportCity = location?.city?.takeIf { it.isNotBlank() } ?: entity.city
+                reportZone = forecastZone(location?.tzStr, entity.tz).id
+                reportOwner = responseOwner
+                reportToken = token
+                _state.value = if (cached != null) ReportState.Ready(cached) else loaded
+            }) {
+                _state.value = ReportState.NeedAuth
+                _history.value = emptyList()
+                return@launch
+            }
             if (cached != null) _cachedAt.value = previous?.createdAt
             if (loaded is ReportState.Ready) {
-                _comparison.value = previous?.let(ForecastHistory::payload)?.let { ForecastHistory.compare(it, loaded.data) }
+                _comparison.value = baseline?.let { saved -> ForecastHistory.payload(saved)?.let {
+                    ForecastHistory.compare(it, loaded.data).copy(baselineStart = saved.start, baselineEnd = saved.end)
+                } }
                 ForecastHistory.save(context, chartId, selectedPeriod, range, loaded.data, currentScope)
                 _history.value = ForecastHistory.list(context, chartId).filter { it.accessScope == currentScope }
                 if (_access.value.hasEntitlement(Entitlement.JOURNAL_HISTORY)) {
-                    val owner = context.getSharedPreferences("journal_owner", Context.MODE_PRIVATE)
-                        .getString("last_owner", null) ?: "guest"
-                    _journalCount.value = journalDao.since(owner, range.first.toEpochDay())
-                        .count { it.epochDay <= range.second.toEpochDay() }
+                    val owner = tokenStore.owner()
+                    if (owner != null && tokenStore.get() == token) {
+                        _journalCount.value = journalDao.since(owner, range.first.toEpochDay())
+                            .count { it.epochDay <= range.second.toEpochDay() }
+                    }
                 }
             }
         }
     }
 
-    private suspend fun verifiedAccess(token: String?): AccessState = try {
-        val me = api.me()
+    private suspend fun verifiedAccess(token: String?): AccessState? = if (token == null) AccessState() else try {
+        val me = api.me(authorization = "Bearer $token")
         val access = me.accessState()
         if (tokenStore.get() != token) {
             _access.value = AccessState()
@@ -168,10 +232,14 @@ class ForecastViewModel @Inject constructor(
     } catch (cancelled: CancellationException) {
         throw cancelled
     } catch (error: Exception) {
-        if (error is retrofit2.HttpException && error.code() in listOf(401, 403)) {
+        if (reportIdentityDenied(reportFailure(error), token != null)) {
             ForecastHistory.revokeAccess(context, token)
-            AccessState()
-        } else ForecastHistory.offlineAccess(context, token) ?: AccessState()
+            _access.value = AccessState()
+            _history.value = emptyList()
+            _state.value = reportFailure(error)
+            null
+        } else if (reportAllowsCachedResult(reportFailure(error))) ForecastHistory.offlineAccess(context, token) ?: AccessState()
+        else AccessState()
     }
 
     fun selectPeriod(value: ForecastPeriod) {
@@ -184,14 +252,15 @@ class ForecastViewModel @Inject constructor(
         _state.value = ReportState.Loading
         loadJob = viewModelScope.launch {
             val token = tokenStore.get()
-            val verifiedAccess = verifiedAccess(token)
+            val verifiedAccess = verifiedAccess(token) ?: return@launch
             val entity = dao.byId(chartId)
             if (entity == null) {
                 _state.value = ReportState.MissingChart
                 return@launch
             }
+            val natal = entity.toNatalRequest().copy(lang = forecastLanguage())
             val scope = ForecastHistory.scope(token, verifiedAccess.entitlements.map { it.wireName }.toSet()) +
-                ":" + entity.toNatalRequest().toString() + ":" + ForecastLocationStore.get(context).toString()
+                ":" + natal.toString() + ":" + ForecastLocationStore.get(context).toString() + ":lang=" + natal.lang
             _access.value = verifiedAccess
             if (snapshot.accessScope != scope || tokenStore.get() != token) {
                 _history.value = emptyList()
@@ -200,7 +269,15 @@ class ForecastViewModel @Inject constructor(
             }
             ForecastHistory.payload(snapshot)?.let {
                 _period.value = runCatching { ForecastPeriod.valueOf(snapshot.period) }.getOrDefault(ForecastPeriod.THIS_MONTH)
-                _state.value = ReportState.Ready(it)
+                val snapshotOwner = tokenStore.owner()
+                if (!tokenStore.withCurrentSession(snapshotOwner, token) {
+                    val location = ForecastLocationStore.get(context)
+                    reportCity = location?.city?.takeIf { it.isNotBlank() } ?: entity.city
+                    reportZone = forecastZone(location?.tzStr, entity.tz).id
+                    reportOwner = snapshotOwner
+                    reportToken = token
+                    _state.value = ReportState.Ready(it)
+                }) return@launch
                 _cachedAt.value = snapshot.createdAt
                 _comparison.value = null
                 _journalCount.value = 0
@@ -211,7 +288,7 @@ class ForecastViewModel @Inject constructor(
 }
 
 @Composable
-fun ForecastScreen(viewModel: ForecastViewModel = hiltViewModel(), onSelectChart: (() -> Unit)? = null) {
+fun ForecastScreen(viewModel: ForecastViewModel = hiltViewModel(), onSelectChart: (() -> Unit)? = null, onJournalAdvice: ((String, String, ru.astrosmap.app.ui.journal.ForecastAdviceSource) -> Unit)? = null) {
     val state by viewModel.state.collectAsState()
     val access by viewModel.access.collectAsState()
     val cachedAt by viewModel.cachedAt.collectAsState()
@@ -220,24 +297,39 @@ fun ForecastScreen(viewModel: ForecastViewModel = hiltViewModel(), onSelectChart
     val comparison by viewModel.comparison.collectAsState()
     val journalCount by viewModel.journalCount.collectAsState()
     var mode by remember { mutableStateOf(InterpretationMode.BRIEF) }
+    val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+    val scrollScope = androidx.compose.runtime.rememberCoroutineScope()
 
     Column(Modifier.fillMaxSize()) {
         ForecastPeriodSelector(period, viewModel::selectPeriod)
         Box(Modifier.weight(1f)) {
-            ReportScaffold(state, onRetry = viewModel::load, onMissingChart = onSelectChart) { data ->
-                LazyColumn(Modifier.fillMaxSize()) {
+            ReportScaffold(state, onRetry = viewModel::retry, onMissingChart = onSelectChart) { data ->
+                val visibleSpheres = data.a("sphere_forecast").let {
+                    if (mode == InterpretationMode.BRIEF || !access.hasEntitlement(Entitlement.ADVANCED_FORECASTS)) it.take(2) else it
+                }
+                val visibleEvents = data.a("events").let { if (mode == InterpretationMode.BRIEF) it.take(3) else it }
+                // Every optional item before the section headers is counted here; no pixel offsets.
+                val beforeSections = 4 + (if (cachedAt != null) 1 else 0) +
+                    (if (comparison != null) 1 else 0) +
+                    (if (access.hasEntitlement(Entitlement.JOURNAL_HISTORY) && journalCount > 0) 1 else 0) +
+                    (if (data.s("summary") != null) 2 else 0) +
+                    (if (mode == InterpretationMode.DETAILED && !access.hasEntitlement(Entitlement.ADVANCED_FORECASTS)) 1 else 0) +
+                    (if (mode == InterpretationMode.TECHNICAL && !access.hasEntitlement(Entitlement.PROFESSIONAL_TOOLS)) 1 else 0) +
+                    (if (mode == InterpretationMode.DETAILED) listOf("profection", "progressed_moon").count { data.o(it)?.s("text") != null } else 0)
+                val indices = forecastSectionIndices(beforeSections, visibleSpheres.size, mode != InterpretationMode.TECHNICAL, visibleEvents.size)
+                LazyColumn(Modifier.fillMaxSize(), state = listState) {
                     cachedAt?.let { timestamp ->
                         item {
                             Text(stringResource(R.string.forecast_cached_at,
                                 java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT, java.text.DateFormat.SHORT)
                                     .format(java.util.Date(timestamp))), Modifier.padding(16.dp))
-                            TextButton(onClick = viewModel::load) { Text(stringResource(R.string.retry)) }
+                            TextButton(onClick = viewModel::retry) { Text(stringResource(R.string.retry)) }
                         }
                     }
                     item {
                         Text(
                             stringResource(R.string.tools_forecast) +
-                                " · ${data.s("start").orEmpty()} — ${data.s("end").orEmpty()}",
+                                " · ${forecastDate(data.s("start"))} — ${forecastDate(data.s("end"))}",
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(16.dp),
@@ -250,6 +342,18 @@ fun ForecastScreen(viewModel: ForecastViewModel = hiltViewModel(), onSelectChart
                             onSelect = { mode = it },
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                         )
+                    }
+                    item {
+                        Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp)) {
+                            val targets = buildList {
+                                if (mode != InterpretationMode.TECHNICAL) add(R.string.forecast_spheres to indices.first)
+                                add(R.string.forecast_events to indices.second)
+                                add(R.string.forecast_history_title to indices.third)
+                            }
+                            targets.forEach { (label, target) ->
+                                TextButton(onClick = { scrollScope.launch { listState.animateScrollToItem(target) } }) { Text(stringResource(label)) }
+                            }
+                        }
                     }
                     comparison?.let { value ->
                         item {
@@ -290,10 +394,7 @@ fun ForecastScreen(viewModel: ForecastViewModel = hiltViewModel(), onSelectChart
                         }
                     }
                     if (mode != InterpretationMode.TECHNICAL) item { ToolSection(stringResource(R.string.forecast_spheres)) }
-                    val spheres = data.a("sphere_forecast").let {
-                        if (mode == InterpretationMode.BRIEF || !access.hasEntitlement(Entitlement.ADVANCED_FORECASTS)) it.take(2) else it
-                    }
-                    if (mode != InterpretationMode.TECHNICAL) items(spheres) { s ->
+                    if (mode != InterpretationMode.TECHNICAL) items(visibleSpheres) { s ->
                         AstroPanel(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
                           Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             Text(
@@ -307,44 +408,29 @@ fun ForecastScreen(viewModel: ForecastViewModel = hiltViewModel(), onSelectChart
                             if (highlights.isEmpty()) {
                                 Text(stringResource(R.string.forecast_sphere_no_events), style = MaterialTheme.typography.bodyMedium)
                             } else {
-                                Text(stringResource(R.string.forecast_sphere_basis),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 highlights.forEach { event ->
-                                    Text(
-                                        listOfNotNull(event.s("date"), event.s("p1_ru"),
-                                            event.s("aspect_ru") ?: event.s("aspect_symbol"), event.s("p2_ru")).joinToString(" · "),
-                                        modifier = Modifier.padding(top = 8.dp),
-                                        style = MaterialTheme.typography.labelLarge,
-                                        color = MaterialTheme.colorScheme.secondary,
-                                    )
-                                    ForecastMeaning(event)
+                                    Text(forecastDate(event.s("date")), style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.secondary)
+                                    ForecastMeaning(event, onJournalAdvice?.let { action -> { date, advice -> viewModel.journalAdvice(date, advice) { d, a -> action(d, a, forecastAdviceSource(event, data)) } } })
+                                    ForecastBasis(event)
                                 }
                             }
                           }
                         }
                     }
                     item { ToolSection(stringResource(R.string.forecast_events)) }
-                    val events = data.a("events").let {
-                        if (mode == InterpretationMode.BRIEF) it.take(3) else it
-                    }
-                    items(events) { e ->
+                    items(visibleEvents) { e ->
                         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
-                            Row {
-                                Text(
-                                    e.s("date").orEmpty(),
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.primary,
-                                )
-                                Text(
-                                    "  ${e.s("p1_symbol").orEmpty()} ${e.s("aspect_symbol").orEmpty()} ${e.s("p2_symbol").orEmpty()}" +
-                                        "  ${e.s("p1_ru").orEmpty()} — ${e.s("p2_ru").orEmpty()}",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                            if (mode == InterpretationMode.DETAILED) {
-                                ForecastMeaning(e)
+                            Text(forecastDate(e.s("date")), style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary)
+                            if (mode != InterpretationMode.TECHNICAL) {
+                                ForecastMeaning(e, onJournalAdvice?.let { action -> { date, advice -> viewModel.journalAdvice(date, advice) { d, a -> action(d, a, forecastAdviceSource(e, data)) } } })
+                                ForecastBasis(e)
+                                EventReminderButton(e.s("date").orEmpty(), forecastEventTitle(e), viewModel.reportCity,
+                                    viewModel.reportZone, viewModel.reportOwner)
+                            } else {
+                                Text(listOfNotNull(e.s("p1_ru"), e.s("aspect_ru") ?: e.s("aspect_symbol"), e.s("p2_ru")).joinToString(" · "),
+                                    style = MaterialTheme.typography.labelLarge)
                             }
                             if (mode == InterpretationMode.TECHNICAL) {
                                 val orbit = forecastOrb(e)
@@ -360,12 +446,17 @@ fun ForecastScreen(viewModel: ForecastViewModel = hiltViewModel(), onSelectChart
                         FilterChip(
                             selected = false,
                             onClick = { viewModel.openHistory(snapshot) },
-                            label = { Text("${snapshot.start} — ${snapshot.end}") },
+                            label = { Text("${forecastDate(snapshot.start)} — ${forecastDate(snapshot.end)}") },
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 3.dp),
                         )
                     }
                     if (!access.hasEntitlement(Entitlement.ADVANCED_FORECASTS)) {
                         item { ForecastAccessNote(R.string.forecast_history_premium) }
+                    }
+                    item {
+                        TextButton(onClick = { scrollScope.launch { listState.animateScrollToItem(0) } }, modifier = Modifier.padding(12.dp)) {
+                            Text(stringResource(R.string.forecast_top_v176))
+                        }
                     }
                 }
             }
@@ -388,11 +479,15 @@ internal fun ForecastPeriodSelector(period: ForecastPeriod, onSelect: (ForecastP
 }
 
 internal fun forecastAccessDenied(state: ReportState): Boolean =
-    state == ReportState.NeedAuth || state == ReportState.NeedPremium
+    state == ReportState.NeedAuth || state == ReportState.NeedPremium || state == ReportState.Forbidden
 
 @Composable
-private fun ForecastComparisonCard(value: ForecastComparison) {
+internal fun ForecastComparisonCard(value: ForecastComparison) {
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
+        if (value.baselineStart != null && value.baselineEnd != null) {
+            Text(stringResource(R.string.forecast_compare_baseline_v176, forecastDate(value.baselineStart), forecastDate(value.baselineEnd)),
+                style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+        }
         Text(stringResource(R.string.forecast_compare_added, value.added))
         Text(stringResource(R.string.forecast_compare_ended, value.ended))
         Text(stringResource(R.string.forecast_compare_continued, value.continued))
@@ -402,6 +497,16 @@ private fun ForecastComparisonCard(value: ForecastComparison) {
             else -> R.string.forecast_compare_stable
         }
         Text(stringResource(tone), color = MaterialTheme.colorScheme.secondary)
+        value.themes.forEach { theme ->
+            AstroPanel(Modifier.padding(vertical = 6.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(theme.name, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+                    theme.previous?.let { Text(stringResource(R.string.forecast_before_v176), style = MaterialTheme.typography.labelLarge); Text(it) }
+                    theme.current?.let { Text(stringResource(R.string.forecast_now_v176), style = MaterialTheme.typography.labelLarge); Text(it) }
+                    theme.advice?.let { Text(stringResource(R.string.forecast_advice_label), color = MaterialTheme.colorScheme.primary); Text(it) }
+                }
+            }
+        }
     }
 }
 
@@ -429,7 +534,7 @@ internal fun forecastOrb(event: kotlinx.serialization.json.JsonObject): String? 
     event.s("orb") ?: event.d("orb")?.toString() ?: event.s("orbit") ?: event.d("orbit")?.toString()
 
 @Composable
-internal fun ForecastMeaning(event: kotlinx.serialization.json.JsonObject) {
+internal fun ForecastMeaning(event: kotlinx.serialization.json.JsonObject, onJournalAdvice: ((String, String) -> Unit)? = null) {
     val interpretation = event.s("interpretation")?.takeIf { it.isNotBlank() }
     val advice = event.s("advice")?.takeIf { it.isNotBlank() }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -455,6 +560,11 @@ internal fun ForecastMeaning(event: kotlinx.serialization.json.JsonObject) {
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary)
                     Text(it, style = MaterialTheme.typography.bodyLarge)
+                    if (onJournalAdvice != null && event.s("date")?.let { date -> runCatching { LocalDate.parse(date) }.isSuccess } == true) {
+                        TextButton(onClick = { onJournalAdvice(event.s("date")!!, it) }) {
+                            Text(stringResource(R.string.forecast_journal_v176))
+                        }
+                    }
                 }
             }
         }
@@ -472,7 +582,7 @@ internal fun ForecastPeriodOverview(data: kotlinx.serialization.json.JsonObject)
             listOf(R.string.forecast_opportunity to favorable, R.string.forecast_attention to challenging)
                 .forEach { (label, event) ->
                     event?.let {
-                        Text(stringResource(label) + " · " + it.s("date").orEmpty(),
+                        Text(stringResource(label) + " · " + forecastDate(it.s("date")),
                             Modifier.padding(top = 8.dp), style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.secondary)
                         val meaning = it.s("interpretation")?.takeIf(String::isNotBlank)
@@ -496,3 +606,36 @@ internal fun forecastOverviewEvents(data: kotlinx.serialization.json.JsonObject)
 
 internal fun forecastPreview(text: String): String =
     text.split(Regex("(?<=[.!?])\\s+"), limit = 2).first().trim()
+
+@Composable
+private fun forecastDate(raw: String?): String {
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    return readableForecastDate(raw.orEmpty(), locale)
+}
+
+@Composable
+internal fun ForecastBasis(event: kotlinx.serialization.json.JsonObject) {
+    var expanded by androidx.compose.runtime.saveable.rememberSaveable(event.toString()) { mutableStateOf(false) }
+    TextButton(onClick = { expanded = !expanded }) {
+        Text(stringResource(if (expanded) R.string.forecast_basis_hide_v176 else R.string.forecast_basis_show_v176))
+    }
+    if (expanded) {
+        Text(listOfNotNull(event.s("p1_ru"), event.s("aspect_ru") ?: event.s("aspect_symbol"), event.s("p2_ru")).joinToString(" · "),
+            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        forecastOrb(event)?.let { Text(stringResource(R.string.aspect_orb, it), style = MaterialTheme.typography.bodySmall) }
+    }
+}
+
+internal fun forecastSectionIndices(beforeSections: Int, sphereCount: Int, showSpheres: Boolean, eventCount: Int): Triple<Int, Int, Int> {
+    val events = beforeSections + if (showSpheres) 1 + sphereCount else 0
+    return Triple(beforeSections, events, events + 1 + eventCount)
+}
+
+internal fun forecastEventTitle(event: kotlinx.serialization.json.JsonObject): String =
+    listOfNotNull(event.s("p1_ru") ?: event.s("p1"), event.s("aspect_ru") ?: event.s("aspect_symbol") ?: event.s("aspect"),
+        event.s("p2_ru") ?: event.s("p2")).joinToString(" · ")
+
+internal fun forecastAdviceSource(event: kotlinx.serialization.json.JsonObject, report: kotlinx.serialization.json.JsonObject) =
+    ru.astrosmap.app.ui.journal.ForecastAdviceSource(forecastEventTitle(event), report.s("start").orEmpty(), report.s("end").orEmpty())
+
+internal fun forecastLanguage(): String = if (ru.astrosmap.app.ui.AstroLabels.isRu()) "ru" else "en"

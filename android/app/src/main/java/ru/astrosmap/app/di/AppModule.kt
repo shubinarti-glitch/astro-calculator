@@ -22,11 +22,12 @@ object AppModule {
     @Singleton
     fun chartDb(@ApplicationContext context: Context): ChartDb =
         Room.databaseBuilder(context, ChartDb::class.java, "charts.db")
-            .addMigrations(ChartDb.MIGRATION_1_2, ChartDb.MIGRATION_2_3)
+            .addMigrations(ChartDb.MIGRATION_1_2, ChartDb.MIGRATION_2_3, ChartDb.MIGRATION_3_4)
             .build()
 
     @Provides
-    fun chartDao(db: ChartDb): ChartDao = db.chartDao()
+    @Singleton
+    fun chartDao(db: ChartDb, tokenStore: ru.astrosmap.app.data.TokenStore): ChartDao = ChartDao(db.chartDao(), tokenStore)
 
     @Provides
     @Singleton
