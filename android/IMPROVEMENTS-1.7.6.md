@@ -1,3 +1,28 @@
+## Production release verified — 22 October 2026
+
+Server backend and website APK1.7.6 (14) are published. The owner explicitly asked
+agent to perform the migration, overriding the repository's manual-only rule for this
+release. Backup verified first; additive migration preserved existing profile rows and
+passed integrity_check. All three backend file hashes match the tested staged package;
+astro is active, new profile PUT/cancellation routes are exposed, no traceback/HTTP500
+was found in the journal since restart. A synthetic daily forecast returned dated
+interpretations and advice. Existing production website changes were preserved.
+
+Public download https://astrosmap.ru/astrosmap.apk returned14913074bytes,
+SHA256 ac534f9e5f57a1bdca949fa132c339ad47ddb16185f54e1112acb0ae78f99075,
+exactly matching the accepted signed standard APK. GooglePlay remains AAB-only;
+billing/external-purchase links are disabled in that flavor. Store uploads are the owner's.
+Code integrated onto current origin/main and pushed normally at57437a1; its Android
+product sources match the tested build. Additional merged-server regressions38passed,
+1Windows skip. Four unrelated original working-tree diffs remain untouched.
+The separate protected-source repository/export was not updated: its runtime-package
+and completeness review is still pending. No claim of standalone source completeness.
+Physical-device FPS/battery, TalkBack and actual Doze delivery remain unverified.
+
+---
+
+Historical implementation and acceptance log:
+
 # AstroSMap 1.7.6 — approved improvement work
 
 User approved implementation and subagents on 21 October 2026, following the audit
