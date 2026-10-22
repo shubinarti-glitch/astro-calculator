@@ -1,5 +1,9 @@
 package ru.astrosmap.app.ui.journal
 
+import ru.astrosmap.app.ui.assistant.AssistantPhase
+import ru.astrosmap.app.ui.assistant.AssistantUiState
+import ru.astrosmap.app.ui.assistant.PublishAssistantState
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
@@ -97,6 +101,16 @@ class JournalViewModel @Inject constructor(
         private set
     var saved by mutableStateOf(false)
         private set
+    var saving by mutableStateOf(false)
+        private set
+    var saveFailed by mutableStateOf(false)
+        private set
+    var saveRevision by mutableIntStateOf(0)
+        private set
+    private var saveRequest = 0
+    private var savedSnapshot: JournalEntry? = null
+    val isCurrentSaved: Boolean
+        get() = saved && savedSnapshot?.copy(updatedAt = 0) == snapshot().copy(updatedAt = 0)
     private var ownerKey = "guest"
     var ready by mutableStateOf(false)
         private set
@@ -201,21 +215,38 @@ class JournalViewModel @Inject constructor(
     }
 
     fun save() {
-        if (!ready) return
+        if (!ready || saving) return
         val owner = ownerKey
         val entry = snapshot()
         val date = selectedDate
+        val request = dateRequest
+        val saveAttempt = ++saveRequest
         val imported = pendingAdvice[date].orEmpty().filter { entry.note.contains(it) }.toSet()
+        saving = true
+        saveFailed = false
         viewModelScope.launch {
-            if (tokenStore.owner() != owner) return@launch
-            dao.upsert(entry)
-            if (imported.isNotEmpty() && pendingAdvice[date]?.removeAll(imported) == true) {
-                analytics.track("advice_saved")
-            }
-            if (tokenStore.owner() == owner) {
-                if (selectedDate == date && snapshot().copy(updatedAt = 0) == entry.copy(updatedAt = 0)) saved = true
+            var stored = false
+            try {
+                if (tokenStore.owner() != owner) return@launch
+                dao.upsert(entry)
+                stored = true
+                if (tokenStore.owner() != owner) return@launch
+                if (imported.isNotEmpty() && pendingAdvice[date]?.removeAll(imported) == true) {
+                    analytics.track("advice_saved")
+                }
+                if (request == dateRequest && selectedDate == date && snapshot().copy(updatedAt = 0) == entry.copy(updatedAt = 0)) {
+                    savedSnapshot = entry
+                    saved = true
+                    saveRevision++
+                }
                 if (drafts[date]?.copy(updatedAt = 0) == entry.copy(updatedAt = 0)) drafts.remove(date)
                 refresh()
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                if (!stored && tokenStore.owner() == owner && saveAttempt == saveRequest) saveFailed = true
+            } finally {
+                if (tokenStore.owner() == owner && saveAttempt == saveRequest) saving = false
             }
         }
     }
@@ -301,6 +332,7 @@ class JournalViewModel @Inject constructor(
     }
 
     private fun apply(entry: JournalEntry?) {
+        saveRequest++
         mood = entry?.mood ?: 3
         energy = entry?.energy ?: 3
         relationships = entry?.relationships ?: 3
@@ -311,12 +343,39 @@ class JournalViewModel @Inject constructor(
         note = entry?.note.orEmpty()
         tags = entry?.tags.orEmpty()
         saved = false
+        savedSnapshot = null
+        saving = false
+        saveFailed = false
     }
 }
 
 @Composable
-fun JournalScreen(viewModel: JournalViewModel = hiltViewModel(), adviceDraft: AdviceDraft? = null, onAdviceConsumed: () -> Unit = {}) {
+fun JournalScreen(viewModel: JournalViewModel = hiltViewModel(), adviceDraft: AdviceDraft? = null, onAdviceConsumed: () -> Unit = {}, onAssistantState: ((AssistantUiState?) -> Unit)? = null) {
     var showLegacyImport by remember { mutableStateOf(false) }
+    val currentSaved = viewModel.isCurrentSaved
+    val assistantPhase = when {
+        viewModel.accessFailed || viewModel.saveFailed -> AssistantPhase.ERROR
+        !viewModel.ready -> AssistantPhase.LOADING
+        viewModel.saving -> AssistantPhase.SAVING
+        currentSaved -> AssistantPhase.SAVED
+        else -> AssistantPhase.READY
+    }
+    val assistantHint = when {
+        viewModel.accessFailed -> R.string.assistant_report_auth_v177
+        viewModel.saveFailed -> R.string.assistant_save_error_v177
+        !viewModel.ready -> R.string.assistant_journal_loading_v177
+        viewModel.saving -> R.string.assistant_saving_v177
+        currentSaved -> R.string.assistant_journal_saved_v177
+        else -> R.string.assistant_journal_ready_v177
+    }
+    val assistantAction: (() -> Unit)? = when {
+        viewModel.accessFailed -> viewModel::retryAccess
+        !viewModel.ready || viewModel.saving || currentSaved -> null
+        else -> viewModel::save
+    }
+    PublishAssistantState(onAssistantState, assistantPhase, assistantHint,
+        if (assistantAction == null) null else if (viewModel.accessFailed) R.string.retry else R.string.journal_save,
+        assistantAction, viewModel.saveRevision)
     if (showLegacyImport && viewModel.ready && viewModel.legacyCount > 0) {
         AlertDialog(onDismissRequest = { showLegacyImport = false },
             title = { Text(stringResource(R.string.journal_legacy_title_v176)) },
@@ -371,9 +430,10 @@ fun JournalScreen(viewModel: JournalViewModel = hiltViewModel(), adviceDraft: Ad
             JournalField(stringResource(R.string.journal_gratitude), viewModel.gratitude) { viewModel.gratitude = it }
             JournalField(stringResource(R.string.journal_note), viewModel.note, minLines = 3) { viewModel.note = it }
             JournalField(stringResource(R.string.journal_tags), viewModel.tags) { viewModel.tags = it }
-            Button(onClick = viewModel::save, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(if (viewModel.saved) R.string.journal_saved else R.string.journal_save))
+            Button(onClick = viewModel::save, enabled = !viewModel.saving, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(if (viewModel.saving) R.string.forecast_chart_saving else if (currentSaved) R.string.journal_saved else R.string.journal_save))
             }
+            if (viewModel.saveFailed) Text(stringResource(R.string.assistant_save_error_v177), color = MaterialTheme.colorScheme.error)
             if (viewModel.entries.any { it.epochDay == viewModel.selectedDate.toEpochDay() }) {
                 OutlinedButton(onClick = viewModel::delete, modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.journal_delete))

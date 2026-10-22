@@ -1,6 +1,9 @@
 package ru.astrosmap.app.ui.assistant
 
 import android.content.Context
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -17,8 +20,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.GenericShape
@@ -31,6 +35,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -44,6 +49,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
@@ -52,7 +61,7 @@ import ru.astrosmap.app.R
 import ru.astrosmap.app.data.DailyNotify
 import ru.astrosmap.app.ui.tarot.TarotStorage
 
-private enum class AssistantMotion { IDLE, SLEEPING, REACTING }
+private enum class AssistantMotion { IDLE, SLEEPING, REACTING, WORKING, ATTENTIVE }
 
 private val starFrames = intArrayOf(
     R.drawable.assistant_star_00, R.drawable.assistant_star_01,
@@ -87,31 +96,44 @@ private fun assistantFrames(character: AssistantCharacter) = when (character) {
     AssistantCharacter.MOON -> moonFrames
 }
 
-private fun cloudBubbleShape(tailOnRight: Boolean) = GenericShape { size, _ ->
+internal fun cloudBubbleShape(tailOnRight: Boolean, tailAtTop: Boolean, edgeHeight: Float) = GenericShape { size, _ ->
     val w = size.width
-    val h = size.height
-    moveTo(w * 0.10f, h * 0.28f)
-    cubicTo(w * 0.03f, h * 0.28f, w * 0.02f, h * 0.43f, w * 0.08f, h * 0.48f)
-    cubicTo(w * 0.02f, h * 0.57f, w * 0.06f, h * 0.74f, w * 0.16f, h * 0.74f)
-    cubicTo(w * 0.18f, h * 0.84f, w * 0.30f, h * 0.86f, w * 0.36f, h * 0.79f)
-    lineTo(if (tailOnRight) w * 0.72f else w * 0.28f, h * 0.79f)
-    if (tailOnRight) {
-        lineTo(w * 0.94f, h * 0.97f)
-        lineTo(w * 0.84f, h * 0.73f)
-    } else {
-        lineTo(w * 0.06f, h * 0.97f)
-        lineTo(w * 0.16f, h * 0.73f)
+    // Stretch the body, not the cloud edges: long hints must not be clipped by taller lobes.
+    val edge = minOf(size.height, edgeHeight)
+    fun y(fraction: Float): Float {
+        val position = if (fraction <= 0.48f) fraction * edge else size.height - (1f - fraction) * edge
+        return if (tailAtTop) size.height - position else position
     }
-    cubicTo(w * 0.95f, h * 0.73f, w * 0.98f, h * 0.57f, w * 0.92f, h * 0.48f)
-    cubicTo(w * 0.98f, h * 0.39f, w * 0.95f, h * 0.26f, w * 0.87f, h * 0.25f)
-    cubicTo(w * 0.85f, h * 0.12f, w * 0.71f, h * 0.08f, w * 0.63f, h * 0.16f)
-    cubicTo(w * 0.56f, h * 0.03f, w * 0.39f, h * 0.04f, w * 0.33f, h * 0.16f)
-    cubicTo(w * 0.25f, h * 0.07f, w * 0.12f, h * 0.13f, w * 0.10f, h * 0.28f)
+    moveTo(w * 0.10f, y(0.28f))
+    cubicTo(w * 0.03f, y(0.28f), w * 0.02f, y(0.43f), w * 0.08f, y(0.48f))
+    lineTo(w * 0.08f, y(0.52f))
+    cubicTo(w * 0.02f, y(0.57f), w * 0.06f, y(0.74f), w * 0.16f, y(0.74f))
+    if (tailOnRight) {
+        cubicTo(w * 0.18f, y(0.84f), w * 0.30f, y(0.86f), w * 0.36f, y(0.79f))
+        lineTo(w * 0.72f, y(0.79f))
+        lineTo(w * 0.94f, y(0.97f))
+        lineTo(w * 0.84f, y(0.73f))
+    } else {
+        lineTo(w * 0.06f, y(0.97f))
+        lineTo(w * 0.28f, y(0.79f))
+        lineTo(w * 0.84f, y(0.73f))
+    }
+    cubicTo(w * 0.95f, y(0.73f), w * 0.98f, y(0.57f), w * 0.92f, y(0.52f))
+    lineTo(w * 0.92f, y(0.48f))
+    cubicTo(w * 0.98f, y(0.39f), w * 0.95f, y(0.26f), w * 0.87f, y(0.25f))
+    cubicTo(w * 0.85f, y(0.12f), w * 0.71f, y(0.08f), w * 0.63f, y(0.16f))
+    cubicTo(w * 0.56f, y(0.03f), w * 0.39f, y(0.04f), w * 0.33f, y(0.16f))
+    cubicTo(w * 0.25f, y(0.07f), w * 0.12f, y(0.13f), w * 0.10f, y(0.28f))
     close()
 }
 
 @Composable
-fun FloatingAssistant(route: String?, modifier: Modifier = Modifier, onNavigate: ((String) -> Unit)? = null) {
+fun FloatingAssistant(
+    route: String?,
+    modifier: Modifier = Modifier,
+    onNavigate: ((String) -> Unit)? = null,
+    uiState: AssistantUiState? = null,
+) {
     val context = LocalContext.current
     val darkTheme = isSystemInDarkTheme()
     var revision by remember { mutableIntStateOf(0) }
@@ -145,7 +167,23 @@ fun FloatingAssistant(route: String?, modifier: Modifier = Modifier, onNavigate:
         animationSpec = infiniteRepeatable(tween(1600), RepeatMode.Reverse),
         label = "assistant_breathe",
     )
-    val hint = assistantHint(context, route)
+    val hint = uiState?.let { stringResource(it.hintRes) } ?: assistantHint(context, route)
+    val busy = uiState?.phase == AssistantPhase.LOADING || uiState?.phase == AssistantPhase.SAVING
+
+    LaunchedEffect(route) {
+        activityToken++
+        motionState = AssistantMotion.IDLE
+    }
+    LaunchedEffect(uiState?.phase, uiState?.eventKey) {
+        if (uiState == null) return@LaunchedEffect
+        activityToken++
+        motionState = when (uiState.phase) {
+            AssistantPhase.LOADING, AssistantPhase.SAVING -> AssistantMotion.WORKING
+            AssistantPhase.SAVED -> AssistantMotion.REACTING
+            AssistantPhase.ERROR -> AssistantMotion.ATTENTIVE
+            else -> if (motionState == AssistantMotion.WORKING) AssistantMotion.REACTING else AssistantMotion.IDLE
+        }
+    }
 
     LaunchedEffect(character, animationsEnabled, motionState, activityToken) {
         if (!animationsEnabled) {
@@ -174,60 +212,77 @@ fun FloatingAssistant(route: String?, modifier: Modifier = Modifier, onNavigate:
                     frameIndex = frame
                     delay(320)
                 }
+                motionState = if (busy) AssistantMotion.WORKING else AssistantMotion.IDLE
+            }
+            AssistantMotion.WORKING -> while (true) {
+                intArrayOf(1, 2, 1, 0).forEach { frame ->
+                    frameIndex = frame
+                    delay(440)
+                }
+            }
+            AssistantMotion.ATTENTIVE -> {
+                intArrayOf(3, 4, 5, 0).forEach { frame ->
+                    frameIndex = frame
+                    delay(240)
+                }
                 motionState = AssistantMotion.IDLE
             }
         }
     }
 
-    LaunchedEffect(activityToken, animationsEnabled, character) {
-        if (animationsEnabled) {
+    LaunchedEffect(activityToken, animationsEnabled, character, busy) {
+        if (animationsEnabled && !busy) {
             delay(15_000)
             motionState = AssistantMotion.SLEEPING
         }
     }
 
-    BoxWithConstraints(modifier.fillMaxSize()) {
+    BoxWithConstraints(modifier.fillMaxSize().imePadding()) {
         val density = LocalDensity.current
-        val assistantSize = AssistantPrefs.size(context).dp
-        val maxX = with(density) { (maxWidth - assistantSize).coerceAtLeast(0.dp).toPx() }
-        val maxY = with(density) { (maxHeight - assistantSize).coerceAtLeast(0.dp).toPx() }
-        val bubbleWidth = 232.dp.coerceAtMost(maxWidth - 16.dp)
-        val bubbleWidthPx = with(density) { bubbleWidth.toPx() }
-        val bubbleGapPx = with(density) { 8.dp.toPx() }
-        val bubbleLiftPx = with(density) { 112.dp.toPx() }
-        var offset by remember { mutableStateOf(IntOffset.Zero) }
-        var initialized by remember { mutableStateOf(false) }
-        var bubbleHeight by remember { mutableIntStateOf(0) }
-
-        LaunchedEffect(maxX, maxY) {
-            if (!initialized) {
-                offset = IntOffset(
-                    (AssistantPrefs.positionX(context) * maxX).roundToInt(),
-                    (AssistantPrefs.positionY(context) * maxY).roundToInt(),
-                )
-                initialized = true
-            } else {
-                offset = IntOffset(offset.x.coerceIn(0, maxX.roundToInt()), offset.y.coerceIn(0, maxY.roundToInt()))
-            }
+        val assistantSize = AssistantPrefs.size(context).dp.coerceAtMost(maxWidth).coerceAtMost(maxHeight)
+        val insetX = ((maxWidth - assistantSize) / 2).coerceIn(0.dp, 8.dp)
+        val insetY = ((maxHeight - assistantSize) / 2).coerceIn(0.dp, 8.dp)
+        val maxX = with(density) { (maxWidth - assistantSize - insetX * 2).coerceAtLeast(0.dp).toPx() }
+        val maxY = with(density) { (maxHeight - assistantSize - insetY * 2).coerceAtLeast(0.dp).toPx() }
+        val bubbleWidth = (maxWidth - 16.dp).coerceIn(0.dp, 232.dp)
+        var positionX by remember { mutableFloatStateOf(AssistantPrefs.positionX(context)) }
+        var positionY by remember { mutableFloatStateOf(AssistantPrefs.positionY(context)) }
+        // Relative anchors survive temporary keyboard resizing without rewriting the saved position.
+        val offset = with(density) {
+            IntOffset((insetX.toPx() + positionX * maxX).roundToInt(), (insetY.toPx() + positionY * maxY).roundToInt())
         }
+        var bubbleHeight by remember { mutableIntStateOf(0) }
+        val placement = with(density) {
+            placeAssistantBubble(offset.x.toFloat(), offset.y.toFloat(), assistantSize.toPx(),
+                bubbleWidth.toPx(), if (bubbleHeight > 0) bubbleHeight.toFloat() else 160.dp.toPx(),
+                maxWidth.toPx(), maxHeight.toPx(), 8.dp.toPx(), 8.dp.toPx())
+        }
+        val bubbleMaxHeight = with(density) { placement.maxHeight.toDp() }
+        val bubbleInset = ((bubbleMaxHeight - 48.dp) / 2).coerceIn(0.dp, 42.dp)
+        val petState = stringResource(when {
+            motionState == AssistantMotion.SLEEPING -> R.string.assistant_pet_sleep_v177
+            busy -> R.string.assistant_pet_busy_v177
+            uiState?.phase == AssistantPhase.ERROR -> R.string.assistant_pet_attention_v177
+            else -> R.string.assistant_pet_awake_v177
+        })
+        val tapLabel = stringResource(when {
+            !hintsEnabled -> R.string.assistant_pet_interact_v177
+            showHint -> R.string.assistant_hint_close_v177
+            else -> R.string.assistant_hint_open_v177
+        })
 
-        if (showHint && hintsEnabled) {
-            val bubbleX = if (offset.x > maxX / 2f) {
-                offset.x - bubbleWidthPx - bubbleGapPx
-            } else {
-                offset.x + with(density) { assistantSize.toPx() } + bubbleGapPx
-            }.coerceIn(8f, (with(density) { maxWidth.toPx() } - bubbleWidthPx - 8f).coerceAtLeast(8f))
-            val bubbleBottomLimit = with(density) { maxHeight.toPx() } - bubbleHeight - 8f
-            val bubbleY = (offset.y - bubbleLiftPx).coerceIn(8f, bubbleBottomLimit.coerceAtLeast(8f))
-            val tailOnRight = offset.x > maxX / 2f
+        AnimatedVisibility(
+            visible = showHint && hintsEnabled,
+            enter = fadeIn(tween(180)), exit = fadeOut(tween(120)),
+        ) {
             Surface(
-                modifier = Modifier.widthIn(max = bubbleWidth)
-                    .heightIn(max = (maxHeight - 16.dp).coerceAtLeast(80.dp))
+                modifier = Modifier.width(bubbleWidth)
+                    .heightIn(max = bubbleMaxHeight)
                     .onSizeChanged { bubbleHeight = it.height }.graphicsLayer {
-                    translationX = bubbleX
-                    translationY = bubbleY
-                }.clickable { showHint = false },
-                shape = cloudBubbleShape(tailOnRight),
+                    translationX = placement.x
+                    translationY = placement.y
+                }.semantics { liveRegion = LiveRegionMode.Polite },
+                shape = cloudBubbleShape(placement.tailOnRight, placement.tailAtTop, with(density) { (120.dp * (bubbleInset / 42.dp)).toPx() }),
                 color = if (darkTheme) Color(0xFFF5F0FF) else Color(0xFFFFFBEE),
                 contentColor = Color(0xFF29223D),
                 border = BorderStroke(
@@ -237,14 +292,27 @@ fun FloatingAssistant(route: String?, modifier: Modifier = Modifier, onNavigate:
                 tonalElevation = 2.dp,
                 shadowElevation = 12.dp,
             ) {
-                Column(Modifier.verticalScroll(rememberScrollState())
-                    .padding(start = 32.dp, end = 32.dp, top = 30.dp, bottom = 42.dp)) {
+                Column(Modifier.padding(start = 32.dp, end = 32.dp, top = bubbleInset, bottom = bubbleInset)
+                    .verticalScroll(rememberScrollState())) {
                     Text(hint, style = MaterialTheme.typography.bodyMedium, color = Color(0xFF29223D))
-                    val action = assistantAction(route)
-                    if (onNavigate != null && action != null) {
-                        TextButton(onClick = { showHint = false; onNavigate(action.first) }) {
-                            Text(stringResource(action.second), color = Color(0xFF5A49B0))
+                    if (uiState != null) {
+                        val label = uiState.actionRes
+                        val action = uiState.onAction
+                        if (label != null && action != null) {
+                            TextButton(onClick = { showHint = false; activityToken++; action() }) {
+                                Text(stringResource(label), color = Color(0xFF5A49B0))
+                            }
                         }
+                    } else {
+                        val action = assistantAction(route)
+                        if (onNavigate != null && action != null) {
+                            TextButton(onClick = { showHint = false; onNavigate(action.first) }) {
+                                Text(stringResource(action.second), color = Color(0xFF5A49B0))
+                            }
+                        }
+                    }
+                    TextButton(onClick = { showHint = false; activityToken++ }) {
+                        Text(stringResource(R.string.assistant_hint_close_v177), color = Color(0xFF5A49B0))
                     }
                 }
             }
@@ -262,6 +330,7 @@ fun FloatingAssistant(route: String?, modifier: Modifier = Modifier, onNavigate:
             contentScale = ContentScale.Fit,
             modifier = Modifier
                 .size(assistantSize)
+                .semantics { stateDescription = petState }
                 .graphicsLayer {
                     translationX = offset.x.toFloat()
                     translationY = offset.y.toFloat() + if (animationsEnabled) floatY else 0f
@@ -273,30 +342,34 @@ fun FloatingAssistant(route: String?, modifier: Modifier = Modifier, onNavigate:
                 .clickable(
                     interactionSource = assistantInteraction,
                     indication = null,
+                    onClickLabel = tapLabel,
                 ) {
                     activityToken++
                     motionState = AssistantMotion.REACTING
                     if (hintsEnabled) showHint = !showHint
                 }
-                .pointerInput(maxX, maxY) {
+                .pointerInput(maxX, maxY, busy) {
                     detectDragGestures(
                         onDragStart = {
                             activityToken++
-                            motionState = AssistantMotion.IDLE
+                            motionState = if (busy) AssistantMotion.WORKING else AssistantMotion.IDLE
+                            showHint = false
+                        },
+                        onDragCancel = {
+                            positionX = AssistantPrefs.positionX(context)
+                            positionY = AssistantPrefs.positionY(context)
                         },
                         onDragEnd = {
                             AssistantPrefs.setPosition(
                                 context,
-                                if (maxX > 0f) offset.x / maxX else 0f,
-                                if (maxY > 0f) offset.y / maxY else 0f,
+                                positionX,
+                                positionY,
                             )
                         },
                     ) { change, dragAmount ->
                         change.consume()
-                        offset = IntOffset(
-                            (offset.x + dragAmount.x).roundToInt().coerceIn(0, maxX.roundToInt()),
-                            (offset.y + dragAmount.y).roundToInt().coerceIn(0, maxY.roundToInt()),
-                        )
+                        if (maxX > 0f) positionX = (positionX + dragAmount.x / maxX).coerceIn(0f, 1f)
+                        if (maxY > 0f) positionY = (positionY + dragAmount.y / maxY).coerceIn(0f, 1f)
                     }
                 },
         )

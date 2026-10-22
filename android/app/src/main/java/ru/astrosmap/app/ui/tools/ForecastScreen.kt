@@ -1,5 +1,9 @@
 package ru.astrosmap.app.ui.tools
 
+import ru.astrosmap.app.ui.assistant.AssistantPhase
+import ru.astrosmap.app.ui.assistant.AssistantUiState
+import ru.astrosmap.app.ui.assistant.PublishAssistantState
+
 import android.content.Context
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -288,7 +292,7 @@ class ForecastViewModel @Inject constructor(
 }
 
 @Composable
-fun ForecastScreen(viewModel: ForecastViewModel = hiltViewModel(), onSelectChart: (() -> Unit)? = null, onJournalAdvice: ((String, String, ru.astrosmap.app.ui.journal.ForecastAdviceSource) -> Unit)? = null) {
+fun ForecastScreen(viewModel: ForecastViewModel = hiltViewModel(), onSelectChart: (() -> Unit)? = null, onJournalAdvice: ((String, String, ru.astrosmap.app.ui.journal.ForecastAdviceSource) -> Unit)? = null, onAssistantState: ((AssistantUiState?) -> Unit)? = null, onOpenJournal: (() -> Unit)? = null, onOpenAccount: (() -> Unit)? = null) {
     val state by viewModel.state.collectAsState()
     val access by viewModel.access.collectAsState()
     val cachedAt by viewModel.cachedAt.collectAsState()
@@ -299,6 +303,38 @@ fun ForecastScreen(viewModel: ForecastViewModel = hiltViewModel(), onSelectChart
     var mode by remember { mutableStateOf(InterpretationMode.BRIEF) }
     val listState = androidx.compose.foundation.lazy.rememberLazyListState()
     val scrollScope = androidx.compose.runtime.rememberCoroutineScope()
+
+    val assistantPhase = when (state) {
+        ReportState.Loading -> AssistantPhase.LOADING
+        ReportState.MissingChart -> AssistantPhase.EMPTY
+        is ReportState.Ready -> AssistantPhase.READY
+        else -> AssistantPhase.ERROR
+    }
+    val assistantHint = when (state) {
+        ReportState.Loading -> R.string.assistant_forecast_loading_v177
+        ReportState.MissingChart -> R.string.assistant_report_missing_v177
+        ReportState.NeedAuth, ReportState.Forbidden -> R.string.assistant_report_auth_v177
+        ReportState.NeedPremium -> R.string.assistant_report_access_v177
+        ReportState.Offline -> R.string.assistant_report_offline_v177
+        is ReportState.Ready -> if (cachedAt != null) R.string.assistant_forecast_cached_v177 else R.string.assistant_forecast_ready_v177
+        else -> R.string.assistant_report_error_v177
+    }
+    val assistantAction: (() -> Unit)? = when (state) {
+        ReportState.Loading -> null
+        ReportState.MissingChart, ReportState.NeedPremium -> onSelectChart
+        ReportState.NeedAuth, ReportState.Forbidden -> onOpenAccount
+        is ReportState.Ready -> if (cachedAt != null) viewModel::retry else onOpenJournal
+        else -> viewModel::retry
+    }
+    val assistantActionRes = when (state) {
+        ReportState.Loading -> null
+        ReportState.MissingChart, ReportState.NeedPremium -> R.string.assistant_open_charts_v176
+        ReportState.NeedAuth, ReportState.Forbidden -> R.string.assistant_open_account_v177
+        is ReportState.Ready -> if (cachedAt != null) R.string.retry else R.string.assistant_open_diary_v176
+        else -> R.string.retry
+    }
+    PublishAssistantState(onAssistantState, assistantPhase, assistantHint,
+        assistantActionRes.takeIf { assistantAction != null }, assistantAction, period.ordinal)
 
     Column(Modifier.fillMaxSize()) {
         ForecastPeriodSelector(period, viewModel::selectPeriod)

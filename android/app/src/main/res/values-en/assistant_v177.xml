@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="assistant_form_empty_v177">Enter your birth date, time and city. I can help you open your chart.</string>
+    <string name="assistant_form_ready_v177">Check your birth time and selected city. When they are right, calculate your chart.</string>
+    <string name="assistant_form_error_v177">Something needs correcting. Check the message in the form, update the details and try again.</string>
+    <string name="assistant_chart_loading_v177">Your chart is being calculated. You can wait a moment or keep using the menu.</string>
+    <string name="assistant_chart_error_v177">The chart could not be calculated. Try again? Your entered details remain in the form.</string>
+    <string name="assistant_chart_ready_v177">Your chart is ready. Tap a planet for an explanation or open your personal forecast.</string>
+    <string name="assistant_chart_unsaved_v177">Your chart is calculated, but the changes are not saved yet. Save them?</string>
+    <string name="assistant_saving_v177">Saving. Wait for confirmation so you know everything has been stored.</string>
+    <string name="assistant_chart_saved_v177">Your chart is saved! You can open its forecast now.</string>
+    <string name="assistant_save_error_v177">Saving did not finish. Your details are still on screen — try saving again.</string>
+    <string name="assistant_forecast_loading_v177">Loading the forecast for your selected period. You can use another section meanwhile.</string>
+    <string name="assistant_forecast_ready_v177">Your forecast is ready. Start with its meaning and advice; record your observations in the diary.</string>
+    <string name="assistant_forecast_cached_v177">You are reading a saved forecast. Refresh it when you are connected again.</string>
+    <string name="assistant_report_offline_v177">The server could not be reached. Check your connection and try loading the forecast again.</string>
+    <string name="assistant_report_error_v177">The forecast has not loaded. Retry the request or choose another chart.</string>
+    <string name="assistant_report_missing_v177">A forecast needs a saved chart. Let us choose one from your list.</string>
+    <string name="assistant_report_auth_v177">This section requires sign-in. Open Account and check your session.</string>
+    <string name="assistant_report_access_v177">This report is not currently accessible. You can return to your chart list.</string>
+    <string name="assistant_journal_loading_v177">Opening your diary. Wait while your entries load.</string>
+    <string name="assistant_journal_ready_v177">Record your mood, events and thoughts here. Save your entry when you finish.</string>
+    <string name="assistant_journal_saved_v177">Your entry is saved! Return to it by selecting this date in the diary.</string>
+    <string name="assistant_open_account_v177">Open Account</string>
+    <string name="assistant_chart_operation_error_v177">The chart operation could not be completed. Check your saved charts before trying again.</string>
+</resources>

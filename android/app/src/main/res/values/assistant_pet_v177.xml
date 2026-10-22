@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="assistant_hint_close_v177">Понятно</string>
+    <string name="assistant_hint_open_v177">Показать подсказку</string>
+    <string name="assistant_pet_sleep_v177">Спит. Можно разбудить нажатием.</string>
+    <string name="assistant_pet_busy_v177">Расчёт или сохранение выполняется.</string>
+    <string name="assistant_pet_attention_v177">Есть подсказка о том, как продолжить.</string>
+    <string name="assistant_pet_awake_v177">Рядом и готов помочь. Можно перетаскивать.</string>
+    <string name="assistant_pet_interact_v177">Поиграть с помощником</string>
+</resources>
