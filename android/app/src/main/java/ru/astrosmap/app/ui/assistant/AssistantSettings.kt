@@ -32,7 +32,6 @@ import ru.astrosmap.app.R
 fun AssistantSettings(context: Context) {
     var selected by remember { mutableStateOf(AssistantPrefs.character(context)) }
     var enabled by remember { mutableStateOf(AssistantPrefs.enabled(context)) }
-    var animations by remember { mutableStateOf(AssistantPrefs.animations(context)) }
     var hints by remember { mutableStateOf(AssistantPrefs.hints(context)) }
     var size by remember { mutableStateOf(AssistantPrefs.size(context)) }
 
@@ -74,9 +73,6 @@ fun AssistantSettings(context: Context) {
     }
     AssistantSwitch(stringResource(R.string.assistant_show), enabled) {
         enabled = it; AssistantPrefs.setEnabled(context, it)
-    }
-    AssistantSwitch(stringResource(R.string.assistant_animations), animations, enabled) {
-        animations = it; AssistantPrefs.setAnimations(context, it)
     }
     AssistantSwitch(stringResource(R.string.assistant_hints), hints, enabled) {
         hints = it; AssistantPrefs.setHints(context, it)

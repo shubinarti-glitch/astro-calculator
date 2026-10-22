@@ -116,13 +116,11 @@ class ForecastContentUiTest {
     @Test fun animatedPetCanBeDraggedAndExplainsForecastOnTap() {
         val wasEnabled = AssistantPrefs.enabled(context)
         val hadHints = AssistantPrefs.hints(context)
-        val hadAnimations = AssistantPrefs.animations(context)
         val oldX = AssistantPrefs.positionX(context)
         val oldY = AssistantPrefs.positionY(context)
         try {
             AssistantPrefs.setEnabled(context, true)
             AssistantPrefs.setHints(context, true)
-            AssistantPrefs.setAnimations(context, true)
             AssistantPrefs.setPosition(context, 0.6f, 0.5f)
             compose.setContent { AstroTheme { FloatingAssistant("forecast/1") } }
             val pet = compose.onNodeWithContentDescription(label(AssistantPrefs.character(context).nameRes))
@@ -137,7 +135,6 @@ class ForecastContentUiTest {
         } finally {
             AssistantPrefs.setEnabled(context, wasEnabled)
             AssistantPrefs.setHints(context, hadHints)
-            AssistantPrefs.setAnimations(context, hadAnimations)
             AssistantPrefs.setPosition(context, oldX, oldY)
         }
     }

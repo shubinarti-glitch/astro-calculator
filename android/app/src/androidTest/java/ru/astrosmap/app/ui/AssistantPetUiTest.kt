@@ -2,6 +2,7 @@ package ru.astrosmap.app.ui
 
 import android.content.Context
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -39,6 +40,7 @@ import ru.astrosmap.app.R
 import ru.astrosmap.app.ui.assistant.AssistantCharacter
 import ru.astrosmap.app.ui.assistant.AssistantPhase
 import ru.astrosmap.app.ui.assistant.AssistantPrefs
+import ru.astrosmap.app.ui.assistant.AssistantSettings
 import ru.astrosmap.app.ui.assistant.AssistantUiState
 import ru.astrosmap.app.ui.assistant.FloatingAssistant
 import ru.astrosmap.app.ui.assistant.PublishAssistantState
@@ -244,20 +246,39 @@ class AssistantPetUiTest {
         close().assertDoesNotExist()
     }
 
-    @Test fun disabledHintsStayClosedAndDisabledAnimationsKeepPetStill() {
+    @Test fun disabledHintsStayClosedAndCanBeEnabledAgain() {
         AssistantPrefs.setHints(context, false)
         var actions = 0
         show(state { actions++ })
         pet().performClick()
         compose.onNodeWithText(label(hint)).assertDoesNotExist()
         assertEquals(0, actions)
-        val before = pet().fetchSemanticsNode().boundsInRoot
-        compose.mainClock.advanceTimeBy(2_000)
-        val after = pet().fetchSemanticsNode().boundsInRoot
-        assertEquals(before, after)
         compose.runOnIdle { AssistantPrefs.setHints(context, true) }
         pet().performClick()
         compose.onNodeWithText(label(hint)).assertIsDisplayed()
+    }
+
+    @Test fun legacyDisabledAnimationPreferenceDoesNotStopMotion() {
+        assertTrue(!prefs.getBoolean("animations", true))
+        // Compose cancels infinite animations if automatic time advancement starts them.
+        compose.mainClock.autoAdvance = false
+        show(state())
+        compose.mainClock.advanceTimeByFrame()
+        val before = pet().fetchSemanticsNode().boundsInRoot.center
+        compose.mainClock.advanceTimeBy(650)
+        val after = pet().fetchSemanticsNode().boundsInRoot.center
+        assertTrue("Legacy static-image setting must not stop the pet animation",
+            (after - before).getDistance() > .1f)
+    }
+
+    @Test fun settingsKeepCharacterSizeAndHintsWithoutAnimationSwitch() {
+        compose.setContent { AstroTheme { Column { AssistantSettings(context) } } }
+        compose.onNodeWithText(label(R.string.assistant_animations)).assertDoesNotExist()
+        compose.onNodeWithText(label(R.string.assistant_show)).assertIsDisplayed()
+        compose.onNodeWithText(label(R.string.assistant_hints)).assertIsDisplayed()
+        AssistantCharacter.entries.forEach { character ->
+            compose.onNodeWithContentDescription(label(character.nameRes)).assertIsDisplayed()
+        }
     }
 
     @Test fun nonFiniteStoredPositionUsesSafeDefaults() {
