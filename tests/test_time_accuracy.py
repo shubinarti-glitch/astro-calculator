@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
 import pytest
@@ -17,10 +17,30 @@ def test_progression_preserves_midnight_birth_hour():
     report = astrology.progression_report(
         NATAL, {"year": 2030, "month": 5, "day": 15, "hour": 12, "minute": 0}, with_svg=False,
     )
-    birth = datetime(1990, 5, 15, 0, 30)
     target = datetime(2030, 5, 15, 12, 0)
-    expected = birth + (target - birth) / astrology.TROPICAL_YEAR_DAYS
-    assert report["prog_meta"]["local_datetime"].startswith(expected.strftime("%Y-%m-%dT%H:%M"))
+    natal = astrology.build_subject(**NATAL)
+    birth_utc = datetime.fromisoformat(natal.iso_formatted_utc_datetime)
+    target_utc = (target - timedelta(hours=3)).replace(tzinfo=timezone.utc)
+    expected_years = (target_utc - birth_utc).total_seconds() / (astrology.TROPICAL_YEAR_DAYS * 86400)
+    expected_progressed = (birth_utc + timedelta(days=expected_years)).astimezone(astrology._timezone("Europe/Moscow"))
+    assert report["elapsed_years"] == pytest.approx(expected_years, abs=0.01)
+    assert report["prog_meta"]["local_datetime"].startswith(expected_progressed.strftime("%Y-%m-%dT%H:%M"))
+
+
+def test_progression_rejects_dates_before_birth_and_dst_gaps():
+    with pytest.raises(ValueError, match="раньше даты рождения"):
+        astrology.progression_report(NATAL, {"year": 1980, "month": 5, "day": 15}, with_svg=False)
+
+    new_york = astrology.build_subject(**dict(NATAL, tz_str="America/New_York"))
+    with pytest.raises(ValueError, match="однозначное местное время"):
+        astrology._progression_moment(new_york, datetime(2026, 3, 8, 2, 30))
+
+
+def test_progression_at_birth_has_zero_elapsed_years():
+    report = astrology.progression_report(
+        NATAL, {"year": 1990, "month": 5, "day": 15, "hour": 0, "minute": 30}, with_svg=False,
+    )
+    assert report["elapsed_years"] == 0
 
 
 def test_panchang_local_noon_is_not_silent_utc_fallback():

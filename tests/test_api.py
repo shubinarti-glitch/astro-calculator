@@ -143,6 +143,15 @@ def test_progression():
     assert r.status_code == 200
 
 
+def test_progression_rejects_prebirth_date_in_api_in_both_languages():
+    target_date = {"year": 1980, "month": 6, "day": 1, "hour": 12, "minute": 0}
+    ru = client.post("/api/progression", json={"natal": dict(NATAL, lang="ru"), "target_date": target_date})
+    en = client.post("/api/progression", json={"natal": dict(NATAL, lang="en"), "target_date": target_date})
+    assert ru.status_code == en.status_code == 400
+    assert "раньше даты рождения" in ru.json()["detail"]
+    assert "cannot be before" in en.json()["detail"]
+
+
 def test_forecast():
     r = client.post("/api/forecast", json={
         "natal": NATAL,
@@ -419,8 +428,13 @@ def test_body_size_limit():
     assert r.status_code == 413
 
 
-def test_geocode_rate_limited():
+def test_geocode_rate_limited(monkeypatch):
+    from types import SimpleNamespace
     from backend.main import _RATE
+    monkeypatch.setattr(
+        "backend.main.requests.get",
+        lambda *args, **kwargs: SimpleNamespace(raise_for_status=lambda: None, json=lambda: {}),
+    )
     _RATE.pop("geo:testclient", None)
     codes = [client.get("/api/reverse-geocode", params={"lat": 0, "lng": 0}).status_code
              for _ in range(31)]

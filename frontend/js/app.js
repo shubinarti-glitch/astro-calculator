@@ -426,6 +426,7 @@ document.querySelectorAll(".tab").forEach((tab) => {
     document.querySelectorAll(".tab").forEach((el) => el.classList.remove("active"));
     tab.classList.add("active");
     mode = tab.dataset.mode;
+    if (mode === "progression") $("prog-date").min = $("birth-date").value;
     const usesCurrentLocation = ["transit", "calendar", "forecast", "return", "vedic"].includes(mode);
     $("current-location-block").classList.toggle("hidden", !usesCurrentLocation);
     if (usesCurrentLocation) syncCurrentLocationFromBirth(false);
@@ -1001,6 +1002,9 @@ $("birth-form").addEventListener("submit", async (e) => {
       const pd = $("prog-date").value;
       const pt = $("prog-time").value || "12:00";
       if (!pd) throw new Error(t("e_prog_date"));
+      const birthDate = $("birth-date").value;
+      $("prog-date").min = birthDate;
+      if (birthDate && pd < birthDate) throw new Error(t("e_prog_before"));
       const [py, pm, pday] = pd.split("-").map(Number);
       const [ph, pmin] = pt.split(":").map(Number);
       const body = { natal: birth, target_date: { year: py, month: pm, day: pday, hour: ph, minute: pmin } };
@@ -1328,10 +1332,12 @@ function toneGroupedCards(aspects, swap = false) {
       else other.push(a);
     });
   if (!good.length && !tense.length && !other.length) return `<p class="section-note">${t("no_aspects")}</p>`;
-  const block = (title, arr, cls) =>
-    arr.length
-      ? `<div class="tr-block"><h4 class="tr-h ${cls}">${title}</h4>${arr.slice(0, 12).map((a) => aspectCard(a, swap)).join("")}</div>`
-      : "";
+  const block = (title, arr, cls) => {
+    if (!arr.length) return "";
+    const visible = arr.slice(0, 12).map((a) => aspectCard(a, swap)).join("");
+    const rest = arr.slice(12);
+    return `<div class="tr-block"><h4 class="tr-h ${cls}">${title}</h4>${visible}${rest.length ? `<details class="progression-more"><summary>${t("pg_more").replace("{n}", rest.length)}</summary>${rest.map((a) => aspectCard(a, swap)).join("")}</details>` : ""}</div>`;
+  };
   return (
     block(t("pg_harm"), good, "good") +
     block(t("pg_tense"), tense, "tense") +
@@ -2624,6 +2630,7 @@ function renderProgression(data) {
       null,
       [
         [t("t_prog_elapsed"), `${data.elapsed_years}`],
+        [t("t_prog_target"), formatDateTime(data.target_date)],
         [t("t_prog_arc"), `${sa.deg}°${String(sa.min).padStart(2, "0")}′`],
         [t("t_prog_date"), formatDateTime(data.prog_meta.local_datetime)],
         [t("sum_natal"), formatDateTime(data.natal_meta.local_datetime)],
@@ -2647,6 +2654,7 @@ function renderProgression(data) {
     `<p class="section-note">${MODE_INTRO.progression}</p>` +
       progressionHighlights(data.highlights) +
       `<h4 class="tr-h" style="margin-top:18px">${t("pg_aspects_title")}</h4>` +
+      `<p class="section-note">${t("pg_snapshot")}</p>` +
       toneGroupedCards(data.aspects, true)
   );
 }

@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from functools import lru_cache
 from typing import Any, Optional
 from pytz import timezone as _timezone
+from pytz.exceptions import AmbiguousTimeError, NonExistentTimeError
 
 # Путь к эфемеридам обязательно настраивается ДО импорта Kerykeion-расчётов.
 from .ephe import ensure_ephemeris
@@ -241,6 +242,7 @@ def _apply_progression_interp(aspects: list[dict]) -> list[dict]:
     """Трактовка вторичных прогрессий: p2 — прогрессивная точка, p1 — натальная."""
     lang = _lang()
     for a in aspects:
+        a["movement"] = ""  # Dual-chart factory marks both charts fixed; it cannot infer progression phase.
         text = I.interpret_progression(a["p2"], a["aspect"], a["p1"], lang)
         if text:
             a["interp"] = text
@@ -817,6 +819,22 @@ def transit_report(
 
 TROPICAL_YEAR_DAYS = 365.242189
 
+
+def _progression_moment(natal_model, at: datetime):
+    """Convert a target wall time in the natal timezone to its day-for-year ephemeris moment."""
+    tz = _timezone(natal_model.tz_str)
+    try:
+        target = tz.localize(at, is_dst=None) if at.tzinfo is None else at.astimezone(tz)
+    except (AmbiguousTimeError, NonExistentTimeError) as exc:
+        message = "Choose an unambiguous local time for the progression date" if _lang() == "en" else "Укажите однозначное местное время для даты прогрессии"
+        raise ValueError(message) from exc
+    birth_utc = datetime.fromisoformat(natal_model.iso_formatted_utc_datetime)
+    elapsed = (target.astimezone(_timezone("UTC")) - birth_utc).total_seconds() / (TROPICAL_YEAR_DAYS * 86400)
+    if elapsed < 0:
+        message = "The progression date cannot be before the birth date" if _lang() == "en" else "Дата прогрессии не может быть раньше даты рождения"
+        raise ValueError(message)
+    return elapsed, (birth_utc + timedelta(days=elapsed)).astimezone(tz)
+
 # Мажорные аспекты для дирекций солнечной дуги (угол -> имя Kerykeion)
 _SA_ASPECTS = {0: "conjunction", 60: "sextile", 90: "square", 120: "trine", 180: "opposition"}
 _SA_ORB = 1.2  # дирекции медленные — берём тугой орб
@@ -903,23 +921,19 @@ def progression_report(
     lang = _set_lang(natal_params.get("lang", "ru"))
     natal_model = build_subject(**natal_params)
 
-    birth = datetime(
-        natal_params["year"], natal_params["month"], natal_params["day"],
-        natal_params.get("hour", 12), natal_params.get("minute", 0),
-    )
     target = datetime(
         target_date["year"], target_date["month"], target_date["day"],
         target_date.get("hour", 12), target_date.get("minute", 0),
     )
-    elapsed_years = (target - birth).total_seconds() / (TROPICAL_YEAR_DAYS * 86400)
-    prog_dt = birth + timedelta(days=elapsed_years)
+    elapsed_years, prog_local = _progression_moment(natal_model, target)
 
     prog_model = build_subject(
         name="Progression" if lang == "en" else "Прогрессия",
-        year=prog_dt.year, month=prog_dt.month, day=prog_dt.day,
-        hour=prog_dt.hour, minute=prog_dt.minute,
+        year=prog_local.year, month=prog_local.month, day=prog_local.day,
+        hour=prog_local.hour, minute=prog_local.minute,
         lat=natal_params["lat"], lng=natal_params["lng"],
         tz_str=natal_model.tz_str,
+        is_dst=bool(prog_local.dst()),
         city=natal_params.get("city", ""),
         houses_system=natal_params.get("houses_system", "P"),
     )
@@ -1347,18 +1361,13 @@ def _annual_profection(model, age: int) -> dict:
 
 def _progressed_moon(natal_model, natal_params: dict, at: datetime) -> dict:
     """Прогрессивная Луна (день=год) на дату — эмоциональный фон периода."""
-    birth = datetime(
-        natal_params["year"], natal_params["month"], natal_params["day"],
-        natal_params.get("hour", 12), natal_params.get("minute", 0),
-    )
-    elapsed_years = (at - birth).total_seconds() / (TROPICAL_YEAR_DAYS * 86400)
-    prog_dt = birth + timedelta(days=elapsed_years)
+    elapsed_years, prog_local = _progression_moment(natal_model, at)
     prog_model = build_subject(
         name="Прогр.Луна",
-        year=prog_dt.year, month=prog_dt.month, day=prog_dt.day,
-        hour=prog_dt.hour, minute=prog_dt.minute,
+        year=prog_local.year, month=prog_local.month, day=prog_local.day,
+        hour=prog_local.hour, minute=prog_local.minute,
         lat=natal_params["lat"], lng=natal_params["lng"],
-        tz_str=natal_model.tz_str, city=natal_params.get("city", ""),
+        tz_str=natal_model.tz_str, is_dst=bool(prog_local.dst()), city=natal_params.get("city", ""),
         houses_system=natal_params.get("houses_system", "P"),
     )
     lang = _lang()

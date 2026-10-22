@@ -367,6 +367,7 @@ def _interpret_transit_deep(t_name: str, aspect: str, n_name: str,
 def interpret_progression(p_name: str, aspect: str, n_name: str, lang: str = "ru") -> str:
     """Вторичная прогрессия: медленно созревающий внутренний этап, а не событие дня."""
     role = PLANET_ROLE.get(n_name)
+    progressed_role = PLANET_ROLE.get(p_name)
     category = _ASPECT_CATEGORY.get(aspect)
     if not role or not category:
         return ""
@@ -374,13 +375,12 @@ def interpret_progression(p_name: str, aspect: str, n_name: str, lang: str = "ru
     natal = C.point_name(n_name, lang)
     aspect_name = C.aspect_name(aspect, lang).lower()
     guidance = g(_PROGRESSION_GUIDANCE[category], lang)
+    source = g(progressed_role, lang) if progressed_role else progressed
+    natal_focus = g(role, lang)
+    natal_focus = natal_focus[:1].upper() + natal_focus[1:]
     if lang == "en":
-        return (
-            f"{_editorial_text('interpretations.7c3d3a71041fb3d2dd417be30da9b03b1d5277a65ee1b4641ef14482a986e3f3')}{progressed}{_editorial_text('interpretations.a8130b15b39f685b3469f2b098940cf873795cd8fe6dad03800dba85b5e5770e')}{aspect_name}{_editorial_text('interpretations.cb55a35efea76767f5f4bed353b1d30b53168ab5a2db06a372fd109f951df7f7')}{natal}{_editorial_text('interpretations.5beed14f0ee2062531284e299f3ee7b46d2d39af07fdcd864cd68755977fbe0d')}{g(role, lang)}”. {guidance}"
-        )
-    return (
-        f"{_editorial_text('interpretations.2b7b4f8f3931f9bbfd4f2531f929afd3554eeee4cd481bbc9834720d1da6400d')}{progressed}{_editorial_text('interpretations.cd4dc1144b5928a5e87d8b9bc23484d977e18e897721868bb4f412f26146d196')}{aspect_name}{_editorial_text('interpretations.62d1e02a977d30ddf38fb87bebf43a154d5e38c6915a56cca528b5a2199507eb')}{natal}{_editorial_text('interpretations.3df07062be68ba3c783df6e895e23edaa7060a6d43faaf7b50aa92cbfc9395c6')}{g(role, lang)}». {guidance}"
-    )
+        return f"Progressed point {progressed} forms a {aspect_name} to natal {natal}. The gradual development of {source} connects with this natal area. What areas are involved? {natal_focus}. {guidance}"
+    return f"Прогрессивная точка «{progressed}» образует аспект «{aspect_name}» к натальной точке «{natal}». Постепенное развитие темы «{source}» связано с этой сферой натальной карты. Что затронуто? {natal_focus}. {guidance}"
 
 
 _DIRECTION_GUIDANCE = {

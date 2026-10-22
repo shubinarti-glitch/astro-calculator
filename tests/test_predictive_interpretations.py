@@ -235,8 +235,19 @@ def test_progression_report_uses_progression_and_direction_texts():
     assert progression_texts
     assert all("транзит" not in text.lower() for text in progression_texts)
     assert any("Прогрессивная" in text for text in progression_texts)
+    assert all(not aspect["movement"] for aspect in report["aspects"])
     assert direction_texts
     assert all("Дирекционная" in text for text in direction_texts)
+
+
+def test_progression_interpretation_uses_both_planet_roles_in_ru_and_en():
+    moon = I.interpret_progression("Moon", "square", "Sun", "ru")
+    mercury = I.interpret_progression("Mercury", "square", "Sun", "ru")
+    english = I.interpret_progression("Moon", "square", "Sun", "en")
+    assert moon != mercury
+    assert I.g(I.PLANET_ROLE["Moon"], "ru") in moon
+    assert I.g(I.PLANET_ROLE["Mercury"], "ru") in mercury
+    assert "gradual development" in english
 
 
 def test_return_report_excludes_natal_portrait_but_keeps_android_contract():
