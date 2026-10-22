@@ -1,5 +1,6 @@
 package ru.astrosmap.app.ui.assistant
 
+import android.animation.ValueAnimator
 import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -148,7 +149,7 @@ fun FloatingAssistant(
     val character = AssistantPrefs.character(context)
     val frames = assistantFrames(character)
     val assistantInteraction = remember { MutableInteractionSource() }
-    val animationsEnabled = AssistantPrefs.animations(context)
+    val animationsEnabled = ValueAnimator.areAnimatorsEnabled()
     val hintsEnabled = AssistantPrefs.hints(context)
     var showHint by remember(route) { mutableStateOf(false) }
     var motionState by remember { mutableStateOf(AssistantMotion.IDLE) }

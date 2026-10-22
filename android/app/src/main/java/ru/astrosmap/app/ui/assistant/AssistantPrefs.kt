@@ -13,7 +13,6 @@ object AssistantPrefs {
     private const val PREFS = "astro_assistant"
     private const val CHARACTER = "character"
     private const val ENABLED = "enabled"
-    private const val ANIMATIONS = "animations"
     private const val HINTS = "hints"
     private const val POSITION_X = "position_x"
     private const val POSITION_Y = "position_y"
@@ -26,8 +25,6 @@ object AssistantPrefs {
     fun setCharacter(context: Context, value: AssistantCharacter) = prefs(context).edit().putString(CHARACTER, value.key).apply()
     fun enabled(context: Context) = prefs(context).getBoolean(ENABLED, true)
     fun setEnabled(context: Context, value: Boolean) = prefs(context).edit().putBoolean(ENABLED, value).apply()
-    fun animations(context: Context) = prefs(context).getBoolean(ANIMATIONS, true)
-    fun setAnimations(context: Context, value: Boolean) = prefs(context).edit().putBoolean(ANIMATIONS, value).apply()
     fun hints(context: Context) = prefs(context).getBoolean(HINTS, true)
     fun size(context: Context) = prefs(context).getInt("size_dp", 88).coerceIn(64, 104)
     fun setSize(context: Context, value: Int) = prefs(context).edit().putInt("size_dp", value.coerceIn(64, 104)).apply()
