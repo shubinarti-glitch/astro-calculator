@@ -13,8 +13,8 @@ content stays runtime-only. Public source and APK/AAB must not embed it.
 The savedId route correction now preserves Save for an edited preview. Actual
 client Save sent PUT 200 to the isolated local server, retained the original row
 id/client nonce and did not duplicate or change account B's row. New packages,
-current dual-variant units and lint passed. Root is performing the new signed APK
-quick check. Production owner/schema migration and specific publication approval
+current dual-variant units and lint passed. The new signed APK edit/save/restart
+and native chart check passed on Android16/16KiB. Production owner/schema migration and specific publication approval
 remain prerequisites; physical-device limitations and incomplete public-source
 export readiness remain explicit below.
 

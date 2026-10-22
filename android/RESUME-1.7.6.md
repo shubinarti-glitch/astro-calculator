@@ -1,5 +1,11 @@
 # Проверенная локальная версия 1.7.6 (14) — 22 октября 2026
 
+Код и тесты закоммичены: b67787fc18b9d3891786d1b8fe13c00b96cb19bc (78 файлов).
+Чистый экспорт именно этого коммита проверен: 336 выбранных файлов, 352 известные
+длинные приватные строки, 0 совпадений. Export ready_to_build/publish остаются false;
+не смешивать source privacy pass с полнотой публичного исходного пакета.
+QA emulator/API остановлены с сохранением данных, IME preference восстановлена.
+
 Исправление edited-draft savedId завершено и проверено. Текущий APK ac534f9e…,
 AAB3b2d34ad…; точные SHA256 и mapping в android/store/releases/1.7.6.
 Build14m03s; test/lint build8m54s; fresh units81/81 каждого варианта; lint0errors.
