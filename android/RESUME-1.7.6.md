@@ -1,3 +1,18 @@
+## Public source update completed — 22 October 2026
+
+The separate public repository https://github.com/shubinarti-glitch/astro-calculator-source
+is updated to1.7.6 (versionCode14), commit73d367361a38e41f0478f50af4a563cfe0d77a1d.
+Normal push, remote-main SHA and unauthenticated GitHub HTTP were verified. The public
+index has342files;339canonical code/build/license blobs match the accepted release source.
+Private data, assets, signing credentials and user records are excluded. A4889-string
+scan found only previously public technical time-validation messages and HTML/XML/CSS
+scaffolding; no editorial interpretation match. Exporter tests20passed,1Windows skip;
+Python syntax compilation passed. The public checkout was not rebuilt with substitute
+private runtime/build resources; README and SOURCE-RELEASE.md state that boundary.
+This supersedes earlier notes that the separate repository was still on1.7.4/pending.
+
+---
+
 ## Production release verified — 22 October 2026
 
 Server backend and website APK1.7.6 (14) are published. The owner explicitly asked
