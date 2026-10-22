@@ -8,6 +8,11 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -20,33 +25,69 @@ private val Context.authDataStore by preferencesDataStore(name = "auth")
  * Хранилище Bearer-токена: DataStore + шифрование AES-GCM ключом из Android Keystore
  * (androidx security-crypto устарела — шифруем сами, это ~30 строк).
  */
-class TokenStore(private val context: Context) {
+interface SessionIdentity {
+    val owners: StateFlow<String?>
+    suspend fun owner(): String?
+}
+
+class TokenStore(private val context: Context) : SessionIdentity {
 
     private val tokenKey = stringPreferencesKey("token")
+    private val ownerKey = stringPreferencesKey("verified_owner")
+    private val mutex = Mutex()
+    private val _owners = MutableStateFlow<String?>(null)
+    /** null: authenticated identity unresolved (or still loading); never falls back to guest. */
+    override val owners: StateFlow<String?> = _owners.asStateFlow()
+    @Volatile private var cached: String? = null
+    @Volatile private var loaded = false
 
-    @Volatile
-    private var cached: String? = null
-    private var loaded = false
-
-    suspend fun get(): String? {
-        if (!loaded) {
-            cached = context.authDataStore.data.first()[tokenKey]?.let(::decrypt)
-            loaded = true
-        }
-        return cached
+    private suspend fun loadLocked() {
+        if (loaded) return
+        val prefs = context.authDataStore.data.first()
+        cached = prefs[tokenKey]?.let(::decrypt)
+        _owners.value = if (cached == null) GUEST else prefs[ownerKey]?.takeIf { it.matches(Regex("user:[1-9][0-9]*")) }
+        loaded = true
     }
 
-    suspend fun save(token: String) {
+    suspend fun get(): String? = mutex.withLock { loadLocked(); cached }
+    override suspend fun owner(): String? = mutex.withLock { loadLocked(); _owners.value }
+
+    suspend fun save(token: String) = mutex.withLock {
+        // A new token has no trusted owner until /me has verified it.
+        context.authDataStore.edit { it[tokenKey] = encrypt(token); it.remove(ownerKey) }
         cached = token
         loaded = true
-        context.authDataStore.edit { it[tokenKey] = encrypt(token) }
+        _owners.value = null
     }
 
-    suspend fun clear() {
+    suspend fun bindOwner(expectedToken: String, userId: Long): Boolean = mutex.withLock {
+        loadLocked()
+        if (cached != expectedToken || userId <= 0) return@withLock false
+        val owner = "user:$userId"
+        context.authDataStore.edit { it[ownerKey] = owner }
+        _owners.value = owner
+        true
+    }
+
+    suspend fun withCurrentSession(expectedOwner: String?, expectedToken: String?, action: () -> Unit): Boolean = mutex.withLock {
+        loadLocked()
+        if (_owners.value != expectedOwner || cached != expectedToken) false else { action(); true }
+    }
+
+    suspend fun clearIf(expectedToken: String) = mutex.withLock {
+        loadLocked()
+        if (cached == expectedToken) clearLocked()
+    }
+
+    suspend fun clear() = mutex.withLock { clearLocked() }
+
+    private suspend fun clearLocked() {
+        context.authDataStore.edit { it.remove(tokenKey); it.remove(ownerKey) }
         cached = null
         loaded = true
-        context.authDataStore.edit { it.remove(tokenKey) }
+        _owners.value = GUEST
     }
+
 
     // ------------------------------------------------------------------ #
 
@@ -77,8 +118,9 @@ class TokenStore(private val context: Context) {
         String(cipher.doFinal(bytes, IV_LEN, bytes.size - IV_LEN))
     }.getOrNull() // ключ Keystore мог «протухнуть» (сброс устройства) — просто разлогин
 
-    private companion object {
-        const val ALIAS = "astro_token_key"
-        const val IV_LEN = 12
+    companion object {
+        const val GUEST = "guest"
+        private const val ALIAS = "astro_token_key"
+        private const val IV_LEN = 12
     }
 }

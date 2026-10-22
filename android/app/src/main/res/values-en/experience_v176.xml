@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="journal_legacy_title_v176">Older entries on this device</string>
+    <string name="journal_legacy_explain_v176">Older local entries use the same account name. This does not prove they belong to this account. Import them only if they are yours. Existing entries will not be replaced.</string>
+    <string name="journal_legacy_confirm_v176">These are mine — import</string>
+    <string name="assistant_hint_journal_v176">Record your mood and events here. Choose a date, add a note and save it. This is your personal journal.</string>
+    <string name="assistant_hint_calendar_v176">Choose a day to see the lunar background and personal events. You can select your current city in Forecasts.</string>
+    <string name="assistant_hint_return_v176">This report describes the selected cycle. Start with its interpretation and advice; technical details explain the calculation.</string>
+    <string name="assistant_hint_synastry_v176">This compares two charts. Read the interpretations as well as the aspects to explore differences and expectations.</string>
+    <string name="assistant_hint_progression_v176">Explore longer-term changes here. Choose a date, then read the interpretation and practical advice.</string>
+    <string name="assistant_open_diary_v176">Open journal</string>
+    <string name="assistant_open_charts_v176">Choose a chart</string>
+    <string name="assistant_open_tools_v176">Open forecasts</string>
+    <string name="journal_advice_title_v176">Advice from your forecast</string>
+    <string name="journal_advice_add_v176">Add to note</string>
+    <string name="journal_advice_added_v176">Advice added to your note. Save the entry when you are finished.</string>
+    <string name="journal_session_loading_v176">Checking journal access…</string>
+</resources>

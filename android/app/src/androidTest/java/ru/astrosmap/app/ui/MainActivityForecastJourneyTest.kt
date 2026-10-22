@@ -4,6 +4,9 @@ import android.database.sqlite.SQLiteDatabase
 import android.graphics.Bitmap
 import java.io.File
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -11,6 +14,7 @@ import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -69,16 +73,37 @@ class MainActivityForecastJourneyTest {
             compose.onNodeWithText(cityLabel).performScrollTo().performClick()
             compose.onNodeWithText(label(R.string.form_calculate)).performScrollTo().performClick()
             awaitText(label(R.string.forecast_chart_open))
+            val sunLabel = AstroLabels.point("Sun")
+            val sunChip = hasText(sunLabel) and SemanticsMatcher.keyIsDefined(SemanticsProperties.Selected)
+            compose.onNode(hasScrollToIndexAction()).performScrollToNode(sunChip)
+            compose.onNode(sunChip).performClick().assertIsSelected()
+            compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText(label(R.string.chart_related_aspects)))
+            capture("chart-interactive.png")
+            compose.onNodeWithText(label(R.string.chart_reset_selection)).performScrollTo().performClick()
             // Saving may already have occurred for an installation with no charts.
             if (compose.onAllNodesWithContentDescription(label(R.string.save)).fetchSemanticsNodes().isNotEmpty()) {
                 compose.onNodeWithContentDescription(label(R.string.save)).performClick()
+                compose.onNode(hasScrollToIndexAction()).performScrollToIndex(0)
                 awaitText(label(R.string.forecast_chart_open))
             }
             compose.onNodeWithText(label(R.string.forecast_chart_open)).performScrollTo().performClick()
             compose.waitUntil(90_000) { compose.onAllNodes(hasScrollToIndexAction()).fetchSemanticsNodes().isNotEmpty() }
-
-
-
+            val today = ru.astrosmap.app.ui.tools.forecastToday(city.tz, city.tz)
+            val start = today.withDayOfMonth(1)
+            val end = start.plusMonths(1).minusDays(1)
+            val locale = context.resources.configuration.locales[0]
+            fun reportTitle(from: LocalDate, to: LocalDate) = label(R.string.tools_forecast) + " · " +
+                ru.astrosmap.app.ui.tools.readableForecastDate(from.toString(), locale) + " — " +
+                ru.astrosmap.app.ui.tools.readableForecastDate(to.toString(), locale)
+            awaitText(reportTitle(start, end))
+            compose.onNodeWithText(label(R.string.forecast_period_next_month)).performScrollTo().performClick()
+            awaitText(reportTitle(start.plusMonths(1), start.plusMonths(2).minusDays(1)))
+            val baseline = context.getString(R.string.forecast_compare_baseline_v176,
+                ru.astrosmap.app.ui.tools.readableForecastDate(start.toString(), locale),
+                ru.astrosmap.app.ui.tools.readableForecastDate(end.toString(), locale))
+            compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText(baseline))
+            compose.onNodeWithText(baseline).assertIsDisplayed()
+            capture("forecast-comparison.png")
             // Three actual chip callbacks queued in the same UI frame reproduce fast input
             // before recomposition removes the ready report. Last requested period must win.
             val periodLabels = listOf(R.string.forecast_period_next_week, R.string.forecast_period_next_month, R.string.forecast_period_this_month)
@@ -86,10 +111,7 @@ class MainActivityForecastJourneyTest {
                 compose.onNodeWithText(label(it)).fetchSemanticsNode().config[SemanticsActions.OnClick].action!!
             }
             compose.runOnUiThread { actions.forEach { it() } }
-            val today = LocalDate.now()
-            val start = today.withDayOfMonth(1)
-            val end = start.plusMonths(1).minusDays(1)
-            val title = label(R.string.tools_forecast) + " · $start — $end"
+            val title = reportTitle(start, end)
             compose.waitUntil(90_000) { compose.onAllNodes(hasScrollToIndexAction()).fetchSemanticsNodes().isNotEmpty() }
             compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText(title))
             compose.onNodeWithText(title).performScrollTo().assertIsDisplayed()
@@ -99,6 +121,14 @@ class MainActivityForecastJourneyTest {
             compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText(label(R.string.forecast_advice_label)))
             compose.onAllNodesWithText(label(R.string.forecast_advice_label))[0].assertExists()
             capture("forecast-advice.png")
+            compose.onNode(hasScrollToIndexAction()).performScrollToNode(hasText(label(R.string.forecast_journal_v176)))
+            compose.onAllNodesWithText(label(R.string.forecast_journal_v176))[0].performScrollTo().assertIsDisplayed().performClick()
+            awaitText(label(R.string.journal_advice_title_v176))
+            compose.onNodeWithText(label(R.string.journal_advice_add_v176)).performScrollTo().performClick()
+            compose.onNodeWithText(label(R.string.journal_note)).performScrollTo().assertIsDisplayed()
+            capture("journal-advice.png")
+            compose.onNodeWithText(label(R.string.journal_save)).performScrollTo().performClick()
+            awaitText(label(R.string.journal_saved))
             // Confirm persistence and that auto/manual save did not insert duplicates.
             SQLiteDatabase.openDatabase(context.getDatabasePath("charts.db").absolutePath, null, SQLiteDatabase.OPEN_READONLY).use { db ->
                 db.rawQuery("SELECT COUNT(*) FROM charts WHERE name = ?", arrayOf(name)).use { cursor ->
@@ -107,6 +137,7 @@ class MainActivityForecastJourneyTest {
                 }
             }
         } finally {
+            runCatching { capture("journey-last-state.png") }
             val file = context.getDatabasePath("charts.db")
             if (InstrumentationRegistry.getArguments().getString("retainQa") != "true" && file.exists()) SQLiteDatabase.openDatabase(file.absolutePath, null, SQLiteDatabase.OPEN_READWRITE).use { db ->
                 db.delete("charts", "name = ?", arrayOf(name))

@@ -50,9 +50,12 @@ android {
         minSdk = 26
         targetSdk = 36
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        versionCode = 13
-        versionName = "1.7.5"
+        versionCode = 14
+        versionName = "1.7.6"
     }
+
+    // The in-app RU/EN switch must work without downloading another language.
+    bundle { language { enableSplit = false } }
 
     buildTypes {
         debug {

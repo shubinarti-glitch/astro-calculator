@@ -24,6 +24,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.ensureActive
 import ru.astrosmap.app.R
 import ru.astrosmap.app.data.ChartDao
 import ru.astrosmap.app.data.api.AstroApi
@@ -39,29 +40,42 @@ class ProgressionViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val dao: ChartDao,
     private val api: AstroApi,
+    private val tokenStore: ru.astrosmap.app.data.TokenStore,
 ) : ViewModel() {
 
     private val chartId: Long = savedStateHandle.get<String>("id")?.toLongOrNull() ?: 0L
     private val _state = MutableStateFlow<ReportState>(ReportState.Loading)
     val state: StateFlow<ReportState> = _state
 
+    private var loadJob: kotlinx.coroutines.Job? = null
+
     init {
         load()
     }
 
     fun load() {
+        loadJob?.cancel()
         _state.value = ReportState.Loading
-        viewModelScope.launch {
-            val entity = dao.byId(chartId) ?: return@launch
+        loadJob = viewModelScope.launch {
+            val token = tokenStore.get()
+            val entity = dao.byId(chartId) ?: run {
+                if (tokenStore.get() == token) _state.value = ReportState.MissingChart
+                return@launch
+            }
             val today = LocalDate.now()
-            _state.value = loadReport {
+            if (dao.owner() != entity.ownerKey || tokenStore.get() != token) return@launch
+            val loaded = loadReport {
+                ensureActive()
                 api.progression(
                     ProgressionApiRequest(
                         natal = entity.toNatalRequest(),
                         targetDate = TransitDateDto(today.year, today.monthValue, today.dayOfMonth),
                     ),
+                    authorization = token?.let { "Bearer $it" } ?: "",
                 )
             }
+            ensureActive()
+            if (tokenStore.get() == token && dao.owner() == entity.ownerKey) _state.value = loaded
         }
     }
 }

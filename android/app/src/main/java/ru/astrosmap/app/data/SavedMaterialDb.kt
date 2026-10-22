@@ -37,13 +37,13 @@ object SavedMaterialPolicy {
 
 @Dao
 interface SavedMaterialDao {
-    @Query("SELECT * FROM saved_materials WHERE ownerKey = :owner ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM saved_materials WHERE (ownerKey = :owner OR (:owner = 'guest' AND ownerKey = 'local')) ORDER BY updatedAt DESC")
     fun observe(owner: String): Flow<List<SavedMaterial>>
 
-    @Query("SELECT * FROM saved_materials WHERE ownerKey = :owner ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM saved_materials WHERE (ownerKey = :owner OR (:owner = 'guest' AND ownerKey = 'local')) ORDER BY updatedAt DESC")
     suspend fun all(owner: String): List<SavedMaterial>
 
-    @Query("SELECT COUNT(*) FROM saved_materials WHERE ownerKey = :owner")
+    @Query("SELECT COUNT(*) FROM saved_materials WHERE (ownerKey = :owner OR (:owner = 'guest' AND ownerKey = 'local'))")
     suspend fun count(owner: String): Int
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

@@ -10,7 +10,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.imePadding
+import ru.astrosmap.app.ui.keepEditorAboveIme
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -34,6 +38,11 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collectLatest
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import ru.astrosmap.app.R
 import ru.astrosmap.app.data.JournalDao
 import ru.astrosmap.app.data.JournalEntry
@@ -62,7 +71,8 @@ class JournalViewModel @Inject constructor(
     private val chartDao: ChartDao,
     private val engine: AstroEngine,
     private val api: AstroApi,
-    analytics: ru.astrosmap.app.data.Analytics,
+    private val tokenStore: ru.astrosmap.app.data.TokenStore,
+    private val analytics: ru.astrosmap.app.data.Analytics,
 ) : ViewModel() {
     var selectedDate by mutableStateOf(LocalDate.now())
         private set
@@ -88,70 +98,178 @@ class JournalViewModel @Inject constructor(
     var saved by mutableStateOf(false)
         private set
     private var ownerKey = "guest"
+    var ready by mutableStateOf(false)
+        private set
+    var accessFailed by mutableStateOf(false)
+        private set
+    private val pendingAdvice = mutableMapOf<LocalDate, MutableSet<String>>()
+    private val drafts = mutableMapOf<LocalDate, JournalEntry>()
+    private var dateRequest = 0
+    private var legacyOwner: String? = null
+    var legacyCount by mutableIntStateOf(0)
+        private set
+
+    private fun snapshot() = JournalEntry(ownerKey, selectedDate.toEpochDay(), mood, energy,
+        relationships, work, wellbeing, event.trim(), gratitude.trim(), note.trim(), tags.trim())
+
+    private fun retainDraft() { if (ready) drafts[selectedDate] = snapshot() }
+    fun accepts(draft: AdviceDraft) = ready && draft.owner == ownerKey
 
     init {
         analytics.track("journal_opened")
         viewModelScope.launch {
-            val me = runCatching { api.me() }.getOrNull()
-            val prefs = context.getSharedPreferences("journal_owner", android.content.Context.MODE_PRIVATE)
-            ownerKey = me?.username?.let(::ownerHash)
-                ?.also { prefs.edit().putString("last_owner", it).apply() }
-                ?: prefs.getString("last_owner", null)
-                ?: "guest"
-            fullHistory = me?.hasEntitlement(Entitlement.JOURNAL_HISTORY) ?: false
+            tokenStore.owner()
+            tokenStore.owners.collectLatest { owner ->
+                ready = false
+                drafts.clear()
+                pendingAdvice.clear()
+                dateRequest++
+                legacyOwner = null
+                legacyCount = 0
+                accessFailed = false
+                apply(null)
+                entries = emptyList()
+                analysis = null
+                transitMatch = null
+                val token = tokenStore.get()
+                val me = if (token != null) try { api.me() }
+                    catch (e: kotlinx.coroutines.CancellationException) { throw e }
+                    catch (_: Exception) { null } else null
+                if (tokenStore.get() != token) return@collectLatest
+                if (owner == null) {
+                    if (token != null && me?.id != null) tokenStore.bindOwner(token, me.id)
+                    else accessFailed = true
+                    return@collectLatest
+                }
+                if (token != null && me?.id != null && owner != "user:${me.id}") return@collectLatest
+                ownerKey = owner
+                if (token != null && me != null) {
+                    // A reused username does not prove ownership of old local entries.
+                    val old = ownerHash(me.username)
+                    val count = dao.all(old).size
+                    if (tokenStore.owner() != owner) return@collectLatest
+                    legacyOwner = old
+                    legacyCount = count
+                }
+                fullHistory = me?.hasEntitlement(Entitlement.JOURNAL_HISTORY) ?: false
+                refresh()
+                val entry = dao.byDate(owner, selectedDate.toEpochDay())
+                if (tokenStore.owner() == owner) { apply(entry); ready = true }
+            }
+        }
+    }
+
+    fun retryAccess() {
+        viewModelScope.launch {
+            accessFailed = false
+            val token = tokenStore.get() ?: return@launch
+            try {
+                val me = api.me(authorization = "Bearer $token")
+                if (me.id == null || !tokenStore.bindOwner(token, me.id)) accessFailed = true
+            } catch (e: kotlinx.coroutines.CancellationException) { throw e }
+            catch (_: Exception) { accessFailed = true }
+        }
+    }
+
+    fun importLegacy() {
+        if (!ready) return
+        val owner = ownerKey.takeIf { it.startsWith("user:") } ?: return
+        val old = legacyOwner ?: return
+        viewModelScope.launch {
+            if (tokenStore.owner() != owner) return@launch
+            dao.copyLegacyOwner(old, owner)
+            if (tokenStore.owner() != owner) return@launch
+            legacyCount = 0
             refresh()
-            load(LocalDate.now())
+            load(selectedDate)
         }
     }
 
     fun load(date: LocalDate) {
+        if (!ready) return
+        retainDraft()
+        val request = ++dateRequest
+        val owner = ownerKey
         viewModelScope.launch {
-            selectedDate = date
-            apply(dao.byDate(ownerKey, date.toEpochDay()))
+            val entry = drafts[date] ?: dao.byDate(owner, date.toEpochDay())
+            if (tokenStore.owner() == owner && request == dateRequest) {
+                retainDraft() // Include typing that happened while the Room read was pending.
+                selectedDate = date
+                apply(entry)
+            }
         }
     }
 
     fun save() {
+        if (!ready) return
+        val owner = ownerKey
+        val entry = snapshot()
+        val date = selectedDate
+        val imported = pendingAdvice[date].orEmpty().filter { entry.note.contains(it) }.toSet()
         viewModelScope.launch {
-            dao.upsert(
-                JournalEntry(
-                    ownerKey = ownerKey,
-                    epochDay = selectedDate.toEpochDay(),
-                    mood = mood,
-                    energy = energy,
-                    relationships = relationships,
-                    work = work,
-                    wellbeing = wellbeing,
-                    event = event.trim(),
-                    gratitude = gratitude.trim(),
-                    note = note.trim(),
-                    tags = tags.trim(),
-                ),
-            )
-            saved = true
-            refresh()
+            if (tokenStore.owner() != owner) return@launch
+            dao.upsert(entry)
+            if (imported.isNotEmpty() && pendingAdvice[date]?.removeAll(imported) == true) {
+                analytics.track("advice_saved")
+            }
+            if (tokenStore.owner() == owner) {
+                if (selectedDate == date && snapshot().copy(updatedAt = 0) == entry.copy(updatedAt = 0)) saved = true
+                if (drafts[date]?.copy(updatedAt = 0) == entry.copy(updatedAt = 0)) drafts.remove(date)
+                refresh()
+            }
         }
     }
 
     fun delete() {
+        if (!ready) return
+        val owner = ownerKey
+        val date = selectedDate
+        val before = snapshot()
         viewModelScope.launch {
-            dao.delete(ownerKey, selectedDate.toEpochDay())
-            apply(null)
-            refresh()
+            if (tokenStore.owner() != owner) return@launch
+            dao.delete(owner, date.toEpochDay())
+            if (tokenStore.owner() == owner) {
+                drafts.remove(date)
+                if (selectedDate == date && snapshot().copy(updatedAt = 0) == before.copy(updatedAt = 0)) apply(null)
+                refresh()
+            }
+        }
+    }
+
+    fun addAdvice(draft: AdviceDraft, consumed: () -> Unit) {
+        if (!ready || draft.owner != ownerKey) return
+        retainDraft()
+        val request = ++dateRequest
+        val owner = ownerKey
+        viewModelScope.launch {
+            val existing = drafts[draft.date] ?: dao.byDate(owner, draft.date.toEpochDay())
+            if (tokenStore.owner() != owner || request != dateRequest) return@launch
+            // Preserve all open per-date drafts, not only the target day's saved row.
+            if (selectedDate != draft.date) { retainDraft(); selectedDate = draft.date; apply(existing) }
+            val imported = sourcedAdvice(draft)
+            val updated = appendAdvice(note, imported)
+            if (updated != note) pendingAdvice.getOrPut(draft.date) { mutableSetOf() }.add(imported)
+            note = updated
+            saved = false
+            consumed()
         }
     }
 
     private suspend fun refresh() {
-        entries = if (fullHistory) {
-            dao.all(ownerKey)
+        val owner = ownerKey
+        val loaded = if (fullHistory) {
+            dao.all(owner)
         } else {
-            dao.since(ownerKey, LocalDate.now().minusDays(29).toEpochDay())
+            dao.since(owner, LocalDate.now().minusDays(29).toEpochDay())
         }
+        if (tokenStore.owner() != owner) return
+        entries = loaded
         analysis = if (fullHistory) JournalAnalyticsCalculator.calculate(entries) else null
         if (fullHistory && analysis != null) calculateTransitMatch() else transitMatch = null
     }
 
     private suspend fun calculateTransitMatch() {
+        val owner = ownerKey
         analysisLoading = true
         try {
             val charts = chartDao.allOnce().filter { !it.pendingDelete }
@@ -176,7 +294,7 @@ class JournalViewModel @Inject constructor(
                     )
                 }
             }
-            transitMatch = JournalAnalyticsCalculator.transitMatch(sample, predicted)
+            if (tokenStore.owner() == owner) transitMatch = JournalAnalyticsCalculator.transitMatch(sample, predicted)
         } finally {
             analysisLoading = false
         }
@@ -197,12 +315,42 @@ class JournalViewModel @Inject constructor(
 }
 
 @Composable
-fun JournalScreen(viewModel: JournalViewModel = hiltViewModel()) {
+fun JournalScreen(viewModel: JournalViewModel = hiltViewModel(), adviceDraft: AdviceDraft? = null, onAdviceConsumed: () -> Unit = {}) {
+    var showLegacyImport by remember { mutableStateOf(false) }
+    if (showLegacyImport && viewModel.ready && viewModel.legacyCount > 0) {
+        AlertDialog(onDismissRequest = { showLegacyImport = false },
+            title = { Text(stringResource(R.string.journal_legacy_title_v176)) },
+            text = { Text(stringResource(R.string.journal_legacy_explain_v176)) },
+            confirmButton = { TextButton(onClick = { showLegacyImport = false; viewModel.importLegacy() }) {
+                Text(stringResource(R.string.journal_legacy_confirm_v176))
+            } },
+            dismissButton = { TextButton(onClick = { showLegacyImport = false }) { Text(stringResource(R.string.cancel)) } })
+    }
+    if (!viewModel.ready) {
+        Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(stringResource(if (viewModel.accessFailed) R.string.net_error else R.string.journal_session_loading_v176))
+            if (viewModel.accessFailed) Button(onClick = viewModel::retryAccess) { Text(stringResource(R.string.retry)) }
+        }
+        return
+    }
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+        Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         AppHeader(stringResource(R.string.journal_title))
+        if (viewModel.legacyCount > 0) {
+            OutlinedButton(onClick = { showLegacyImport = true }) { Text(stringResource(R.string.journal_legacy_title_v176)) }
+        }
+        adviceDraft?.takeIf(viewModel::accepts)?.let { draft ->
+            AstroPanel {
+                Text(stringResource(R.string.journal_advice_title_v176), style = MaterialTheme.typography.titleMedium)
+                Text(formatDate(draft.date))
+                Text(draft.advice, style = MaterialTheme.typography.bodyLarge)
+                Button(onClick = { viewModel.addAdvice(draft, onAdviceConsumed) }) {
+                    Text(stringResource(R.string.journal_advice_add_v176))
+                }
+            }
+        }
         if (!viewModel.fullHistory) {
             Text(
                 stringResource(R.string.journal_free_hint),
@@ -359,13 +507,13 @@ private fun metricName(metric: JournalMetric): String = stringResource(
 private fun RatingRow(label: String, value: Int, onValue: (Int) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(label, style = MaterialTheme.typography.labelLarge)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             (1..5).forEach { score ->
                 FilterChip(
                     selected = value == score,
                     onClick = { onValue(score) },
                     label = { Text(score.toString()) },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.widthIn(min = 48.dp),
                 )
             }
         }
@@ -376,10 +524,10 @@ private fun RatingRow(label: String, value: Int, onValue: (Int) -> Unit) {
 private fun JournalField(label: String, value: String, minLines: Int = 1, onValue: (String) -> Unit) {
     OutlinedTextField(
         value = value,
-        onValueChange = { onValue(it.take(2000)) },
+        onValueChange = onValue,
         label = { Text(label) },
         minLines = minLines,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().keepEditorAboveIme(),
     )
 }
 

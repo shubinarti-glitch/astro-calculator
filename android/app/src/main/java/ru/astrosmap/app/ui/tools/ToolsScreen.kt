@@ -9,6 +9,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
+import ru.astrosmap.app.ui.keepEditorAboveIme
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -80,14 +88,21 @@ class ToolsViewModel @Inject constructor(
         }
     }
 
+    private var locationSearch: kotlinx.coroutines.Job? = null
+
     fun onLocationQuery(value: String) {
+        locationSearch?.cancel()
         locationQuery = value
-        viewModelScope.launch {
-            locationSuggestions = withContext(Dispatchers.IO) { cities.search(value) }
+        locationSuggestions = emptyList()
+        locationSearch = viewModelScope.launch {
+            kotlinx.coroutines.delay(200)
+            val result = withContext(Dispatchers.IO) { cities.search(value) }
+            if (locationQuery == value) locationSuggestions = result
         }
     }
 
     fun selectLocation(city: CityStore.City) {
+        locationSearch?.cancel()
         val label = city.label(ru.astrosmap.app.ui.AstroLabels.isRu())
         ForecastLocationStore.save(context, city, label)
         forecastLocationName = label
@@ -96,10 +111,11 @@ class ToolsViewModel @Inject constructor(
     }
 
     fun useBirthLocation() {
-        ForecastLocationStore.clear(context)
-        forecastLocationName = ""
+        locationSearch?.cancel()
         locationQuery = ""
         locationSuggestions = emptyList()
+        ForecastLocationStore.clear(context)
+        forecastLocationName = ""
     }
 }
 
@@ -146,9 +162,14 @@ fun ToolsScreen(
         )
     }
 
+    val focusManager = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+    var firstLocationHeight by remember { mutableIntStateOf(0) }
+    val resultGap = with(LocalDensity.current) { 12.dp.roundToPx() }
     Column(
         Modifier
             .fillMaxSize()
+            .imePadding()
             .verticalScroll(rememberScrollState())
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -193,14 +214,17 @@ fun ToolsScreen(
                 onValueChange = viewModel::onLocationQuery,
                 label = { Text(stringResource(R.string.forecast_location_choose)) },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().testTag("tools-city-editor").keepEditorAboveIme(
+                    if (viewModel.locationSuggestions.isEmpty()) 0 else firstLocationHeight + resultGap,
+                    viewModel.locationSuggestions.firstOrNull()),
             )
-            viewModel.locationSuggestions.forEach { city ->
+            viewModel.locationSuggestions.forEachIndexed { index, city ->
                 Surface(
-                    onClick = { viewModel.selectLocation(city) },
+                    onClick = { viewModel.selectLocation(city); focusManager.clearFocus(); keyboard?.hide() },
                     color = MaterialTheme.colorScheme.surface,
                     shape = MaterialTheme.shapes.medium,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().then(if (index == 0)
+                        Modifier.testTag("tools-city-first-suggestion").onSizeChanged { firstLocationHeight = it.height } else Modifier),
                 ) {
                     Text(
                         city.label(ru.astrosmap.app.ui.AstroLabels.isRu()),

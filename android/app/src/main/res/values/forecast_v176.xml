@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="report_forbidden_v176">Нет доступа к этому отчёту. Проверьте выбранный аккаунт и доступ в кабинете.</string>
+    <string name="report_rate_limit_v176">Слишком много запросов. Подождите немного и повторите попытку.</string>
+    <string name="report_invalid_v176">Не удалось рассчитать отчёт с выбранными данными. Проверьте карту и период.</string>
+    <string name="report_server_v176">Сервис временно недоступен. Повторите попытку позже.</string>
+    <string name="report_unexpected_v176">Не удалось прочитать ответ сервиса. Повторите попытку.</string>
+    <string name="forecast_basis_show_v176">Астрологическое основание</string>
+    <string name="forecast_basis_hide_v176">Скрыть основание</string>
+    <string name="forecast_journal_v176">Сохранить совет в дневник</string>
+    <string name="forecast_top_v176">К началу прогноза</string>
+    <string name="forecast_before_v176">В предыдущем расчёте</string>
+    <string name="forecast_now_v176">В новом расчёте</string>
+    <string name="forecast_compare_baseline_v176">Сравнение с периодом %1$s — %2$s</string>
+</resources>

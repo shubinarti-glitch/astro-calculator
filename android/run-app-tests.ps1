@@ -33,6 +33,7 @@ foreach ($variant in $Variants) {
     if ($LASTEXITCODE -ne 0) { throw "$variant classpath lookup failed: $classpathOutput" }
     $classpath = $classpathOutput | Where-Object { "$_" -match 'junit.*\.jar' } | Select-Object -Last 1
     if (-not $classpath) { throw "$variant unit-test classpath was not returned." }
+    Set-Content -LiteralPath (Join-Path $OutputDirectory "$variant-unit-classpath.txt") -Value $classpath -Encoding utf8
     $log = Join-Path $OutputDirectory "$variant-unit-junit.log"
     $result = & $java -cp "$classpath" org.junit.runner.JUnitCore @testClasses 2>&1
     $testExit = $LASTEXITCODE

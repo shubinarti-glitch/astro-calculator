@@ -1,5 +1,12 @@
 package ru.astrosmap.app.ui.view
 
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.FilterChip
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalContext
+import ru.astrosmap.app.ui.theme.AstroPanel
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -58,6 +65,7 @@ fun ChartViewScreen(
     viewModel: ChartViewViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
+    var selectedPoint by rememberSaveable(state.entity?.id) { mutableStateOf<String?>(null) }
     var confirmDelete by remember { mutableStateOf(false) }
     var mode by remember { mutableStateOf(InterpretationMode.BRIEF) }
     val expanded = remember { mutableStateOf(setOf<String>()) }
@@ -69,8 +77,7 @@ fun ChartViewScreen(
             confirmButton = {
                 TextButton(onClick = {
                     confirmDelete = false
-                    viewModel.delete()
-                    onClosed()
+                    viewModel.delete(onClosed)
                 }) { Text(stringResource(R.string.delete)) }
             },
             dismissButton = {
@@ -117,10 +124,19 @@ fun ChartViewScreen(
         val chart = state.chart
         if (chart == null) {
             Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+                if (state.calculationFailed) Column(
+                    Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Text(stringResource(R.string.report_invalid_v176), style = MaterialTheme.typography.bodyLarge)
+                    Button(onClick = viewModel::retryCalculation) { Text(stringResource(R.string.retry)) }
+                    TextButton(onClick = onClosed) { Text(stringResource(R.string.password_close)) }
+                } else CircularProgressIndicator()
             }
             return@Scaffold
         }
+        val context = LocalContext.current
+        LaunchedEffect(chart) { ru.astrosmap.app.data.DailyNotify.markUsefulAction(context) }
         val texts = state.texts
         val materialBody = texts?.let { value ->
             (value.storySections + value.bigThree + value.temperament + value.spheres)
@@ -145,11 +161,35 @@ fun ChartViewScreen(
             item {
                 ChartWheel(
                     chart = chart,
+                    selectedPoint = selectedPoint,
+                    onPointSelected = { selectedPoint = it },
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(1f)
                         .padding(8.dp),
                 )
+            }
+            item {
+                Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                    Text(stringResource(R.string.chart_select_hint), style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        chart.points.forEach { point ->
+                            FilterChip(selected = selectedPoint == point.name,
+                                onClick = { selectedPoint = if (selectedPoint == point.name) null else point.name },
+                                label = { Text(AstroLabels.point(point.name)) })
+                        }
+                    }
+                }
+            }
+            selectedPoint?.let { name ->
+                val point = chart.points.firstOrNull { it.name == name }
+                if (point != null) item {
+                    SelectedChartPoint(point, chart.aspects.filter { it.p1 == name || it.p2 == name }, texts) {
+                        selectedPoint = null
+                    }
+                }
             }
             item {
                 InterpretationModeSelector(
@@ -209,10 +249,10 @@ fun ChartViewScreen(
                         }
                     }
                     item { SectionTitle(stringResource(R.string.planets)) }
-                    items(chart.points) { p -> PlanetRow(p, null, expanded) }
-                    items(chart.angles.filter { it.name in listOf("Ascendant", "Medium_Coeli") }) { p -> PlanetRow(p, null, expanded) }
+                    items(chart.points) { p -> PlanetRow(p, texts?.planetTexts?.get(p.name), expanded) }
+                    items(chart.angles.filter { it.name in listOf("Ascendant", "Medium_Coeli") }) { p -> PlanetRow(p, texts?.planetTexts?.get(p.name), expanded) }
                     item { SectionTitle(stringResource(R.string.aspects)) }
-                    items(chart.aspects) { a -> AspectRow(a, null, expanded) }
+                    items(chart.aspects) { a -> AspectRow(a, texts?.aspectTexts?.get(ChartTexts.aspectKey(a.p1, a.aspect, a.p2)), expanded) }
                 }
             }
             // Проверенный продажами продукт — PDF-отчёт. Покупок в приложении нет (правила
@@ -305,17 +345,12 @@ private fun PlanetRow(
             Text(AstroLabels.pointGlyphs[p.name] ?: "", color = MaterialTheme.colorScheme.primary)
             Column(Modifier.weight(1f)) {
                 Text(AstroLabels.point(p.name))
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    if (p.retrograde) {
-                        Text("R", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
-                    }
-                    Text("${AstroLabels.signGlyphs[p.sign]} ${AstroLabels.sign(p.sign)}", color = GoodColor)
-                    Text(AstroLabels.degMin(p.position))
-                    Text(
-                        stringResource(R.string.house_short, p.houseNum),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+                Text(
+                    "${AstroLabels.signGlyphs[p.sign]} ${AstroLabels.sign(p.sign)} · ${AstroLabels.degMin(p.position)} · " +
+                        stringResource(R.string.house_short, p.houseNum) + if (p.retrograde) " · R" else "",
+                    color = GoodColor,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
             }
             if (paragraphs != null) {
                 Text(
@@ -382,6 +417,44 @@ private fun AspectRow(
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 6.dp),
             )
+        }
+    }
+}
+
+@Composable
+internal fun SelectedChartPoint(
+    point: ChartPoint,
+    aspects: List<AspectHit>,
+    texts: ChartTexts?,
+    onReset: () -> Unit,
+) {
+    val expanded = remember(point.name) { mutableStateOf(setOf<String>()) }
+    AstroPanel(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(AstroLabels.point(point.name), style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.primary)
+            Text("${AstroLabels.sign(point.sign)} · ${AstroLabels.degMin(point.position)} · " +
+                stringResource(R.string.house_short, point.houseNum), style = MaterialTheme.typography.bodyMedium)
+            val paragraphs = texts?.planetTexts?.get(point.name).orEmpty().filter { it.text.isNotBlank() }
+            if (paragraphs.isEmpty()) {
+                Text(stringResource(R.string.chart_interpretation_unavailable), style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else paragraphs.forEach { block ->
+                if (block.title.isNotBlank()) Text(block.title, style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.secondary)
+                Text(block.text, style = MaterialTheme.typography.bodyLarge)
+            }
+            Text(stringResource(R.string.chart_related_aspects), style = MaterialTheme.typography.titleMedium)
+            if (aspects.isEmpty()) Text(stringResource(R.string.chart_no_aspects), style = MaterialTheme.typography.bodyMedium)
+            aspects.forEach { aspect ->
+                // The complete names remain available to screen readers; glyphs are decorative.
+                Text("${AstroLabels.point(aspect.p1)} · ${AstroLabels.aspect(aspect.aspect)} · ${AstroLabels.point(aspect.p2)}",
+                    style = MaterialTheme.typography.bodyMedium)
+                val interpretation = texts?.aspectTexts?.get(ChartTexts.aspectKey(aspect.p1, aspect.aspect, aspect.p2))
+                    ?.takeIf { it.isNotBlank() }
+                if (interpretation != null) AspectRow(aspect, interpretation, expanded)
+            }
+            TextButton(onClick = onReset) { Text(stringResource(R.string.chart_reset_selection)) }
         }
     }
 }

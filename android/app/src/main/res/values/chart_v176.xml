@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="chart_wheel_description">Натальная карта. Выберите планету на колесе или в списке ниже.</string>
+    <string name="chart_select_hint">Нажмите планету, чтобы увидеть трактовку и выделить её связи. Повторное нажатие снимает выбор.</string>
+    <string name="chart_interpretation_unavailable">Трактовка этой точки пока недоступна. Положение и рассчитанные связи показаны ниже.</string>
+    <string name="chart_related_aspects">Связи выбранной планеты</string>
+    <string name="chart_no_aspects">В рассчитанном наборе нет связей для этой точки.</string>
+    <string name="chart_reset_selection">Показать всю карту</string>
+</resources>

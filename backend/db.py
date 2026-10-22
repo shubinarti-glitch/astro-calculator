@@ -105,6 +105,17 @@ def init_db() -> None:
         pcols = [r["name"] for r in c.execute("PRAGMA table_info(profiles)").fetchall()]
         if "note" not in pcols:
             c.execute("ALTER TABLE profiles ADD COLUMN note TEXT NOT NULL DEFAULT ''")
+        if "client_id" not in pcols:
+            c.execute("ALTER TABLE profiles ADD COLUMN client_id TEXT")
+        c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_client_id ON profiles(user_id, client_id) WHERE client_id IS NOT NULL")
+        # Deletion nonces prevent a timed-out create request arriving after deletion
+        # from recreating the chart. No birth data, label or notes are retained.
+        c.execute("""CREATE TABLE IF NOT EXISTS profile_deletions (
+            user_id INTEGER NOT NULL,
+            client_id TEXT NOT NULL,
+            PRIMARY KEY(user_id, client_id),
+            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+        )""")
         # Одноразовые токены писем (подтверждение email, сброс пароля) — храним хэш.
         c.execute(
             """CREATE TABLE IF NOT EXISTS email_tokens (
@@ -514,13 +525,39 @@ def is_banned(user_id: int) -> bool:
 # --------------------------------------------------------------------------- #
 #  Сохранённые карты
 # --------------------------------------------------------------------------- #
-def add_profile(user_id: int, label: str, data: dict) -> dict:
+class ProfileDeletedError(Exception):
+    pass
+
+
+def add_profile(user_id: int, label: str, data: dict, client_id: Optional[str] = None,
+                limit: Optional[int] = None) -> dict:
+    """One transaction: retry lookup, quota and insert. Retrying never duplicates a chart."""
     with get_conn() as c:
+        c.execute("BEGIN IMMEDIATE")
+        if client_id:
+            if c.execute("SELECT 1 FROM profile_deletions WHERE user_id = ? AND client_id = ?", (user_id, client_id)).fetchone():
+                raise ProfileDeletedError("Profile creation was cancelled")
+            row = c.execute("SELECT id, label, data FROM profiles WHERE user_id = ? AND client_id = ?",
+                            (user_id, client_id)).fetchone()
+            if row:
+                return {"id": row["id"], "label": row["label"], "data": json.loads(row["data"])}
+        if limit is not None and c.execute("SELECT COUNT(*) FROM profiles WHERE user_id = ?", (user_id,)).fetchone()[0] >= limit:
+            raise ValueError("profile_limit")
         cur = c.execute(
-            "INSERT INTO profiles (user_id, label, data, created_at) VALUES (?, ?, ?, ?)",
-            (user_id, label, json.dumps(data, ensure_ascii=False), _now_iso()),
+            "INSERT INTO profiles (user_id, label, data, created_at, client_id) VALUES (?, ?, ?, ?, ?)",
+            (user_id, label, json.dumps(data, ensure_ascii=False), _now_iso(), client_id),
         )
         return {"id": cur.lastrowid, "label": label, "data": data}
+
+
+def update_profile(user_id: int, profile_id: int, label: str, data: dict) -> Optional[dict]:
+    """Update in place; preserves id, notes, primary selection and original record on failure."""
+    with get_conn() as c:
+        cur = c.execute("UPDATE profiles SET label = ?, data = ? WHERE id = ? AND user_id = ?",
+                        (label, json.dumps(data, ensure_ascii=False), profile_id, user_id))
+        if not cur.rowcount:
+            return None
+        return {"id": profile_id, "label": label, "data": data}
 
 
 def first_profile_id(user_id: int) -> Optional[int]:
@@ -557,10 +594,24 @@ def list_profiles(user_id: int) -> list[dict]:
     ]
 
 
+def delete_profile_by_client(user_id: int, client_id: str) -> None:
+    """Idempotent cancellation, including creates with an unknown/lost server id."""
+    with get_conn() as c:
+        c.execute("BEGIN IMMEDIATE")
+        c.execute("INSERT OR IGNORE INTO profile_deletions(user_id, client_id) VALUES (?, ?)", (user_id, client_id))
+        c.execute("DELETE FROM profiles WHERE user_id = ? AND client_id = ?", (user_id, client_id))
+
+
 def delete_profile(user_id: int, profile_id: int) -> bool:
     with get_conn() as c:
-        cur = c.execute("DELETE FROM profiles WHERE id = ? AND user_id = ?", (profile_id, user_id))
-        return cur.rowcount > 0
+        c.execute("BEGIN IMMEDIATE")
+        row = c.execute("SELECT client_id FROM profiles WHERE id = ? AND user_id = ?", (profile_id, user_id)).fetchone()
+        if row is None:
+            return False
+        if row["client_id"]:
+            c.execute("INSERT OR IGNORE INTO profile_deletions(user_id, client_id) VALUES (?, ?)", (user_id, row["client_id"]))
+        c.execute("DELETE FROM profiles WHERE id = ? AND user_id = ?", (profile_id, user_id))
+        return True
 
 
 def set_profile_note(user_id: int, profile_id: int, note: str) -> bool:

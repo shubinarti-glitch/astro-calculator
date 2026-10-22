@@ -32,6 +32,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.ensureActive
 import kotlinx.serialization.json.JsonObject
 import ru.astrosmap.app.R
 import ru.astrosmap.app.data.ChartDao
@@ -52,6 +53,7 @@ class ReturnViewModel @Inject constructor(
     @ApplicationContext private val context: android.content.Context,
     private val dao: ChartDao,
     private val api: AstroApi,
+    private val tokenStore: ru.astrosmap.app.data.TokenStore,
 ) : ViewModel() {
 
     private val chartId: Long = savedStateHandle.get<String>("id")?.toLongOrNull() ?: 0L
@@ -66,6 +68,8 @@ class ReturnViewModel @Inject constructor(
     val state: StateFlow<ReportState> = _state
     private val _comparison = MutableStateFlow<SolarComparison?>(null)
     val comparison: StateFlow<SolarComparison?> = _comparison
+
+    private var loadJob: kotlinx.coroutines.Job? = null
 
     init {
         load()
@@ -83,33 +87,51 @@ class ReturnViewModel @Inject constructor(
     }
 
     fun load() {
+        loadJob?.cancel()
         _state.value = ReportState.Loading
-        viewModelScope.launch {
-            val entity = dao.byId(chartId) ?: return@launch
+        val selectedYear = year
+        val selectedMonth = month
+        loadJob = viewModelScope.launch {
+            val token = tokenStore.get()
+            val entity = dao.byId(chartId) ?: run {
+                if (tokenStore.get() == token) _state.value = ReportState.MissingChart
+                return@launch
+            }
+            val location = ForecastLocationStore.get(context)
+            if (dao.owner() != entity.ownerKey || tokenStore.get() != token) return@launch
             val loaded = loadReport {
+                ensureActive()
                 api.solarReturn(
                     ReturnApiRequest(
                         natal = entity.toNatalRequest(),
-                        year = year,
-                        month = if (isLunar) month else null,
+                        year = selectedYear,
+                        month = if (isLunar) selectedMonth else null,
                         returnType = if (isLunar) "Lunar" else "Solar",
-                        location = ForecastLocationStore.get(context),
+                        location = location,
                     ),
+                    authorization = token?.let { "Bearer $it" } ?: "",
                 )
             }
+            ensureActive()
+            if (tokenStore.get() != token || dao.owner() != entity.ownerKey) return@launch
             _state.value = loaded
             _comparison.value = null
             if (!isLunar && loaded is ReportState.Ready) {
                 val previous = loadReport {
+                    ensureActive()
+                    if (tokenStore.get() != token || dao.owner() != entity.ownerKey) throw kotlinx.coroutines.CancellationException("Session changed")
                     api.solarReturn(
                         ReturnApiRequest(
                             natal = entity.toNatalRequest(),
-                            year = year - 1,
+                            year = selectedYear - 1,
                             returnType = "Solar",
-                            location = ForecastLocationStore.get(context),
+                            location = location,
                         ),
+                        authorization = token?.let { "Bearer $it" } ?: "",
                     )
                 }
+                ensureActive()
+                if (tokenStore.get() != token || dao.owner() != entity.ownerKey) return@launch
                 if (previous is ReportState.Ready) {
                     _comparison.value = compareSolars(previous.data, loaded.data)
                 }

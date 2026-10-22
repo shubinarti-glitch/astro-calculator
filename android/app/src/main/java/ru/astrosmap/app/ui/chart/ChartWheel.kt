@@ -1,5 +1,11 @@
 package ru.astrosmap.app.ui.chart
 
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.res.stringResource
+import ru.astrosmap.app.R
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
@@ -15,6 +21,7 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.dp
 import ru.astrosmap.app.astro.AspectHit
 import ru.astrosmap.app.astro.ChartPoint
 import ru.astrosmap.app.astro.HouseCusp
@@ -65,11 +72,26 @@ private fun aspectColor(aspect: String, darkTheme: Boolean): Color = when (aspec
 
 /** Колесо натальной карты: зодиак, дома, планеты, линии аспектов. */
 @Composable
-fun ChartWheel(chart: NatalChart, modifier: Modifier = Modifier) {
+fun ChartWheel(
+    chart: NatalChart,
+    modifier: Modifier = Modifier,
+    selectedPoint: String? = null,
+    onPointSelected: ((String?) -> Unit)? = null,
+) {
     val measurer = rememberTextMeasurer()
     val darkTheme = isSystemInDarkTheme()
-    Canvas(modifier = modifier) {
-        drawWheel(chart, measurer, darkTheme)
+    val description = stringResource(R.string.chart_wheel_description)
+    val interactive = if (onPointSelected == null) Modifier else Modifier.pointerInput(chart, selectedPoint) {
+        detectTapGestures(
+            onDoubleTap = { onPointSelected(null) },
+            onTap = { tap ->
+                val hit = chartPointHit(chart, size.width.toFloat(), size.height.toFloat(), tap.x, tap.y, 24.dp.toPx())
+                if (hit != null) onPointSelected(if (hit == selectedPoint) null else hit)
+            },
+        )
+    }
+    Canvas(modifier = modifier.then(interactive).semantics { contentDescription = description }) {
+        drawWheel(chart, measurer, darkTheme, selectedPoint)
     }
 }
 
@@ -77,6 +99,7 @@ internal fun DrawScope.drawWheel(
     chart: NatalChart,
     measurer: TextMeasurer,
     darkTheme: Boolean = true,
+    selectedPoint: String? = null,
 ) {
     val frameColor = if (darkTheme) DarkFrameColor else LightFrameColor
     val lineDim = if (darkTheme) DarkLineDim else LightLineDim
@@ -153,9 +176,11 @@ internal fun DrawScope.drawWheel(
         val l1 = lonByName[asp.p1] ?: continue
         val l2 = lonByName[asp.p2] ?: continue
         val alpha = (1.0f - (asp.orbit / 12.0f).toFloat()).coerceIn(0.25f, 0.9f)
+        val related = selectedPoint == asp.p1 || selectedPoint == asp.p2
+        val emphasis = if (selectedPoint == null || related) alpha else alpha * 0.15f
         drawLine(
-            aspectColor(asp.aspect, darkTheme).copy(alpha = alpha),
-            pos(rAspect, l1), pos(rAspect, l2), radius * 0.005f,
+            aspectColor(asp.aspect, darkTheme).copy(alpha = emphasis),
+            pos(rAspect, l1), pos(rAspect, l2), radius * if (related) 0.010f else 0.005f,
         )
     }
 
@@ -165,7 +190,12 @@ internal fun DrawScope.drawWheel(
     for ((i, p) in shown.withIndex()) {
         drawLine(textColor, pos(rZodiacInner, p.absPos), pos(rZodiacInner * 0.965f, p.absPos), radius * 0.005f)
         val glyphPos = pos(rPlanet, spreadLons[i])
-        drawGlyph(measurer, PointGlyphs.getValue(p.name), glyphPos, textColor, radius * 0.08f)
+        if (p.name == selectedPoint) {
+            drawCircle(goldColor.copy(alpha = 0.16f), radius * 0.065f, glyphPos)
+            drawCircle(goldColor, radius * 0.065f, glyphPos, style = Stroke(radius * 0.005f))
+        }
+        drawGlyph(measurer, PointGlyphs.getValue(p.name), glyphPos,
+            if (p.name == selectedPoint) goldColor else textColor, radius * 0.08f)
         if (p.retrograde) {
             val rPos = pos(rPlanet * 0.88f, spreadLons[i])
             drawGlyph(measurer, "R", rPos, tenseColor, radius * 0.038f)
@@ -211,4 +241,23 @@ private fun DrawScope.drawGlyph(
         layout,
         topLeft = Offset(center.x - layout.size.width / 2f, center.y - layout.size.height / 2f),
     )
+}
+
+/** Hit-test displaced glyphs, not their original longitudes. Closest target wins. */
+internal fun chartPointHit(
+    chart: NatalChart, width: Float, height: Float,
+    x: Float, y: Float, minimumRadius: Float,
+): String? {
+    if (width <= 0f || height <= 0f || minimumRadius < 0f) return null
+    val asc = chart.houses.firstOrNull { it.num == 1 }?.absPos ?: return null
+    val radius = min(width, height) / 2f * 0.92f
+    val shown = chart.points.filter { it.name in PointGlyphs }
+    val spread = spreadAngles(shown.map { it.absPos }, 7.0)
+    val limit = maxOf(minimumRadius, radius * 0.065f)
+    return shown.indices.map { index ->
+        val angle = PI - Math.toRadians(spread[index] - asc)
+        val dx = x - (width / 2f + radius * 0.70f * cos(angle).toFloat())
+        val dy = y - (height / 2f + radius * 0.70f * sin(angle).toFloat())
+        shown[index].name to dx * dx + dy * dy
+    }.filter { it.second <= limit * limit }.minByOrNull { it.second }?.first
 }

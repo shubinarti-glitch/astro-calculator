@@ -41,6 +41,9 @@ interface JournalDao {
 
     @Query("DELETE FROM journal_entries WHERE ownerKey = :ownerKey AND epochDay = :epochDay")
     suspend fun delete(ownerKey: String, epochDay: Long)
+
+    @Query("INSERT OR IGNORE INTO journal_entries (ownerKey, epochDay, mood, energy, relationships, work, wellbeing, event, gratitude, note, tags, updatedAt) SELECT :newOwner, epochDay, mood, energy, relationships, work, wellbeing, event, gratitude, note, tags, updatedAt FROM journal_entries WHERE ownerKey = :oldOwner")
+    suspend fun copyLegacyOwner(oldOwner: String, newOwner: String)
 }
 
 @Database(entities = [JournalEntry::class], version = 1, exportSchema = false)

@@ -29,10 +29,13 @@ object NetModule {
     @Singleton
     fun okHttp(tokenStore: TokenStore): OkHttpClient =
         OkHttpClient.Builder()
+            // A month report can legitimately exceed OkHttp's default 10-second read limit.
+            .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+            .callTimeout(90, java.util.concurrent.TimeUnit.SECONDS)
             .addInterceptor { chain ->
                 // runBlocking допустим: поток OkHttp, DataStore читается один раз и кэшируется.
                 val token = runBlocking { tokenStore.get() }
-                val request = if (token != null) {
+                val request = if (token != null && chain.request().header("Authorization") == null) {
                     chain.request().newBuilder().header("Authorization", "Bearer $token").build()
                 } else {
                     chain.request()
