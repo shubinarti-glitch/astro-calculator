@@ -1,5 +1,6 @@
 """Localize public API errors without altering status codes or Russian defaults."""
 TRANSLATIONS = {
+    "Создание карты отменено: карта была удалена.": "Chart creation was cancelled: the chart was deleted.",
     "На бесплатном тарифе можно сохранить одну карту. Подписка «Премиум» снимает ограничение и вернёт доступ ко всем сохранённым.": "The free plan allows one saved chart. A Premium subscription removes this limit and restores access to all saved charts.",
     "Пользователь с таким именем уже существует": "This username is already taken.",
     "Платёжная система не настроена (data/yookassa.json)": "The payment system is not configured.",

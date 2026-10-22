@@ -149,6 +149,9 @@ def test_client_delete_endpoint_validation_and_replay_status(isolated_profiles):
         assert client.delete("/api/profiles/by-client", params={"client_id": "request-cancelled-key"}).status_code == 200
         r = client.post("/api/profiles", json={"label": "Late request", "data": {}, "client_id": "request-cancelled-key"})
         assert r.status_code == 409
+        en = client.post("/api/profiles?lang=en", json={"label": "Late request", "data": {}, "client_id": "request-cancelled-key"})
+        assert en.status_code == 409
+        assert en.json()["detail"] == "Chart creation was cancelled: the chart was deleted."
         assert client.get("/api/profiles").json() == []
     finally:
         if previous is None:
@@ -176,6 +179,29 @@ def test_client_discard_rate_limit_rejects_before_database_write(isolated_profil
         assert recorded == ["profile-discard:1"]
         with db.get_conn() as c:
             assert [r["client_id"] for r in c.execute("SELECT client_id FROM profile_deletions WHERE user_id=1")] == ["allowed-discard-key"]
+    finally:
+        if previous is None:
+            main.app.dependency_overrides.pop(main.current_user_id, None)
+        else:
+            main.app.dependency_overrides[main.current_user_id] = previous
+
+
+def test_client_discard_actual_limit_is_per_user_and_precedes_write(isolated_profiles, monkeypatch):
+    from collections import OrderedDict
+    monkeypatch.setattr(main, "_RATE", OrderedDict())
+    uid = [1]
+    previous = main.app.dependency_overrides.get(main.current_user_id)
+    main.app.dependency_overrides[main.current_user_id] = lambda: uid[0]
+    try:
+        client = TestClient(main.app)
+        for i in range(120):
+            assert client.delete("/api/profiles/by-client", params={"client_id": f"limit-test-{i:03}"}).status_code == 200
+        assert client.delete("/api/profiles/by-client", params={"client_id": "limit-blocked-key"}).status_code == 429
+        with db.get_conn() as c:
+            assert c.execute("SELECT COUNT(*) FROM profile_deletions WHERE user_id=1").fetchone()[0] == 120
+            assert c.execute("SELECT 1 FROM profile_deletions WHERE client_id='limit-blocked-key'").fetchone() is None
+        uid[0] = 2
+        assert client.delete("/api/profiles/by-client", params={"client_id": "limit-other-user"}).status_code == 200
     finally:
         if previous is None:
             main.app.dependency_overrides.pop(main.current_user_id, None)
