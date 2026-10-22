@@ -6,10 +6,13 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -17,6 +20,13 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.TextButton
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -91,7 +101,7 @@ private val moonFrames = intArrayOf(
     R.drawable.assistant_moon_10, R.drawable.assistant_moon_11,
 )
 
-private fun assistantFrames(character: AssistantCharacter) = when (character) {
+internal fun assistantFrames(character: AssistantCharacter) = when (character) {
     AssistantCharacter.STAR -> starFrames
     AssistantCharacter.SUN -> sunFrames
     AssistantCharacter.MOON -> moonFrames
@@ -112,10 +122,10 @@ internal fun cloudBubbleShape(tailOnRight: Boolean, tailAtTop: Boolean, edgeHeig
     if (tailOnRight) {
         cubicTo(w * 0.18f, y(0.84f), w * 0.30f, y(0.86f), w * 0.36f, y(0.79f))
         lineTo(w * 0.72f, y(0.79f))
-        lineTo(w * 0.94f, y(0.97f))
+        lineTo(w * 0.88f, y(0.89f))
         lineTo(w * 0.84f, y(0.73f))
     } else {
-        lineTo(w * 0.06f, y(0.97f))
+        lineTo(w * 0.12f, y(0.89f))
         lineTo(w * 0.28f, y(0.79f))
         lineTo(w * 0.84f, y(0.73f))
     }
@@ -147,6 +157,7 @@ fun FloatingAssistant(
     revision
     if (!AssistantPrefs.enabled(context)) return
     val character = AssistantPrefs.character(context)
+    val personality = remember(character) { assistantPersonality(character) }
     val frames = assistantFrames(character)
     val assistantInteraction = remember { MutableInteractionSource() }
     val animationsEnabled = ValueAnimator.areAnimatorsEnabled()
@@ -155,21 +166,44 @@ fun FloatingAssistant(
     var motionState by remember { mutableStateOf(AssistantMotion.IDLE) }
     var frameIndex by remember { mutableIntStateOf(0) }
     var activityToken by remember { mutableIntStateOf(0) }
+    var interactionTick by remember { mutableIntStateOf(0) }
+    var dragTilt by remember { mutableFloatStateOf(0f) }
+    var dragging by remember { mutableStateOf(false) }
+    val tilt by animateFloatAsState(if (animationsEnabled) dragTilt else 0f,
+        spring(dampingRatio = .48f, stiffness = 420f), label = "assistant_drag_tilt")
+    val pressScale = remember { Animatable(1f) }
+    val accentProgress = remember { Animatable(1f) }
     val motion = rememberInfiniteTransition(label = "assistant_idle")
     val floatY by motion.animateFloat(
-        initialValue = -3f,
-        targetValue = 3f,
-        animationSpec = infiniteRepeatable(tween(1300), RepeatMode.Reverse),
+        initialValue = -personality.floatDistance,
+        targetValue = personality.floatDistance,
+        animationSpec = infiniteRepeatable(tween(personality.floatMillis), RepeatMode.Reverse),
         label = "assistant_float",
     )
     val scale by motion.animateFloat(
         initialValue = 0.985f,
         targetValue = 1.015f,
-        animationSpec = infiniteRepeatable(tween(1600), RepeatMode.Reverse),
+        animationSpec = infiniteRepeatable(tween(personality.floatMillis + 300), RepeatMode.Reverse),
         label = "assistant_breathe",
     )
     val hint = uiState?.let { stringResource(it.hintRes) } ?: assistantHint(context, route)
     val busy = uiState?.phase == AssistantPhase.LOADING || uiState?.phase == AssistantPhase.SAVING
+
+    LaunchedEffect(interactionTick, animationsEnabled, character) {
+        if (interactionTick == 0 || !animationsEnabled) {
+            pressScale.snapTo(1f)
+        } else {
+            pressScale.animateTo(.93f, tween(80))
+            pressScale.animateTo(1f, spring(dampingRatio = .52f, stiffness = 500f))
+        }
+    }
+    LaunchedEffect(interactionTick, animationsEnabled, character) {
+        accentProgress.snapTo(1f)
+        if (interactionTick > 0 && animationsEnabled) {
+            accentProgress.snapTo(0f)
+            accentProgress.animateTo(1f, tween(850))
+        }
+    }
 
     LaunchedEffect(route) {
         activityToken++
@@ -178,6 +212,7 @@ fun FloatingAssistant(
     LaunchedEffect(uiState?.phase, uiState?.eventKey) {
         if (uiState == null) return@LaunchedEffect
         activityToken++
+        if (uiState.phase == AssistantPhase.SAVED) interactionTick++
         motionState = when (uiState.phase) {
             AssistantPhase.LOADING, AssistantPhase.SAVING -> AssistantMotion.WORKING
             AssistantPhase.SAVED -> AssistantMotion.REACTING
@@ -193,12 +228,10 @@ fun FloatingAssistant(
         }
         when (motionState) {
             AssistantMotion.IDLE -> {
-                val frames = intArrayOf(0, 1, 2, 0, 3, 4, 5, 0)
-                val durations = longArrayOf(700, 220, 220, 850, 120, 140, 180, 900)
                 while (true) {
-                    frames.forEachIndexed { index, frame ->
+                    personality.idleFrames.forEachIndexed { index, frame ->
                         frameIndex = frame
-                        delay(durations[index])
+                        delay(personality.idleDurations[index])
                     }
                 }
             }
@@ -211,7 +244,7 @@ fun FloatingAssistant(
             AssistantMotion.REACTING -> {
                 intArrayOf(8, 9, 10, 11).forEach { frame ->
                     frameIndex = frame
-                    delay(320)
+                    delay(personality.reactionMillis)
                 }
                 motionState = if (busy) AssistantMotion.WORKING else AssistantMotion.IDLE
             }
@@ -231,8 +264,8 @@ fun FloatingAssistant(
         }
     }
 
-    LaunchedEffect(activityToken, animationsEnabled, character, busy) {
-        if (animationsEnabled && !busy) {
+    LaunchedEffect(activityToken, animationsEnabled, character, busy, dragging) {
+        if (animationsEnabled && !busy && !dragging) {
             delay(15_000)
             motionState = AssistantMotion.SLEEPING
         }
@@ -241,8 +274,8 @@ fun FloatingAssistant(
     BoxWithConstraints(modifier.fillMaxSize().imePadding()) {
         val density = LocalDensity.current
         val assistantSize = AssistantPrefs.size(context).dp.coerceAtMost(maxWidth).coerceAtMost(maxHeight)
-        val insetX = ((maxWidth - assistantSize) / 2).coerceIn(0.dp, 8.dp)
-        val insetY = ((maxHeight - assistantSize) / 2).coerceIn(0.dp, 8.dp)
+        val insetX = ((maxWidth - assistantSize) / 2).coerceIn(0.dp, 10.dp)
+        val insetY = ((maxHeight - assistantSize) / 2).coerceIn(0.dp, 10.dp)
         val maxX = with(density) { (maxWidth - assistantSize - insetX * 2).coerceAtLeast(0.dp).toPx() }
         val maxY = with(density) { (maxHeight - assistantSize - insetY * 2).coerceAtLeast(0.dp).toPx() }
         val bubbleWidth = (maxWidth - 16.dp).coerceIn(0.dp, 232.dp)
@@ -259,7 +292,7 @@ fun FloatingAssistant(
                 maxWidth.toPx(), maxHeight.toPx(), 8.dp.toPx(), 8.dp.toPx())
         }
         val bubbleMaxHeight = with(density) { placement.maxHeight.toDp() }
-        val bubbleInset = ((bubbleMaxHeight - 48.dp) / 2).coerceIn(0.dp, 42.dp)
+        val bubbleInset = ((bubbleMaxHeight - 48.dp) / 2).coerceIn(0.dp, 26.dp)
         val petState = stringResource(when {
             motionState == AssistantMotion.SLEEPING -> R.string.assistant_pet_sleep_v177
             busy -> R.string.assistant_pet_busy_v177
@@ -283,7 +316,7 @@ fun FloatingAssistant(
                     translationX = placement.x
                     translationY = placement.y
                 }.semantics { liveRegion = LiveRegionMode.Polite },
-                shape = cloudBubbleShape(placement.tailOnRight, placement.tailAtTop, with(density) { (120.dp * (bubbleInset / 42.dp)).toPx() }),
+                shape = cloudBubbleShape(placement.tailOnRight, placement.tailAtTop, with(density) { (72.dp * (bubbleInset / 26.dp)).toPx() }),
                 color = if (darkTheme) Color(0xFFF5F0FF) else Color(0xFFFFFBEE),
                 contentColor = Color(0xFF29223D),
                 border = BorderStroke(
@@ -291,40 +324,51 @@ fun FloatingAssistant(
                     if (darkTheme) Color(0xFFB9A5FF) else Color(0xFFD4AA55),
                 ),
                 tonalElevation = 2.dp,
-                shadowElevation = 12.dp,
+                shadowElevation = 8.dp,
             ) {
-                Column(Modifier.padding(start = 32.dp, end = 32.dp, top = bubbleInset, bottom = bubbleInset)
+                Column(Modifier.padding(start = 28.dp, end = 28.dp, top = bubbleInset, bottom = bubbleInset)
                     .verticalScroll(rememberScrollState())) {
                     Text(hint, style = MaterialTheme.typography.bodyMedium, color = Color(0xFF29223D))
+                    Spacer(Modifier.height(8.dp))
                     if (uiState != null) {
                         val label = uiState.actionRes
                         val action = uiState.onAction
                         if (label != null && action != null) {
-                            TextButton(onClick = { showHint = false; activityToken++; action() }) {
-                                Text(stringResource(label), color = Color(0xFF5A49B0))
+                            Button(onClick = { showHint = false; activityToken++; action() },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF5A49B0), contentColor = Color.White)) {
+                                Text(stringResource(label))
                             }
                         }
                     } else {
                         val action = assistantAction(route)
                         if (onNavigate != null && action != null) {
-                            TextButton(onClick = { showHint = false; onNavigate(action.first) }) {
-                                Text(stringResource(action.second), color = Color(0xFF5A49B0))
+                            Button(onClick = { showHint = false; onNavigate(action.first) },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF5A49B0), contentColor = Color.White)) {
+                                Text(stringResource(action.second))
                             }
                         }
                     }
-                    TextButton(onClick = { showHint = false; activityToken++ }) {
-                        Text(stringResource(R.string.assistant_hint_close_v177), color = Color(0xFF5A49B0))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        TextButton(onClick = { showHint = false; activityToken++ }) {
+                            Text(stringResource(R.string.assistant_hint_close_v177), color = Color(0xFF5A49B0))
+                        }
                     }
                 }
             }
         }
 
+        AssistantAccent(character, accentProgress.asState(), Modifier.size(assistantSize).graphicsLayer {
+            translationX = offset.x.toFloat()
+            translationY = offset.y.toFloat()
+        })
         Image(
             painter = painterResource(
                 if (animationsEnabled) {
                     frames[frameIndex.coerceIn(frames.indices)]
                 } else {
-                    character.imageRes
+                    frames[0]
                 },
             ),
             contentDescription = stringResource(character.nameRes),
@@ -337,8 +381,9 @@ fun FloatingAssistant(
                     translationY = offset.y.toFloat() + if (animationsEnabled) floatY else 0f
                     // The generated sprite cells are visually wider than the intended mascot.
                     // Keep the assistant compact and slightly vertical without changing its hit area.
-                    scaleX = (if (animationsEnabled) scale else 1f) * 0.88f
-                    scaleY = (if (animationsEnabled) scale else 1f) * 1.02f
+                    scaleX = (if (animationsEnabled) scale * pressScale.value else 1f) * 0.88f
+                    scaleY = (if (animationsEnabled) scale * (2f - pressScale.value) else 1f) * 1.02f
+                    rotationZ = if (animationsEnabled) tilt + floatY / personality.floatDistance * personality.swayDegrees else 0f
                 }
                 .clickable(
                     interactionSource = assistantInteraction,
@@ -346,21 +391,29 @@ fun FloatingAssistant(
                     onClickLabel = tapLabel,
                 ) {
                     activityToken++
+                    interactionTick++
                     motionState = AssistantMotion.REACTING
                     if (hintsEnabled) showHint = !showHint
                 }
                 .pointerInput(maxX, maxY, busy) {
                     detectDragGestures(
                         onDragStart = {
+                            dragging = true
                             activityToken++
                             motionState = if (busy) AssistantMotion.WORKING else AssistantMotion.IDLE
                             showHint = false
                         },
                         onDragCancel = {
+                            dragging = false
+                            activityToken++
+                            dragTilt = 0f
                             positionX = AssistantPrefs.positionX(context)
                             positionY = AssistantPrefs.positionY(context)
                         },
                         onDragEnd = {
+                            dragging = false
+                            activityToken++
+                            dragTilt = 0f
                             AssistantPrefs.setPosition(
                                 context,
                                 positionX,
@@ -369,6 +422,7 @@ fun FloatingAssistant(
                         },
                     ) { change, dragAmount ->
                         change.consume()
+                        dragTilt = (dragAmount.x / density.density * .65f).coerceIn(-6f, 6f)
                         if (maxX > 0f) positionX = (positionX + dragAmount.x / maxX).coerceIn(0f, 1f)
                         if (maxY > 0f) positionY = (positionY + dragAmount.y / maxY).coerceIn(0f, 1f)
                     }

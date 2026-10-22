@@ -8,7 +8,7 @@
     <string name="password_sent">Если эта почта зарегистрирована, на неё отправлено письмо. Проверьте также папку «Спам».</string>
     <string name="today_calculated_at">Обновлено: %1$s</string>
     <string name="assistant_size">Размер помощника</string>
-    <string name="assistant_size_small">Маленький</string>
+    <string name="assistant_size_small">Малый</string>
     <string name="assistant_size_medium">Средний</string>
     <string name="assistant_size_large">Большой</string>
     <string name="feedback_title">Сообщить о проблеме</string>

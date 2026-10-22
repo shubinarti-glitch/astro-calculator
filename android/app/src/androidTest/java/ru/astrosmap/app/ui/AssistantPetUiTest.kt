@@ -3,6 +3,9 @@ package ru.astrosmap.app.ui
 import android.content.Context
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,10 +17,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -41,6 +50,7 @@ import ru.astrosmap.app.ui.assistant.AssistantCharacter
 import ru.astrosmap.app.ui.assistant.AssistantPhase
 import ru.astrosmap.app.ui.assistant.AssistantPrefs
 import ru.astrosmap.app.ui.assistant.AssistantSettings
+import ru.astrosmap.app.ui.assistant.AssistantAccent
 import ru.astrosmap.app.ui.assistant.AssistantUiState
 import ru.astrosmap.app.ui.assistant.FloatingAssistant
 import ru.astrosmap.app.ui.assistant.PublishAssistantState
@@ -279,6 +289,102 @@ class AssistantPetUiTest {
         AssistantCharacter.entries.forEach { character ->
             compose.onNodeWithContentDescription(label(character.nameRes)).assertIsDisplayed()
         }
+    }
+
+    @Test fun livePreviewsSelectEachCharacterAndKeepDifferentMotion() {
+        compose.mainClock.autoAdvance = false
+        compose.setContent { AstroTheme { Column { AssistantSettings(context) } } }
+        compose.mainClock.advanceTimeByFrame()
+        val before = AssistantCharacter.entries.map { character ->
+            compose.onNodeWithContentDescription(label(character.nameRes), useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        }
+        compose.mainClock.advanceTimeBy(650)
+        val distances = AssistantCharacter.entries.mapIndexed { index, character ->
+            val node = compose.onNodeWithContentDescription(label(character.nameRes), useUnmergedTree = true)
+            val after = node.fetchSemanticsNode().boundsInRoot
+            (after.topLeft - before[index].topLeft).getDistance()
+        }
+        assertTrue("Each preview should move", distances.all { it > .1f })
+        assertTrue("Character movement should have different timing", distances.max() - distances.min() > .1f)
+        AssistantCharacter.entries.forEach { character ->
+            val node = compose.onNodeWithContentDescription(label(character.nameRes))
+            node.performClick()
+            compose.mainClock.advanceTimeByFrame()
+            node.assertIsSelected()
+            assertEquals(character, AssistantPrefs.character(context))
+        }
+    }
+
+    @Test fun eachAccentAppearsBrieflyAndFullyDisappears() {
+        val character = mutableStateOf(AssistantCharacter.STAR)
+        val progress = mutableStateOf(.5f)
+        compose.setContent {
+            AssistantAccent(character.value, progress,
+                Modifier.size(88.dp).background(Color.Black).testTag("accent"))
+        }
+        fun litPixels(): Int {
+            val image = compose.onNodeWithTag("accent").captureToImage().toPixelMap()
+            var count = 0
+            for (y in 0 until image.height) for (x in 0 until image.width) {
+                val pixel = image[x, y]
+                if (pixel.red + pixel.green + pixel.blue > .02f) count++
+            }
+            return count
+        }
+        AssistantCharacter.entries.forEach { value ->
+            compose.runOnIdle { character.value = value; progress.value = .5f }
+            assertTrue("Accent should be visible for $value", litPixels() > 0)
+            compose.runOnIdle { progress.value = 1f }
+            assertEquals("Accent must disappear completely", 0, litPixels())
+            compose.runOnIdle { progress.value = 0f }
+            assertEquals(0, litPixels())
+        }
+    }
+
+    @Test fun doubleFontSettingsKeepCharactersAndSizesInsideNarrowWindow() {
+        compose.setContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, 2f)) {
+                AstroTheme {
+                    Box(Modifier.size(274.dp, 400.dp).testTag("settings-window")) {
+                        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                            AssistantSettings(context)
+                        }
+                    }
+                }
+            }
+        }
+        val viewport = compose.onNodeWithTag("settings-window").getUnclippedBoundsInRoot()
+        val labels = AssistantCharacter.entries.map { it.nameRes } + listOf(
+            R.string.assistant_size_small, R.string.assistant_size_medium, R.string.assistant_size_large)
+        labels.forEach { id ->
+            val node = compose.onNodeWithText(label(id))
+            node.performScrollTo().assertIsDisplayed()
+            val bounds = node.getUnclippedBoundsInRoot()
+            assertTrue("Setting label must fit the narrow window",
+                bounds.left.value >= viewport.left.value - 1f && bounds.right.value <= viewport.right.value + 1f)
+        }
+    }
+
+    @Test fun dragTiltsPetThenSettlesWithoutChangingTheChosenPosition() {
+        compose.mainClock.autoAdvance = false
+        show(state())
+        compose.mainClock.advanceTimeByFrame()
+        val before = pet().fetchSemanticsNode().boundsInRoot
+        pet().performTouchInput { down(center); moveBy(Offset(80f, 0f), 100) }
+        compose.mainClock.advanceTimeBy(350)
+        val held = pet().fetchSemanticsNode().boundsInRoot
+        assertTrue("Pet should lean while being dragged", held.width > before.width * 1.04f)
+        pet().performTouchInput { up() }
+        compose.mainClock.advanceTimeByFrame()
+        val chosenX = prefs.getFloat("position_x", -1f)
+        val chosenY = prefs.getFloat("position_y", -1f)
+        compose.mainClock.advanceTimeBy(2_000)
+        val settled = pet().fetchSemanticsNode().boundsInRoot
+        assertEquals(held.center.x, settled.center.x, 5f)
+        assertEquals(chosenX, prefs.getFloat("position_x", -1f), 0f)
+        assertEquals(chosenY, prefs.getFloat("position_y", -1f), 0f)
+        close().assertDoesNotExist()
     }
 
     @Test fun nonFiniteStoredPositionUsesSafeDefaults() {
