@@ -15,6 +15,7 @@ from pathlib import Path
 import requests
 
 from . import db, sales
+from . import robokassa
 
 CONFIG_FILE = Path(__file__).resolve().parent.parent / "data" / "yookassa.json"
 API = "https://api.yookassa.ru/v3/payments"
@@ -57,27 +58,11 @@ def _auth() -> tuple[str, str]:
 
 
 def create_payment(user_id: int, plan: str, return_url: str, attribution: dict | None = None) -> str:
-    """Создать платёж, вернуть URL страницы оплаты ЮKassa."""
+    """Create new payments through Robokassa; YooKassa remains for historical payments."""
     price, _days = PLANS[plan]
-    attempt = str(uuid.uuid4())
-    return_url += ("&" if "?" in return_url else "?") + "attempt=" + attempt
-    resp = requests.post(
-        API,
-        auth=_auth(),
-        headers={"Idempotence-Key": str(uuid.uuid4())},
-        json={
-            "amount": {"value": f"{price}.00", "currency": "RUB"},
-            "capture": True,
-            "confirmation": {"type": "redirect", "return_url": return_url},
-            "description": f"{PLAN_TITLES[plan]}, пользователь #{user_id}",
-            "metadata": {"user_id": user_id, "plan": plan},
-        },
-        timeout=15,
-    )
-    resp.raise_for_status()
-    data = resp.json()
-    sales.register_payment(data["id"], user_id, plan, attempt, price, attribution)
-    return data["confirmation"]["confirmation_url"]
+    user = db.get_user_by_id(user_id)
+    receipt_email = user["email"] if user and user["email_verified"] else None
+    return robokassa.create_payment(user_id, plan, return_url, price, attribution, receipt_email)
 
 
 def _apply_status(payment_id: str, user_id: int, plan: str, status: str) -> bool:
@@ -91,6 +76,9 @@ def reconcile_one(payment_id: str) -> bool:
     rec = db.get_pending_payment(payment_id)
     if not rec:
         return False  # неизвестный или уже обработанный платёж — ничего не делаем
+    if sales.payment_provider(payment_id) == "robokassa":
+        # Robokassa owns the authoritative ResultURL callback; browser return is not trusted.
+        return False
     resp = requests.get(f"{API}/{payment_id}", auth=_auth(), timeout=15)
     if resp.status_code != 200:
         return False
@@ -102,6 +90,8 @@ def reconcile_pending(older_than_min: int = 30) -> int:
     n = 0
     for p in db.pending_payments_all(older_than_min):
         try:
+            if sales.payment_provider(p["payment_id"]) == "robokassa":
+                continue  # status is advanced only by signed ResultURL notification
             resp = requests.get(f"{API}/{p['payment_id']}", auth=_auth(), timeout=15)
             if resp.status_code != 200:
                 continue
@@ -122,6 +112,8 @@ def check_payments(user_id: int, attempt: str | None = None) -> dict:
     activated = False
     pending = ([selected] if selected["status"] == "pending" else []) if selected else db.pending_payments(user_id)
     for p in pending:
+        if sales.payment_provider(p["payment_id"]) == "robokassa":
+            continue  # signed server callback may arrive shortly after browser return
         resp = requests.get(f"{API}/{p['payment_id']}", auth=_auth(), timeout=15)
         resp.raise_for_status()
         if _apply_status(p["payment_id"], user_id, p["plan"], resp.json().get("status", "")):

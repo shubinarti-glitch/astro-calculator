@@ -61,9 +61,9 @@ def _event(c, user_id, name, props, stamp=None):
     )
 
 
-def register_payment(payment_id, user_id, plan, attempt, price, context=None):
+def register_payment(payment_id, user_id, plan, attempt, price, context=None, provider="yookassa"):
     receipt = {**attribution(context), "payment_id": payment_id, "attempt": attempt,
-               "plan": plan, "amount": price, "currency": "RUB"}
+               "plan": plan, "amount": price, "currency": "RUB", "provider": provider}
     with db.get_conn() as c:
         c.execute("INSERT INTO payments (payment_id,user_id,plan,created_at) VALUES (?,?,?,?)",
                   (payment_id, user_id, plan, db._now_iso()))
@@ -87,6 +87,20 @@ def find_attempt(user_id, attempt):
             "AND json_extract(e.props,'$.attempt')=? LIMIT 1", (user_id, user_id, attempt),
         ).fetchone()
     return dict(row) if row else None
+
+
+def payment_provider(payment_id):
+    """Return provider stored with payment creation event; historical rows were YooKassa."""
+    with db.get_conn() as c:
+        return _receipt(c, payment_id).get("provider", "yookassa")
+
+
+def payment_record(payment_id):
+    with db.get_conn() as c:
+        row = c.execute("SELECT payment_id,user_id,plan,status FROM payments WHERE payment_id=?", (payment_id,)).fetchone()
+        if not row:
+            return None
+        return {**dict(row), **_receipt(c, payment_id)}
 
 
 def apply_status(payment_id, user_id, plan, status, days):

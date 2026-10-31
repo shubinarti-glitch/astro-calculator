@@ -100,11 +100,15 @@ def test_provider_failure_preserves_pending(setup_db, monkeypatch):
 def test_creation_binds_return_to_receipt(setup_db, monkeypatch):
     uid, _ = setup_db
     ctx = context()
-    provider = Mock(return_value=Mock(json=lambda: {"id": "provider-123", "confirmation": {"confirmation_url": "https://example.test/pay"}}))
-    monkeypatch.setattr(requests, "post", provider)
-    assert payments.create_payment(uid, "report", "https://example.test/?payment=check", ctx) == "https://example.test/pay"
-    attempt = parse_qs(urlsplit(provider.call_args.kwargs["json"]["confirmation"]["return_url"]).query)["attempt"][0]
+    def create(user_id, plan, return_url, price, attribution, email=None):
+        attempt = str(uuid4())
+        sales.register_payment("provider-123", user_id, plan, attempt, price, attribution, provider="robokassa")
+        return "https://auth.robokassa.ru/Merchant/Index.aspx?Shp_attempt=" + attempt
+    monkeypatch.setattr("backend.robokassa.create_payment", create)
+    url = payments.create_payment(uid, "report", "https://example.test/?payment=check", ctx)
+    attempt = parse_qs(urlsplit(url).query)["Shp_attempt"][0]
     assert sales.find_attempt(uid, attempt)["payment_id"] == "provider-123"
+    assert sales.payment_provider("provider-123") == "robokassa"
 
 
 def test_funnel_order_duplicates_direct_and_repeats(setup_db):

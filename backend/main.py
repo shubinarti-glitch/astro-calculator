@@ -10,6 +10,7 @@ from datetime import date as date_type, datetime, timedelta, timezone
 import pytz
 from functools import lru_cache
 from contextlib import asynccontextmanager
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Literal, Optional
 from uuid import UUID
@@ -17,13 +18,13 @@ from uuid import UUID
 import requests
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 
 import re
 
-from . import astrology, constants, content_store, db, emailer, interpretations, payments, sales, seo, vedic
+from . import astrology, constants, content_store, db, emailer, interpretations, payments, robokassa, sales, seo, vedic
 from . import api_language
 from .request_size_limit import RequestSizeLimitMiddleware
 from .editorial_data import validate_required
@@ -689,7 +690,7 @@ def api_billing_create(body: BillingCreate, request: Request, uid: int = Depends
     try:
         url = payments.create_payment(uid, body.plan, return_url,
                                       body.attribution.model_dump(mode="json", exclude_none=True) if body.attribution else None)
-    except payments.NotConfiguredError as exc:
+    except (payments.NotConfiguredError, robokassa.NotConfiguredError) as exc:
         raise HTTPException(status_code=503, detail=str(exc))
     except Exception:
         logger.exception("Ошибка создания платежа")
@@ -726,6 +727,36 @@ async def api_yookassa_webhook(request: Request):
     except Exception:
         logger.exception("Ошибка обработки вебхука ЮKassa")
     return {"ok": True}
+
+
+@app.post("/api/robokassa/result")
+async def api_robokassa_result(request: Request):
+    """Verify Robokassa ResultURL signature and exact amount before granting entitlements."""
+    from urllib.parse import parse_qsl
+
+    try:
+        raw = (await request.body()).decode("utf-8", errors="strict")
+        pairs = parse_qsl(raw, keep_blank_values=True, strict_parsing=True)
+    except (UnicodeDecodeError, ValueError):
+        raise HTTPException(status_code=400, detail="Malformed Robokassa notification")
+    params = dict(pairs)
+    if len(params) != len(pairs) or not robokassa.verify_result(params):
+        raise HTTPException(status_code=403, detail="Invalid Robokassa signature")
+    record = sales.payment_record(params["InvId"])
+    if not record or record.get("provider") != "robokassa":
+        raise HTTPException(status_code=404, detail="Payment not found")
+    if not params.get("Shp_attempt") or params["Shp_attempt"] != record.get("attempt"):
+        raise HTTPException(status_code=400, detail="Payment attempt mismatch")
+    try:
+        callback_amount = Decimal(params["OutSum"]).quantize(Decimal("0.01"))
+        expected_amount = Decimal(str(record["amount"])).quantize(Decimal("0.01"))
+    except (InvalidOperation, KeyError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid payment amount")
+    if callback_amount != expected_amount:
+        raise HTTPException(status_code=400, detail="Payment amount mismatch")
+    if record["status"] == "pending":
+        payments._apply_status(record["payment_id"], record["user_id"], record["plan"], "succeeded")
+    return PlainTextResponse(f"OK{params['InvId']}")
 
 
 class PasswordChange(BaseModel):
