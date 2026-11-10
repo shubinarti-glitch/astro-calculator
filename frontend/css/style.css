@@ -1927,6 +1927,9 @@ html[data-theme="light"] .adm-tab.active { background: rgba(139,123,216,0.14); }
 }
 .premium-modal-card > h3 { font-size: 27px; margin: 0 38px 5px 0; }
 .premium-modal-card > .section-note { max-width: 760px; }
+.robokassa-brand { display: inline-flex; align-items: center; margin: 8px 0; }
+.robokassa-brand img { display: block; width: 161px; height: 24px; max-width: 100%; object-fit: contain; }
+html[data-theme="dark"] .robokassa-brand img { filter: brightness(0) invert(1); opacity: .85; }
 .premium-benefits { list-style: none; margin: 8px 0 4px; padding: 0; }
 .premium-benefits li {
   position: relative; padding: 4px 0 4px 26px;
