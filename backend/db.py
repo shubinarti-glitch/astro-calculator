@@ -18,6 +18,9 @@ SECRET_FILE = DATA_DIR / "secret.key"
 
 TOKEN_TTL_DAYS = 30
 PBKDF2_ROUNDS = 120_000
+PDF_EXPORT_LIMIT = 5
+PDF_EXPORT_WINDOW_SECONDS = 30 * 86400
+PDF_EXPORT_RESERVATION_SECONDS = 30 * 60
 
 # Stable capability identifiers shared by the API and mobile clients.  Keep
 # these values backwards-compatible: persisted overrides refer to them.
@@ -76,6 +79,8 @@ def init_db() -> None:
         )
         # Миграции для существующих БД: добавить недостающие колонки.
         cols = [r["name"] for r in c.execute("PRAGMA table_info(users)").fetchall()]
+        if "preferred_lang" not in cols:
+            c.execute("ALTER TABLE users ADD COLUMN preferred_lang TEXT NOT NULL DEFAULT 'ru'")
         if "is_admin" not in cols:
             c.execute("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0")
         if "is_banned" not in cols:
@@ -198,6 +203,43 @@ def init_db() -> None:
                 FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
             )"""
         )
+        c.execute(
+            """CREATE TABLE IF NOT EXISTS subscription_email_jobs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                kind TEXT NOT NULL CHECK(kind IN ('activated', 'expiring')),
+                dedupe_key TEXT NOT NULL,
+                payload TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'sending', 'sent')),
+                attempts INTEGER NOT NULL DEFAULT 0,
+                next_attempt_at INTEGER NOT NULL DEFAULT 0,
+                updated_at INTEGER NOT NULL,
+                sent_at INTEGER,
+                UNIQUE(user_id, kind, dedupe_key),
+                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+            )"""
+        )
+        c.execute(
+            """CREATE TABLE IF NOT EXISTS pdf_export_reservations (
+                token_hash TEXT PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                status TEXT NOT NULL CHECK(status IN ('reserved', 'completed', 'cancelled')),
+                created_at INTEGER NOT NULL,
+                completed_at INTEGER,
+                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+            )"""
+        )
+        c.execute("CREATE INDEX IF NOT EXISTS idx_pdf_exports_user_status_time ON pdf_export_reservations(user_id, status, created_at)")
+        c.execute(
+            """CREATE TABLE IF NOT EXISTS report_credit_reservations (
+                token_hash TEXT PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                status TEXT NOT NULL CHECK(status IN ('reserved', 'completed', 'cancelled', 'expired')),
+                created_at INTEGER NOT NULL,
+                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+            )"""
+        )
+        c.execute("CREATE INDEX IF NOT EXISTS idx_report_credit_user_status_time ON report_credit_reservations(user_id, status, created_at)")
         # Оплаченные консультации астролога (тарифы «Премиум+»): одна строка = один кредит.
         c.execute(
             """CREATE TABLE IF NOT EXISTS consultations (
@@ -746,6 +788,102 @@ def get_subscription(user_id: int) -> Optional[dict]:
     return {"plan": r["plan"], "expires_at": r["expires_at"], "source": r["source"]} if r else None
 
 
+def set_preferred_language(user_id: int, lang: str) -> None:
+    lang = "en" if lang == "en" else "ru"
+    with get_conn() as c:
+        c.execute("UPDATE users SET preferred_lang = ? WHERE id = ?", (lang, user_id))
+
+
+def enqueue_subscription_email(c, user_id: int, kind: str, dedupe_key: str, payload: dict, now: int | None = None) -> bool:
+    stamp = int(time.time()) if now is None else int(now)
+    cur = c.execute(
+        """INSERT OR IGNORE INTO subscription_email_jobs
+           (user_id, kind, dedupe_key, payload, updated_at)
+           SELECT ?, ?, ?, ?, ? WHERE EXISTS (
+               SELECT 1 FROM users WHERE id = ? AND email IS NOT NULL
+                 AND email_verified = 1 AND is_banned = 0
+           )""",
+        (user_id, kind, str(dedupe_key), json.dumps(payload, ensure_ascii=True), stamp, user_id),
+    )
+    return cur.rowcount > 0
+
+
+def enqueue_active_subscription_email(user_id: int, now: int | None = None) -> bool:
+    stamp = int(time.time()) if now is None else int(now)
+    with get_conn() as c:
+        row = c.execute(
+            "SELECT expires_at FROM subscriptions WHERE user_id = ? AND source != 'admin' AND expires_at > ?",
+            (user_id, stamp),
+        ).fetchone()
+        if not row:
+            return False
+        expires = row["expires_at"]
+        return enqueue_subscription_email(
+            c, user_id, "activated", f"verified:{expires}",
+            {"expires_at": expires}, stamp,
+        )
+
+
+def queue_expiring_subscription_emails(now: int | None = None, within_days: int = 3) -> int:
+    stamp = int(time.time()) if now is None else int(now)
+    upper = stamp + within_days * 86400
+    added = 0
+    with get_conn() as c:
+        rows = c.execute(
+            """SELECT s.user_id, s.plan, s.expires_at
+               FROM subscriptions s JOIN users u ON u.id = s.user_id
+               WHERE s.source != 'admin' AND s.expires_at > ? AND s.expires_at <= ?
+                 AND u.email IS NOT NULL AND u.email_verified = 1 AND u.is_banned = 0""",
+            (stamp, upper),
+        ).fetchall()
+        for row in rows:
+            added += enqueue_subscription_email(
+                c, row["user_id"], "expiring", str(row["expires_at"]),
+                {"plan": row["plan"], "expires_at": row["expires_at"]}, stamp,
+            )
+    return added
+
+
+def claim_subscription_email_job(now: int | None = None) -> Optional[dict]:
+    stamp = int(time.time()) if now is None else int(now)
+    with get_conn() as c:
+        row = c.execute(
+            """SELECT * FROM subscription_email_jobs
+               WHERE (status = 'pending' AND next_attempt_at <= ?)
+                  OR (status = 'sending' AND updated_at <= ?)
+               ORDER BY id LIMIT 1""",
+            (stamp, stamp - 900),
+        ).fetchone()
+        if not row:
+            return None
+        cur = c.execute(
+            """UPDATE subscription_email_jobs SET status = 'sending', attempts = attempts + 1, updated_at = ?
+               WHERE id = ? AND status = ? AND updated_at = ?""",
+            (stamp, row["id"], row["status"], row["updated_at"]),
+        )
+        if not cur.rowcount:
+            return None
+        return {**dict(row), "attempts": row["attempts"] + 1, "status": "sending", "updated_at": stamp}
+
+
+def finish_subscription_email_job(job_id: int, success: bool, now: int | None = None) -> None:
+    stamp = int(time.time()) if now is None else int(now)
+    with get_conn() as c:
+        if success:
+            c.execute(
+                "UPDATE subscription_email_jobs SET status = 'sent', sent_at = ?, updated_at = ? WHERE id = ? AND status = 'sending'",
+                (stamp, stamp, job_id),
+            )
+        else:
+            row = c.execute("SELECT attempts FROM subscription_email_jobs WHERE id = ?", (job_id,)).fetchone()
+            if row:
+                delay = min(86400, 60 * (2 ** min(row["attempts"], 10)))
+                c.execute(
+                    "UPDATE subscription_email_jobs SET status = 'pending', next_attempt_at = ?, updated_at = ? WHERE id = ? AND status = 'sending'",
+                    (stamp + delay, stamp, job_id),
+                )
+
+
 def is_premium(user_id: int) -> bool:
     sub = get_subscription(user_id)
     return bool(sub and sub["expires_at"] > time.time())
@@ -871,8 +1009,122 @@ def add_report_credit(user_id: int, n: int = 1) -> None:
 
 
 def get_report_credits(user_id: int) -> int:
-    u = get_user_by_id(user_id)
-    return u["report_credits"] if u else 0
+    cutoff = int(time.time()) - PDF_EXPORT_RESERVATION_SECONDS
+    with get_conn() as c:
+        _expire_report_credit_reservations(c, user_id, cutoff)
+        user = c.execute("SELECT report_credits FROM users WHERE id = ?", (user_id,)).fetchone()
+    return user["report_credits"] if user else 0
+
+
+def _expire_report_credit_reservations(conn: sqlite3.Connection, user_id: int, cutoff: int) -> None:
+    cur = conn.execute(
+        "UPDATE report_credit_reservations SET status = 'expired' "
+        "WHERE user_id = ? AND status = 'reserved' AND created_at <= ?",
+        (user_id, cutoff),
+    )
+    if cur.rowcount:
+        conn.execute("UPDATE users SET report_credits = report_credits + ? WHERE id = ?", (cur.rowcount, user_id))
+
+
+def reserve_report_credit(user_id: int, now: int | None = None) -> Optional[dict]:
+    stamp = int(time.time()) if now is None else int(now)
+    token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    with get_conn() as c:
+        c.execute("BEGIN IMMEDIATE")
+        _expire_report_credit_reservations(c, user_id, stamp - PDF_EXPORT_RESERVATION_SECONDS)
+        cur = c.execute(
+            "UPDATE users SET report_credits = report_credits - 1 "
+            "WHERE id = ? AND report_credits > 0",
+            (user_id,),
+        )
+        if not cur.rowcount:
+            return None
+        c.execute(
+            "INSERT INTO report_credit_reservations (token_hash, user_id, status, created_at) "
+            "VALUES (?, ?, 'reserved', ?)",
+            (token_hash, user_id, stamp),
+        )
+        remaining = c.execute("SELECT report_credits FROM users WHERE id = ?", (user_id,)).fetchone()["report_credits"]
+    return {"token": token, "report_credits": remaining}
+
+
+def finish_report_credit_reservation(user_id: int, token: str, success: bool) -> bool:
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    status = "completed" if success else "cancelled"
+    with get_conn() as c:
+        c.execute("BEGIN IMMEDIATE")
+        cur = c.execute(
+            "UPDATE report_credit_reservations SET status = ? "
+            "WHERE token_hash = ? AND user_id = ? AND status = 'reserved'",
+            (status, token_hash, user_id),
+        )
+        if cur.rowcount and not success:
+            c.execute("UPDATE users SET report_credits = report_credits + 1 WHERE id = ?", (user_id,))
+        return cur.rowcount > 0
+
+
+def pdf_export_usage(user_id: int, now: int | None = None) -> dict:
+    stamp = int(time.time()) if now is None else int(now)
+    cutoff = stamp - PDF_EXPORT_WINDOW_SECONDS
+    reserved_cutoff = stamp - PDF_EXPORT_RESERVATION_SECONDS
+    with get_conn() as c:
+        row = c.execute(
+            """SELECT COUNT(*) AS used FROM pdf_export_reservations
+               WHERE user_id = ? AND (
+                   (status = 'completed' AND completed_at > ?) OR
+                   (status = 'reserved' AND created_at > ?)
+               )""",
+            (user_id, cutoff, reserved_cutoff),
+        ).fetchone()
+    used = row["used"]
+    return {"used": used, "limit": PDF_EXPORT_LIMIT, "remaining": max(0, PDF_EXPORT_LIMIT - used)}
+
+
+def reserve_pdf_export(user_id: int, now: int | None = None) -> Optional[dict]:
+    stamp = int(time.time()) if now is None else int(now)
+    cutoff = stamp - PDF_EXPORT_WINDOW_SECONDS
+    reserved_cutoff = stamp - PDF_EXPORT_RESERVATION_SECONDS
+    token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    with get_conn() as c:
+        c.execute("BEGIN IMMEDIATE")
+        c.execute(
+            "DELETE FROM pdf_export_reservations WHERE user_id = ? AND "
+            "((status = 'completed' AND completed_at <= ?) OR (status = 'cancelled' AND created_at <= ?) OR "
+            "(status = 'reserved' AND created_at <= ?))",
+            (user_id, cutoff, cutoff, reserved_cutoff),
+        )
+        row = c.execute(
+            """SELECT COUNT(*) AS used FROM pdf_export_reservations
+               WHERE user_id = ? AND (
+                   (status = 'completed' AND completed_at > ?) OR
+                   (status = 'reserved' AND created_at > ?)
+               )""",
+            (user_id, cutoff, reserved_cutoff),
+        ).fetchone()
+        used = row["used"]
+        if used >= PDF_EXPORT_LIMIT:
+            return None
+        c.execute(
+            "INSERT INTO pdf_export_reservations (token_hash, user_id, status, created_at) VALUES (?, ?, 'reserved', ?)",
+            (token_hash, user_id, stamp),
+        )
+    return {"token": token, "used": used + 1, "limit": PDF_EXPORT_LIMIT,
+            "remaining": max(0, PDF_EXPORT_LIMIT - used - 1)}
+
+
+def finish_pdf_export(user_id: int, token: str, success: bool, now: int | None = None) -> bool:
+    stamp = int(time.time()) if now is None else int(now)
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    status = "completed" if success else "cancelled"
+    with get_conn() as c:
+        cur = c.execute(
+            "UPDATE pdf_export_reservations SET status = ?, completed_at = ? "
+            "WHERE token_hash = ? AND user_id = ? AND status = 'reserved'",
+            (status, stamp if success else None, token_hash, user_id),
+        )
+    return cur.rowcount > 0
 
 
 def consume_report_credit(user_id: int) -> bool:

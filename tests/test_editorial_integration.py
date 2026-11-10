@@ -80,4 +80,16 @@ def test_glossary_matches_private_original():
     with zipfile.ZipFile(original) as archive:
         before = extract(archive.read("frontend/js/app.js").decode("utf-8-sig"))
     after = json.loads(G.GLOSSARY_FILE.read_text(encoding="utf-8"))
-    assert after == before
+    # The progression entry was deliberately rewritten to distinguish secondary
+    # progressions from directions; all other migrated glossary entries stay exact.
+    for lang in ("ru", "en"):
+        current = after[lang].copy()
+        current[11] = before[lang][11]
+        assert current == before[lang]
+        assert after[lang][11][0] == before[lang][11][0]
+        assert after[lang][11][1] != before[lang][11][1]
+    assert "secondary progressions" in after["en"][11][1]
+    assert "solar arc method" in after["en"][11][1]
+    assert "one-day-for-one-year rule" in after["en"][11][1]
+    assert "прогресс" in after["ru"][11][1].casefold()
+    assert "дирекц" in after["ru"][11][1].casefold()

@@ -61,9 +61,9 @@ def _event(c, user_id, name, props, stamp=None):
     )
 
 
-def register_payment(payment_id, user_id, plan, attempt, price, context=None):
+def register_payment(payment_id, user_id, plan, attempt, price, context=None, provider="yookassa"):
     receipt = {**attribution(context), "payment_id": payment_id, "attempt": attempt,
-               "plan": plan, "amount": price, "currency": "RUB"}
+               "plan": plan, "amount": price, "currency": "RUB", "provider": provider}
     with db.get_conn() as c:
         c.execute("INSERT INTO payments (payment_id,user_id,plan,created_at) VALUES (?,?,?,?)",
                   (payment_id, user_id, plan, db._now_iso()))
@@ -76,6 +76,23 @@ def _receipt(c, payment_id):
         "AND json_extract(props,'$.payment_id')=? ORDER BY id LIMIT 1", (payment_id,),
     ).fetchone()
     return json.loads(row["props"]) if row else {}
+
+
+def payment_provider(payment_id):
+    """Use event metadata for provider routing; historical rows are YooKassa."""
+    with db.get_conn() as c:
+        return _receipt(c, payment_id).get("provider", "yookassa")
+
+
+def payment_record(payment_id):
+    """Return persisted payment state and its immutable checkout receipt metadata."""
+    with db.get_conn() as c:
+        row = c.execute(
+            "SELECT payment_id,user_id,plan,status FROM payments WHERE payment_id=?", (payment_id,),
+        ).fetchone()
+        if not row:
+            return None
+        return {**dict(row), **_receipt(c, payment_id)}
 
 
 def find_attempt(user_id, attempt):
@@ -107,6 +124,10 @@ def apply_status(payment_id, user_id, plan, status, days):
                 "INSERT INTO subscriptions (user_id,plan,expires_at,source) VALUES (?,?,?,'website') "
                 "ON CONFLICT(user_id) DO UPDATE SET plan=excluded.plan,expires_at=excluded.expires_at,source=excluded.source",
                 (user_id, plan, expires),
+            )
+            db.enqueue_subscription_email(
+                c, user_id, "activated", payment_id,
+                {"plan": plan, "expires_at": expires}, int(time.time()),
             )
         if plan.startswith("plus_") or plan == "consult":
             c.execute("INSERT INTO consultations (user_id,created_at) VALUES (?,?)", (user_id, db._now_iso()))

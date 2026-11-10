@@ -16,6 +16,7 @@ import json
 import smtplib
 import ssl
 from email.message import EmailMessage
+from datetime import datetime, timezone
 from pathlib import Path
 
 CONFIG_PATH = Path(__file__).resolve().parent.parent / "data" / "smtp.json"
@@ -28,11 +29,27 @@ class NotConfiguredError(Exception):
 def _config() -> dict:
     if not CONFIG_PATH.exists():
         raise NotConfiguredError("Почтовый сервис не настроен (data/smtp.json)")
-    return json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+    try:
+        cfg = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+        if not isinstance(cfg, dict):
+            raise ValueError("SMTP config must be an object")
+        port = int(cfg.get("port", 465))
+        if (not all(isinstance(cfg.get(key), str) and cfg[key].strip() for key in ("host", "user", "password"))
+                or not 1 <= port <= 65535
+                or ("ssl" in cfg and not isinstance(cfg["ssl"], bool))):
+            raise ValueError("missing SMTP fields")
+    except (OSError, ValueError, TypeError, AttributeError) as exc:
+        raise NotConfiguredError("Некорректная конфигурация SMTP (data/smtp.json)") from exc
+    cfg["port"] = port
+    return cfg
 
 
 def is_configured() -> bool:
-    return CONFIG_PATH.exists()
+    try:
+        _config()
+        return True
+    except NotConfiguredError:
+        return False
 
 
 def send(to: str, subject: str, body: str, html: str | None = None, reply_to: str | None = None) -> None:
@@ -178,3 +195,56 @@ def reset_letter(link: str, lang: str = "ru") -> tuple[str, str]:
     return ("Сброс пароля — Астрокалькулятор",
             f"Здравствуйте!\n\nЧтобы задать новый пароль на astrosmap.ru, откройте ссылку:\n{link}\n\n"
             "Ссылка действует 1 час и срабатывает один раз. Если вы не запрашивали сброс — удалите это письмо.")
+
+
+def subscription_letter(person: str, expires_at: int, kind: str, lang: str = "ru") -> tuple[str, str, str]:
+    """Transactional subscription notice with the current cross-platform app links."""
+    esc = html_mod.escape
+    end_date = datetime.fromtimestamp(int(expires_at), timezone.utc).strftime("%d.%m.%Y UTC")
+    en = lang == "en"
+    if en:
+        subject = "Your AstroSMap Premium subscription is active" if kind == "activated" else "Your AstroSMap Premium access is ending soon"
+        title = "Premium is active" if kind == "activated" else "Your Premium access is ending soon"
+        greeting = f"Hello, {person}!"
+        notice = (f"Your subscription is active until {end_date}." if kind == "activated"
+                  else f"Your subscription is currently set to end on {end_date}. Renew it before then if you want to keep Premium access.")
+        shared = "Your subscription is linked to your AstroSMap account. Sign in to the Android app with the same account to use Premium there too."
+        links_title, apk, rustore, play = "Get the Android app", "Download APK", "Get it on RuStore", "Get it on Google Play"
+        footer = "AstroSMap · Project Artemisa"
+        text = (f"{greeting}\n\n{notice}\n\n{shared}\n\n"
+                f"Download the APK: https://astrosmap.ru/astrosmap.apk\n"
+                "RuStore: https://www.rustore.ru/catalog/app/ru.astrosmap.app\n"
+                "Google Play: https://play.google.com/store/apps/details?id=ru.astrosmap.app\n\n"
+                "Open astrosmap.ru and sign in to manage your account.")
+    else:
+        subject = "Подписка AstroSMap Premium активна" if kind == "activated" else "Скоро закончится подписка AstroSMap Premium"
+        title = "Подписка Premium активна" if kind == "activated" else "Скоро закончится подписка Premium"
+        greeting = f"Здравствуйте, {person}!"
+        notice = (f"Подписка действует до {end_date}." if kind == "activated"
+                  else f"Подписка сейчас действует до {end_date}. Если хотите сохранить доступ Premium, продлите её до этой даты.")
+        shared = "Подписка привязана к аккаунту AstroSMap. Войдите в Android-приложение под тем же аккаунтом, чтобы пользоваться Premium и там."
+        links_title, apk, rustore, play = "Скачать приложение AstroSMap для Android", "Скачать APK с сайта", "Открыть в RuStore", "Открыть в Google Play"
+        footer = "AstroSMap · Project Artemisa"
+        text = (f"{greeting}\n\n{notice}\n\n{shared}\n\n"
+                f"APK с сайта: https://astrosmap.ru/astrosmap.apk\n"
+                "RuStore: https://www.rustore.ru/catalog/app/ru.astrosmap.app\n"
+                "Google Play: https://play.google.com/store/apps/details?id=ru.astrosmap.app\n\n"
+                "Откройте astrosmap.ru и войдите в аккаунт, чтобы управлять подпиской.")
+    links = (
+        ("https://astrosmap.ru/astrosmap.apk", apk),
+        ("https://www.rustore.ru/catalog/app/ru.astrosmap.app", rustore),
+        ("https://play.google.com/store/apps/details?id=ru.astrosmap.app", play),
+    )
+    buttons = "".join(
+        f'<p style="margin:10px 0;"><a href="{url}" style="display:block;padding:13px 16px;border-radius:10px;'
+        f'background:#2a2350;color:#f3dfad;text-decoration:none;font-weight:600;text-align:center;">{label}</a></p>'
+        for url, label in links
+    )
+    html = f"""<!doctype html><html lang="{'en' if en else 'ru'}"><body style="margin:0;padding:24px 12px;background:#f7f2f4;color:#2d2541;font-family:Arial,sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;border:1px solid #eadfce;border-radius:16px;overflow:hidden;">
+<tr><td style="padding:24px;background:#17142a;color:#f3dfad;text-align:center;font-family:Georgia,serif;font-size:25px;">AstroSMap <span style="color:#c9a86a;">·</span> Project Artemisa</td></tr>
+<tr><td style="padding:24px 24px 8px;"><h1 style="margin:0 0 16px;color:#3a2f50;font-size:22px;">{title}</h1><p style="font-size:16px;line-height:1.6;">{esc(greeting)}</p><p style="font-size:16px;line-height:1.6;">{esc(notice)}</p><p style="font-size:15px;line-height:1.6;color:#5e566c;">{esc(shared)}</p><h2 style="margin:22px 0 10px;font-size:17px;">{links_title}</h2>{buttons}</td></tr>
+<tr><td style="padding:8px 24px 24px;color:#786f82;font-size:12px;text-align:center;">{footer} · <a href="https://astrosmap.ru/" style="color:#6d55a2;">astrosmap.ru</a></td></tr>
+</table></td></tr></table></body></html>"""
+    return subject, text, html

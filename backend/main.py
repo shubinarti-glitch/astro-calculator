@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import logging
+import asyncio
 import copy
 import time
+from decimal import Decimal, InvalidOperation
 from collections import defaultdict
 from datetime import date as date_type, datetime, timedelta, timezone
 import pytz
@@ -17,13 +19,13 @@ from uuid import UUID
 import requests
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 
 import re
 
-from . import astrology, constants, content_store, db, emailer, interpretations, payments, sales, seo, vedic
+from . import astrology, constants, content_store, db, emailer, interpretations, payments, robokassa, sales, seo, vedic, subscription_emails
 from . import api_language
 from .editorial_data import validate_required
 from .editorial_glossary import router as glossary_router
@@ -59,7 +61,15 @@ async def lifespan(app: FastAPI):
     validate_required()
     db.init_db()
     content_store.init()
-    yield
+    email_worker = asyncio.create_task(subscription_emails.run())
+    try:
+        yield
+    finally:
+        email_worker.cancel()
+        try:
+            await email_worker
+        except asyncio.CancelledError:
+            pass
 
 
 app = FastAPI(title="Астрология — натальная карта и транзиты", version="0.1.0", lifespan=lifespan)
@@ -353,6 +363,7 @@ def api_register(req: RegisterRequest, request: Request):
     except db.UserExistsError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
     _rate_record(f"reg:{ip}")
+    db.set_preferred_language(user["id"], req.lang)
     _send_verify_email(request, user["id"], req.email, req.lang)
     return {"token": db.make_token(user["id"]), "username": user["username"], "is_admin": user.get("is_admin", False)}
 
@@ -401,6 +412,7 @@ def api_attach_email(req: EmailAttach, request: Request, uid: int = Depends(curr
         raise HTTPException(status_code=429, detail="Слишком много запросов. Попробуйте позже.")
     if not db.set_user_email(uid, req.email):
         raise HTTPException(status_code=409, detail="Эта почта уже привязана к другому аккаунту")
+    db.set_preferred_language(uid, req.lang)
     _rate_record(f"email:{ip}")
     sent = _send_verify_email(request, uid, req.email, req.lang)
     return {"ok": True, "sent": sent}
@@ -416,6 +428,7 @@ def api_verify_email(req: EmailToken):
     if uid is None:
         raise HTTPException(status_code=400, detail="Ссылка недействительна или устарела")
     db.mark_email_verified(uid)
+    db.enqueue_active_subscription_email(uid)
     gift = db.grant_welcome_report(uid)  # лид-магнит: 1 бесплатный PDF за подтверждение почты
     return {"ok": True, "report_gift": gift}
 
@@ -651,6 +664,7 @@ class BillingCheck(BaseModel):
 class BillingCreate(BaseModel):
     attribution: BillingAttribution | None = None
     plan: str = Field(..., pattern="^(month|year|plus_month|plus_year|consult|report)$")
+    lang: Literal["ru", "en"] = "ru"
 
 
 @app.get("/api/billing/plans")
@@ -661,10 +675,11 @@ def api_billing_plans():
 @app.post("/api/billing/create")
 def api_billing_create(body: BillingCreate, request: Request, uid: int = Depends(current_user_id)):
     return_url = str(request.base_url).rstrip("/") + "/?payment=check"
+    db.set_preferred_language(uid, body.lang)
     try:
         url = payments.create_payment(uid, body.plan, return_url,
                                       body.attribution.model_dump(mode="json", exclude_none=True) if body.attribution else None)
-    except payments.NotConfiguredError as exc:
+    except (payments.NotConfiguredError, robokassa.NotConfiguredError) as exc:
         raise HTTPException(status_code=503, detail=str(exc))
     except Exception:
         logger.exception("Ошибка создания платежа")
@@ -701,6 +716,39 @@ async def api_yookassa_webhook(request: Request):
     except Exception:
         logger.exception("Ошибка обработки вебхука ЮKassa")
     return {"ok": True}
+
+
+@app.post("/api/robokassa/result")
+async def api_robokassa_result(request: Request):
+    """Verify Robokassa ResultURL and exact order metadata before granting rights."""
+    from urllib.parse import parse_qsl
+
+    try:
+        raw = (await request.body()).decode("utf-8", errors="strict")
+        pairs = parse_qsl(raw, keep_blank_values=True, strict_parsing=True, max_num_fields=32)
+    except (UnicodeDecodeError, ValueError):
+        raise HTTPException(status_code=400, detail="Malformed Robokassa notification")
+    params = dict(pairs)
+    if len(params) != len(pairs):
+        raise HTTPException(status_code=400, detail="Duplicate Robokassa parameters")
+    if not robokassa.verify_result(params):
+        raise HTTPException(status_code=403, detail="Invalid Robokassa signature")
+
+    record = sales.payment_record(params["InvId"])
+    if not record or record.get("provider") != "robokassa":
+        raise HTTPException(status_code=404, detail="Payment not found")
+    if not params.get("Shp_attempt") or params["Shp_attempt"] != record.get("attempt"):
+        raise HTTPException(status_code=400, detail="Payment attempt mismatch")
+    try:
+        callback_amount = Decimal(params["OutSum"]).quantize(Decimal("0.01"))
+        expected_amount = Decimal(str(record["amount"])).quantize(Decimal("0.01"))
+    except (InvalidOperation, KeyError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid payment amount")
+    if callback_amount != expected_amount:
+        raise HTTPException(status_code=400, detail="Payment amount mismatch")
+    if record["status"] == "pending":
+        payments._apply_status(record["payment_id"], record["user_id"], record["plan"], "succeeded")
+    return PlainTextResponse(f"OK{params['InvId']}")
 
 
 class PasswordChange(BaseModel):
@@ -990,14 +1038,83 @@ def api_my_payments(uid: int = Depends(current_user_id)):
 
 
 @app.post("/api/report/consume")
-def api_report_consume(uid: int = Depends(current_user_id)):
-    """Списать один разовый PDF-кредит (после успешного скачивания отчёта).
-    Премиуму кредиты не нужны — у него PDF безлимитный, ничего не списываем."""
-    if db.is_premium(uid):
+def api_report_consume(premium_fallback: bool = False, uid: int = Depends(current_user_id)):
+    """Legacy credit debit; PDF downloads use reserve/complete/cancel below."""
+    if db.is_premium(uid) and not premium_fallback:
         return {"ok": True, "premium": True, "report_credits": db.get_report_credits(uid)}
     if not db.consume_report_credit(uid):
         raise HTTPException(status_code=402, detail="Нет доступных отчётов")
     return {"ok": True, "premium": False, "report_credits": db.get_report_credits(uid)}
+
+
+class PdfExportReservation(BaseModel):
+    token: str = Field(..., min_length=40, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
+
+
+class PdfCreditReservationRequest(BaseModel):
+    report_type: Literal["natal"]
+
+
+@app.post("/api/report/credit/reserve")
+def api_report_credit_reserve(body: PdfCreditReservationRequest, premium_fallback: bool = False,
+                              uid: int = Depends(current_user_id)):
+    access = db.get_access_state(uid)
+    if access["premium"] and not premium_fallback:
+        raise HTTPException(status_code=409, detail="Разовый отчёт доступен после исчерпания PDF-квоты")
+    reservation = db.reserve_report_credit(uid)
+    if not reservation:
+        raise HTTPException(status_code=402, detail="Нет доступных отчётов")
+    return reservation
+
+
+@app.post("/api/report/credit/complete")
+def api_report_credit_complete(body: PdfExportReservation, uid: int = Depends(current_user_id)):
+    if not db.finish_report_credit_reservation(uid, body.token, success=True):
+        raise HTTPException(status_code=409, detail="Резерв разового отчёта истёк")
+    return {"ok": True, "report_credits": db.get_report_credits(uid)}
+
+
+@app.post("/api/report/credit/cancel")
+def api_report_credit_cancel(body: PdfExportReservation, uid: int = Depends(current_user_id)):
+    if not db.finish_report_credit_reservation(uid, body.token, success=False):
+        raise HTTPException(status_code=409, detail="Резерв разового отчёта истёк")
+    return {"ok": True, "report_credits": db.get_report_credits(uid)}
+
+
+@app.get("/api/report/pdf/usage")
+def api_report_pdf_usage(uid: int = Depends(current_user_id)):
+    access = db.get_access_state(uid)
+    if not access["premium"]:
+        raise HTTPException(status_code=402, detail="Доступно по подписке «Премиум»")
+    if access["subscription_source"] == "admin":
+        return {"unlimited": True}
+    return db.pdf_export_usage(uid)
+
+
+@app.post("/api/report/pdf/reserve")
+def api_report_pdf_reserve(uid: int = Depends(current_user_id)):
+    access = db.get_access_state(uid)
+    if not access["premium"]:
+        raise HTTPException(status_code=402, detail="Доступно по подписке «Премиум»")
+    if access["subscription_source"] == "admin":
+        return {"unlimited": True}
+    reservation = db.reserve_pdf_export(uid)
+    if not reservation:
+        raise HTTPException(status_code=429, detail="pdf_export_limit_reached")
+    return reservation
+
+
+@app.post("/api/report/pdf/complete")
+def api_report_pdf_complete(body: PdfExportReservation, uid: int = Depends(current_user_id)):
+    if not db.finish_pdf_export(uid, body.token, success=True):
+        raise HTTPException(status_code=409, detail="pdf_export_reservation_expired")
+    return db.pdf_export_usage(uid)
+
+
+@app.post("/api/report/pdf/cancel")
+def api_report_pdf_cancel(body: PdfExportReservation, uid: int = Depends(current_user_id)):
+    db.finish_pdf_export(uid, body.token, success=False)
+    return db.pdf_export_usage(uid)
 
 
 # --------------------------------------------------------------------------- #

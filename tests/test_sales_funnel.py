@@ -1,6 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
-from urllib.parse import parse_qs, urlsplit
 from uuid import uuid4
 from unittest.mock import Mock
 
@@ -8,7 +7,7 @@ import pytest
 import requests
 from fastapi.testclient import TestClient
 
-from backend import db, payments, sales
+from backend import db, payments, robokassa, sales
 from backend.main import app
 
 
@@ -97,14 +96,23 @@ def test_provider_failure_preserves_pending(setup_db, monkeypatch):
     assert sales.find_attempt(uid, attempt)["status"] == "pending"
 
 
-def test_creation_binds_return_to_receipt(setup_db, monkeypatch):
+def test_creation_uses_robokassa_and_binds_receipt(setup_db, monkeypatch):
     uid, _ = setup_db
     ctx = context()
-    provider = Mock(return_value=Mock(json=lambda: {"id": "provider-123", "confirmation": {"confirmation_url": "https://example.test/pay"}}))
-    monkeypatch.setattr(requests, "post", provider)
+    provider_calls = []
+
+    def create_robokassa_payment(user_id, plan, return_url, price, attribution=None, email=None):
+        attempt = str(uuid4())
+        provider_calls.append((user_id, plan, return_url, price, attribution, email, attempt))
+        sales.register_payment("provider-123", user_id, plan, attempt, price, attribution, provider="robokassa")
+        return "https://example.test/pay"
+
+    monkeypatch.setattr(robokassa, "create_payment", create_robokassa_payment)
     assert payments.create_payment(uid, "report", "https://example.test/?payment=check", ctx) == "https://example.test/pay"
-    attempt = parse_qs(urlsplit(provider.call_args.kwargs["json"]["confirmation"]["return_url"]).query)["attempt"][0]
-    assert sales.find_attempt(uid, attempt)["payment_id"] == "provider-123"
+    call = provider_calls[0]
+    assert call[:4] == (uid, "report", "https://example.test/?payment=check", payments.PLANS["report"][0])
+    assert sales.find_attempt(uid, call[-1])["payment_id"] == "provider-123"
+    assert sales.payment_record("provider-123")["provider"] == "robokassa"
 
 
 def test_funnel_order_duplicates_direct_and_repeats(setup_db):

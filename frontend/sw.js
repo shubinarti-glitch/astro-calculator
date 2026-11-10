@@ -1,5 +1,5 @@
 // ponytail: минимальный SW — только оболочка для установки PWA; полный офлайн-кэш добавить, если понадобится офлайн-режим.
-const CACHE = 'astro-shell-v1';
+const CACHE = 'astro-shell-v2';
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.add('/')));
