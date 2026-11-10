@@ -7,6 +7,7 @@ from __future__ import annotations
 from .editorial_data import text as _editorial_text
 
 import json
+import re
 from pathlib import Path
 from typing import Optional
 
@@ -169,6 +170,33 @@ _TRANSIT_ASPECT_RU = {
     "quintile": _editorial_text('interpretations.04b3e9546f168068e4161fae210769f573ae5bf97581ba6642fe20be08f0ae77'),
 }
 
+_FORECAST_ASPECT_NOTE = {
+    "conjunction": (
+        "Соединение связывает обе темы напрямую и делает их взаимодействие заметнее; итог зависит от планет и жизненного контекста.",
+        "A conjunction links both themes directly and makes their interaction more noticeable; the result depends on the planets and life context.",
+    ),
+    "sextile": (
+        "Секстиль открывает возможность для сотрудничества этих тем; результат легче получить, если сделать первый шаг.",
+        "A sextile opens an opportunity for these themes to work together; it is easier to use when you take the first step.",
+    ),
+    "square": (
+        "Квадрат добавляет трение между темами: напряжение полезно направить на конкретную задачу, а не считать неизбежным препятствием.",
+        "A square adds friction between the themes: channel the tension into a concrete task instead of treating it as an unavoidable obstacle.",
+    ),
+    "trine": (
+        "Тригон облегчает взаимодействие тем и поддерживает естественный ход событий; для результата всё равно потребуется ваше участие.",
+        "A trine makes the themes work together more easily, though making use of that flow still takes your participation.",
+    ),
+    "opposition": (
+        "Оппозиция высвечивает баланс между двумя темами, иногда через людей или обстоятельства; полезно учитывать обе стороны.",
+        "An opposition highlights the balance between two themes, sometimes through people or circumstances; consider both sides.",
+    ),
+    "quintile": (
+        "Квинтиль помогает найти необычный или творческий способ связать эти темы; идею важно превратить в конкретный шаг.",
+        "A quintile can suggest an unusual or creative way to connect these themes; turn the idea into a practical step.",
+    ),
+}
+
 _TRANSIT_TIMING_RU = {
     "Sun": _editorial_text('interpretations.8f72eb0654b4f081f1a4d64737579ca2e8a9401201172aa900e3f4f643fe530e'),
     "Moon": _editorial_text('interpretations.da19a1a0c74619832580637d400e3c3556611c4f14d2467565ec9e97ed29a4d1'),
@@ -250,6 +278,47 @@ AUTHORED_TRANSIT = _load_authored_transits()
 AUTHORED_TRANSIT_EN = TE.load_authored()
 
 
+def _first_sentences(value: str, count: int = 1) -> str:
+    """Return complete opening sentences without cutting authored copy mid-sentence."""
+    parts = [part.strip() for part in re.split(r"(?<=[.!?])\s+", value.strip()) if part.strip()]
+    return " ".join(parts[:count])
+
+
+def transit_forecast_parts(t_name: str, aspect: str, n_name: str,
+                           lang: str = "ru") -> Optional[dict]:
+    """Concise authored meaning and practical advice for forecast cards."""
+    moving = _TRANSIT_DEEP_NAME.get(t_name)
+    target = _canonical_transit_target(n_name)
+    if not moving or aspect not in _TRANSIT_ASPECT_RU:
+        return None
+
+    if lang == "en":
+        pair = AUTHORED_TRANSIT_EN.get(f"transit|{moving}|{target}")
+        if not isinstance(pair, dict):
+            source = g(PLANET_ROLE.get(moving), "en") or TE.ROLES.get(moving)
+            focus = g(PLANET_ROLE.get(target), "en") or TE.ROLES.get(target)
+            pair = TE.generic_pair(source, focus) if source and focus else None
+    else:
+        pair = AUTHORED_TRANSIT.get(f"transit|{moving}|{target}")
+        if not isinstance(pair, dict):
+            pair = _generic_transit_pair(moving, target)
+
+    required = ("energy", "realization", "advice")
+    if not isinstance(pair, dict) or any(
+        not isinstance(pair.get(key), str) or not pair[key].strip()
+        for key in required
+    ):
+        return None
+
+    interpretation = " ".join(filter(None, (
+        _first_sentences(pair["energy"]),
+        _first_sentences(pair["realization"]),
+        _FORECAST_ASPECT_NOTE[aspect][1 if lang == "en" else 0],
+    )))
+    advice = _first_sentences(pair["advice"], 2)
+    return {"interpretation": interpretation, "advice": advice}
+
+
 def _transit_phase_ru(orbit: Optional[float], movement: str) -> str:
     if orbit is None:
         return _editorial_text('interpretations.62b595cbe10d1825f53d2902dc62d31521d98a5fbc82d4f975e730998194bfad')
@@ -298,6 +367,7 @@ def _interpret_transit_deep(t_name: str, aspect: str, n_name: str,
 def interpret_progression(p_name: str, aspect: str, n_name: str, lang: str = "ru") -> str:
     """Вторичная прогрессия: медленно созревающий внутренний этап, а не событие дня."""
     role = PLANET_ROLE.get(n_name)
+    progressed_role = PLANET_ROLE.get(p_name)
     category = _ASPECT_CATEGORY.get(aspect)
     if not role or not category:
         return ""
@@ -305,13 +375,12 @@ def interpret_progression(p_name: str, aspect: str, n_name: str, lang: str = "ru
     natal = C.point_name(n_name, lang)
     aspect_name = C.aspect_name(aspect, lang).lower()
     guidance = g(_PROGRESSION_GUIDANCE[category], lang)
+    source = g(progressed_role, lang) if progressed_role else progressed
+    natal_focus = g(role, lang)
+    natal_focus = natal_focus[:1].upper() + natal_focus[1:]
     if lang == "en":
-        return (
-            f"{_editorial_text('interpretations.7c3d3a71041fb3d2dd417be30da9b03b1d5277a65ee1b4641ef14482a986e3f3')}{progressed}{_editorial_text('interpretations.a8130b15b39f685b3469f2b098940cf873795cd8fe6dad03800dba85b5e5770e')}{aspect_name}{_editorial_text('interpretations.cb55a35efea76767f5f4bed353b1d30b53168ab5a2db06a372fd109f951df7f7')}{natal}{_editorial_text('interpretations.5beed14f0ee2062531284e299f3ee7b46d2d39af07fdcd864cd68755977fbe0d')}{g(role, lang)}”. {guidance}"
-        )
-    return (
-        f"{_editorial_text('interpretations.2b7b4f8f3931f9bbfd4f2531f929afd3554eeee4cd481bbc9834720d1da6400d')}{progressed}{_editorial_text('interpretations.cd4dc1144b5928a5e87d8b9bc23484d977e18e897721868bb4f412f26146d196')}{aspect_name}{_editorial_text('interpretations.62d1e02a977d30ddf38fb87bebf43a154d5e38c6915a56cca528b5a2199507eb')}{natal}{_editorial_text('interpretations.3df07062be68ba3c783df6e895e23edaa7060a6d43faaf7b50aa92cbfc9395c6')}{g(role, lang)}». {guidance}"
-    )
+        return f"Progressed point {progressed} forms a {aspect_name} to natal {natal}. The gradual development of {source} connects with this natal area. What areas are involved? {natal_focus}. {guidance}"
+    return f"Прогрессивная точка «{progressed}» образует аспект «{aspect_name}» к натальной точке «{natal}». Постепенное развитие темы «{source}» связано с этой сферой натальной карты. Что затронуто? {natal_focus}. {guidance}"
 
 
 _DIRECTION_GUIDANCE = {
@@ -880,6 +949,28 @@ def interpret_sign(planet_name: str, sign: str, lang: str = "ru") -> str:
         if code:
             text += f"{_editorial_text('interpretations.e739704cdd28e3d322cc98ad396cd5b5f485bad219a6f01a42c5ba9f16a84fba')}{planet_ru}{_editorial_text('interpretations.a8e2d0828a7cb6689d6bdecb6c7f243de7de700f685f269dd346d60dd0b8e95b')}{g(DIGNITY_LABEL[code], lang)}»: {g(DIGNITY_NOTE[code], lang)}."
     return text
+
+
+_CURRENT_TRANSIT_GUIDANCE = {
+    "Sun": (_editorial_text("current_transits.Sun.ru"), _editorial_text("current_transits.Sun.en")),
+    "Moon": (_editorial_text("current_transits.Moon.ru"), _editorial_text("current_transits.Moon.en")),
+    "Mercury": (_editorial_text("current_transits.Mercury.ru"), _editorial_text("current_transits.Mercury.en")),
+    "Venus": (_editorial_text("current_transits.Venus.ru"), _editorial_text("current_transits.Venus.en")),
+    "Mars": (_editorial_text("current_transits.Mars.ru"), _editorial_text("current_transits.Mars.en")),
+    "Jupiter": (_editorial_text("current_transits.Jupiter.ru"), _editorial_text("current_transits.Jupiter.en")),
+    "Saturn": (_editorial_text("current_transits.Saturn.ru"), _editorial_text("current_transits.Saturn.en")),
+    "Uranus": (_editorial_text("current_transits.Uranus.ru"), _editorial_text("current_transits.Uranus.en")),
+    "Neptune": (_editorial_text("current_transits.Neptune.ru"), _editorial_text("current_transits.Neptune.en")),
+    "Pluto": (_editorial_text("current_transits.Pluto.ru"), _editorial_text("current_transits.Pluto.en")),
+}
+
+
+def current_transit_guidance(planet_name: str, lang: str = "ru") -> str:
+    """Planet-specific practical context for the public current-sky panel."""
+    pair = _CURRENT_TRANSIT_GUIDANCE.get(planet_name)
+    if not pair:
+        return ""
+    return g(pair, lang)
 
 
 # --------------------------------------------------------------------------- #

@@ -9,6 +9,8 @@ import warnings
 from datetime import datetime, timedelta
 from functools import lru_cache
 from typing import Any, Optional
+from pytz import timezone as _timezone
+from pytz.exceptions import AmbiguousTimeError, NonExistentTimeError
 
 # Путь к эфемеридам обязательно настраивается ДО импорта Kerykeion-расчётов.
 from .ephe import ensure_ephemeris
@@ -27,6 +29,7 @@ from kerykeion import (  # noqa: E402
     TransitsTimeRangeFactory,
     EphemerisDataFactory,
 )
+from kerykeion.settings.config_constants import DEFAULT_ACTIVE_ASPECTS  # noqa: E402
 
 from . import constants as C  # noqa: E402
 from . import interpretations as I  # noqa: E402
@@ -438,9 +441,18 @@ def _build_psych_portrait(model, aspects_ser: list, chart_data, lang: str = "ru"
 def _render_chart_svgs(chart_data, lang: str = "ru") -> dict:
     """Рендерит колесо карты в двух темах (тёмная и светлая) на нужном языке."""
     chart_lang = "EN" if str(lang).lower() == "en" else "RU"
+
+    def render(theme: str) -> str:
+        svg = ChartDrawer(chart_data, chart_language=chart_lang, theme=theme).generate_svg_string()
+        if chart_lang == "RU":
+            # Kerykeion currently falls back to English for these two comparison labels.
+            svg = svg.replace("Transit Point", "Транзитная точка")
+            svg = svg.replace("Natal House", "Натальный дом")
+        return svg
+
     return {
-        "svg": ChartDrawer(chart_data, chart_language=chart_lang, theme="dark").generate_svg_string(),
-        "svg_light": ChartDrawer(chart_data, chart_language=chart_lang, theme="light").generate_svg_string(),
+        "svg": render("dark"),
+        "svg_light": render("light"),
     }
 
 
@@ -893,16 +905,11 @@ def progression_report(
     lang = _set_lang(natal_params.get("lang", "ru"))
     natal_model = build_subject(**natal_params)
 
-    birth = datetime(
-        natal_params["year"], natal_params["month"], natal_params["day"],
-        natal_params.get("hour", 12), natal_params.get("minute", 0),
-    )
     target = datetime(
         target_date["year"], target_date["month"], target_date["day"],
         target_date.get("hour", 12), target_date.get("minute", 0),
     )
-    elapsed_years = (target - birth).total_seconds() / (TROPICAL_YEAR_DAYS * 86400)
-    prog_dt = birth + timedelta(days=elapsed_years)
+    elapsed_years, prog_dt = _progression_moment(natal_model, natal_params, target)
 
     prog_model = build_subject(
         name="Progression" if lang == "en" else "Прогрессия",
@@ -1019,32 +1026,99 @@ def _transit_pass_minima(moments, include) -> list[tuple[tuple, dict]]:
     return out
 
 
-def _refine_transit_pass(natal_model, loc: dict, tz: str, key: tuple, info: dict) -> dict:
+def _forecast_local_datetime(value: str, tz: str) -> datetime:
+    moment = datetime.fromisoformat(value)
+    if moment.tzinfo is not None:
+        moment = moment.astimezone(_timezone(tz))
+    return moment.replace(tzinfo=None)
+
+
+_MAX_CALENDAR_REFINEMENT_WINDOWS = 64
+
+
+def _refine_transit_pass(natal_model, loc: dict, tz: str, key: tuple, info: dict,
+                         *, bounds: Optional[tuple[datetime, datetime]] = None,
+                         refinement_cache: Optional[dict] = None,
+                         targeted_pair: bool = False) -> dict:
     """Уточняет суточный кандидат сначала до 2 часов, затем до 10 минут."""
-    center = datetime.fromisoformat(info["date"]).replace(tzinfo=None)
+    center = (_forecast_local_datetime(info["date"], tz) if bounds is not None
+              else datetime.fromisoformat(info["date"]).replace(tzinfo=None))
 
     def find_best(start_dt, end_dt, step_type, step):
+        if bounds is not None:
+            start_dt = max(start_dt, bounds[0])
+            end_dt = min(end_dt, bounds[1])
+            if end_dt < start_dt:
+                return None
+        cache_key = (start_dt, end_dt, step_type, step, loc["lat"], loc["lng"], tz)
+        if targeted_pair:
+            cached_window = refinement_cache.get(cache_key) if refinement_cache is not None else None
+            if cached_window is not None and key in cached_window["results"]:
+                refinement_cache[cache_key] = refinement_cache.pop(cache_key)
+                return cached_window["results"][key]
+            if cached_window is None:
+                eph = EphemerisDataFactory(
+                    start_datetime=start_dt, end_datetime=end_dt,
+                    step_type=step_type, step=step,
+                    lat=loc["lat"], lng=loc["lng"], tz_str=tz,
+                ).get_ephemeris_data_as_astrological_subjects()
+                cached_window = {"ephemeris": eph, "results": {}}
+                if refinement_cache is not None:
+                    refinement_cache[cache_key] = cached_window
+                    if len(refinement_cache) > _MAX_CALENDAR_REFINEMENT_WINDOWS:
+                        refinement_cache.pop(next(iter(refinement_cache)))
+
+            p1, aspect, p2 = key
+            active_aspect = next(item for item in DEFAULT_ACTIVE_ASPECTS if item["name"] == aspect)
+            best = None
+            for subject in cached_window["ephemeris"]:
+                aspects = AspectsFactory.dual_chart_aspects(
+                    subject, natal_model,
+                    active_points=list(dict.fromkeys((p1, p2))),
+                    active_aspects=[active_aspect],
+                    first_subject_is_fixed=False,
+                    second_subject_is_fixed=True,
+                ).aspects
+                for asp in aspects:
+                    if (asp["p1_name"], asp["aspect"], asp["p2_name"]) != key:
+                        continue
+                    candidate = {
+                        "date": subject.iso_formatted_utc_datetime,
+                        "orb": abs(asp["orbit"]),
+                        "asp": asp.model_dump() if hasattr(asp, "model_dump") else dict(asp),
+                    }
+                    if best is None or candidate["orb"] < best["orb"]:
+                        best = candidate
+            cached_window["results"][key] = best
+            return best
+
+        if refinement_cache is not None and cache_key in refinement_cache:
+            return refinement_cache[cache_key].get(key)
+
         eph = EphemerisDataFactory(
             start_datetime=start_dt, end_datetime=end_dt,
             step_type=step_type, step=step,
             lat=loc["lat"], lng=loc["lng"], tz_str=tz,
         ).get_ephemeris_data_as_astrological_subjects()
         refined = TransitsTimeRangeFactory(natal_model, eph).get_transit_moments()
-        best = None
+        best_by_key = {}
         for moment in refined.transits:
             m = moment.model_dump() if hasattr(moment, "model_dump") else dict(moment)
             for asp in m["aspects"]:
-                if (asp["p1_name"], asp["aspect"], asp["p2_name"]) != key:
-                    continue
+                aspect_key = (asp["p1_name"], asp["aspect"], asp["p2_name"])
                 candidate = {"date": m["date"], "orb": abs(asp["orbit"]), "asp": asp}
+                best = best_by_key.get(aspect_key)
                 if best is None or candidate["orb"] < best["orb"]:
-                    best = candidate
-        return best
+                    best_by_key[aspect_key] = candidate
+        if refinement_cache is not None:
+            refinement_cache[cache_key] = best_by_key
+        return best_by_key.get(key)
 
     coarse = find_best(center - timedelta(hours=18), center + timedelta(hours=18), "hours", 2)
     if coarse is None:
         return info
-    fine_center = datetime.fromisoformat(coarse["date"]).replace(tzinfo=None)
+    fine_center = (_forecast_local_datetime(coarse["date"], tz) if bounds is not None
+                   else datetime.fromisoformat(coarse["date"]).replace(tzinfo=None))
     fine = find_best(
         fine_center - timedelta(hours=2), fine_center + timedelta(hours=2), "minutes", 10,
     )
@@ -1185,16 +1259,26 @@ def _transit_overview(aspects: list[dict], lang: str) -> dict:
 
 
 def _forecast_by_sphere(events: list[dict], lang: str) -> list[dict]:
-    """Группирует ключевые транзиты периода по сферам жизни и оценивает тон каждой."""
+    """Группирует события по одной значимой сфере и не показывает пустые шаблоны."""
     out = []
-    for key, name_pair, icon, points in _LIFE_SPHERES:
-        # Сфера активируется транзитом к её натальной точке-сигнификатору (p2).
-        ev = sorted([e for e in events if e.get("p2") in points], key=lambda e: e["orb"])
+    for key, name_pair, icon, _points in _LIFE_SPHERES:
+        unique = {}
+        for event in events:
+            if event.get("sphere_key") != key:
+                continue
+            event_key = (event.get("exact_datetime"), event.get("p1"),
+                         event.get("aspect_ru"), event.get("p2"))
+            unique[event_key] = event
+        ev = sorted(
+            unique.values(),
+            key=lambda event: (-_tr_intensity(event.get("p1", ""))[1],
+                               event.get("orb", 99), event.get("date", "")),
+        )
+        if not ev:
+            continue
         pos = sum(1 for e in ev if e["tone"] == "positive")
         neg = sum(1 for e in ev if e["tone"] == "negative")
-        if not ev:
-            tone = "calm"
-        elif pos and not neg:
+        if pos and not neg:
             tone = "favorable"
         elif neg and not pos:
             tone = "challenging"
@@ -1203,8 +1287,7 @@ def _forecast_by_sphere(events: list[dict], lang: str) -> list[dict]:
         else:
             tone = "active"
         name = name_pair[1] if lang == "en" else name_pair[0]
-        intro = _editorial_text('astrology.24e87bb94b4a5e5357ac5afb638702539e20d8868fa01fcda0dbdb4c056899fe') if lang == "en" else _editorial_text('astrology.36f76a461e8a373ce39c5355799adc909bccbbdc8127d714115faaa5139dca39')
-        text = f'{intro} {_l_pair(_SPHERE_TONE[tone], lang)}.'
+        text = ev[0]["text"]
         out.append({
             "key": key,
             "name": name,
@@ -1215,6 +1298,35 @@ def _forecast_by_sphere(events: list[dict], lang: str) -> list[dict]:
             "highlights": ev[:5],
         })
     return out
+
+
+_FORECAST_HOUSE_SPHERE = {
+    1: "health", 2: "career", 3: "growth", 4: "home",
+    5: "love", 6: "health", 7: "love", 8: "love",
+    9: "growth", 10: "career", 11: "growth", 12: "health",
+}
+
+_FORECAST_ANGLE_HOUSE = {
+    "Ascendant": 1,
+    "Medium_Coeli": 10,
+    "Descendant": 7,
+    "Imum_Coeli": 4,
+}
+
+
+def _forecast_sphere_key(model, point_name: str) -> str:
+    """Map the affected natal point to the life area of its natal house."""
+    house_num = _FORECAST_ANGLE_HOUSE.get(point_name)
+    if house_num is None:
+        attr = point_name.lower()
+        point = getattr(model, attr, None)
+        if point is None and attr in _NODE_FALLBACK:
+            point = getattr(model, _NODE_FALLBACK[attr], None)
+        if point is not None:
+            house_num = serialize_point(point).get("house_num")
+    if house_num in _FORECAST_HOUSE_SPHERE:
+        return _FORECAST_HOUSE_SPHERE[house_num]
+    return _sphere_key_of(point_name)[0]
 
 
 def _l_pair(pair, lang):
@@ -1282,14 +1394,27 @@ def _annual_profection(model, age: int) -> dict:
     }
 
 
-def _progressed_moon(natal_model, natal_params: dict, at: datetime) -> dict:
+def _progression_moment(natal_model, natal_params: dict, at: datetime, at_tz: str | None = None):
+    """Return elapsed tropical years and the progressed moment in the natal timezone."""
+    natal_tz = _timezone(natal_model.tz_str)
+    target_tz = _timezone(at_tz or natal_model.tz_str)
+    birth_utc = datetime.fromisoformat(natal_model.iso_formatted_utc_datetime)
+    if at.tzinfo is None:
+        try:
+            at = target_tz.localize(at, is_dst=None)
+        except (AmbiguousTimeError, NonExistentTimeError) as exc:
+            raise ValueError("Указанное местное время неоднозначно или не существует из-за перевода часов." if _lang() == "ru" else "The selected local time is ambiguous or does not exist because of a daylight-saving transition.") from exc
+    target_utc = at.astimezone(_timezone("UTC"))
+    elapsed_years = (target_utc - birth_utc).total_seconds() / (TROPICAL_YEAR_DAYS * 86400)
+    if elapsed_years < 0:
+        raise ValueError("Дата прогрессии не может быть раньше рождения." if _lang() == "ru" else "The progression date cannot be before birth.")
+    progressed = birth_utc + timedelta(days=elapsed_years)
+    return elapsed_years, progressed.astimezone(natal_tz).replace(tzinfo=None)
+
+
+def _progressed_moon(natal_model, natal_params: dict, at: datetime, at_tz: str | None = None) -> dict:
     """Прогрессивная Луна (день=год) на дату — эмоциональный фон периода."""
-    birth = datetime(
-        natal_params["year"], natal_params["month"], natal_params["day"],
-        natal_params.get("hour", 12), natal_params.get("minute", 0),
-    )
-    elapsed_years = (at - birth).total_seconds() / (TROPICAL_YEAR_DAYS * 86400)
-    prog_dt = birth + timedelta(days=elapsed_years)
+    _, prog_dt = _progression_moment(natal_model, natal_params, at, at_tz)
     prog_model = build_subject(
         name="Прогр.Луна",
         year=prog_dt.year, month=prog_dt.month, day=prog_dt.day,
@@ -1330,7 +1455,7 @@ def forecast_report(
 
     start_dt = datetime(start["year"], start["month"], start["day"], 12, 0)
     end_dt = datetime(end["year"], end["month"], end["day"], 12, 0)
-    if end_dt <= start_dt:
+    if end_dt < start_dt:
         raise ValueError(_editorial_text('astrology.9f1cdcd39d555297c2a729335eace939500a41dae51ecc017715d8fe17418be2'))
     if (end_dt - start_dt).days > 1100:
         raise ValueError(_editorial_text('astrology.08b959126104478ef88e140bd7fe0ec8e97fbbf729d7a67a580cf8f75346b856'))
@@ -1338,7 +1463,7 @@ def forecast_report(
     birth = datetime(natal_params["year"], natal_params["month"], natal_params["day"])
     age = _completed_age(birth, start_dt)
     profection = _annual_profection(natal_model, age)
-    prog_moon = _progressed_moon(natal_model, natal_params, start_dt)
+    prog_moon = _progressed_moon(natal_model, natal_params, start_dt, tz)
 
     # Суточный поиск кандидатов; каждый ретроградный проход сохраняется отдельно.
     eph_points = EphemerisDataFactory(
@@ -1356,17 +1481,28 @@ def forecast_report(
     lang = _lang()
     default_sphere = {"ru": _editorial_text('astrology.84c78f79451e45ee8b404284d71e7b1d0e52d7ed7ed21d231f1f2c1fed386661'), "en": _editorial_text('astrology.2df4ea120db5b615d5c4bb8e13096ca1fb4895976864ea50cdd4d75335b9e760')}
     events = []
+    refinement_cache = {}
     for (p1, kind, p2), info in passes:
         if info["orb"] > 3.0:
             continue  # аспект не становится точным в периоде — это фон, а не событие
-        info = _refine_transit_pass(natal_model, loc, tz, (p1, kind, p2), info)
-        text = I.interpret_transit(p1, kind, p2, lang)
-        if not text:
+        info = _refine_transit_pass(
+            natal_model, loc, tz, (p1, kind, p2), info,
+            bounds=(start_dt.replace(hour=0, minute=0, second=0, microsecond=0),
+                    end_dt.replace(hour=23, minute=59, second=59, microsecond=999999)),
+            refinement_cache=refinement_cache,
+        )
+        event_date = _forecast_local_datetime(info["date"], tz).date()
+        if not start_dt.date() <= event_date <= end_dt.date():
             continue
+        parts = I.transit_forecast_parts(p1, kind, p2, lang)
+        if not parts:
+            continue
+        advice_label = "Advice" if lang == "en" else "Совет"
+        text = f"{parts['interpretation']}\n\n{advice_label}: {parts['advice']}"
         nature = C.ASPECTS.get(kind, {}).get("nature", "")
         tone = "positive" if nature == "harmonious" else ("negative" if nature == "tense" else "neutral")
         events.append({
-            "date": info["date"][:10],
+            "date": event_date.isoformat(),
             "exact_datetime": info["date"],
             "p1": p1,
             "p1_ru": C.point_name(p1, lang),
@@ -1375,11 +1511,14 @@ def forecast_report(
             "aspect_symbol": C.aspect_symbol(kind),
             "nature": nature,
             "tone": tone,
+            "sphere_key": _forecast_sphere_key(natal_model, p2),
             "sphere": C._l(_SPHERE_OF.get(p2, default_sphere), lang),
             "p2": p2,
             "p2_ru": C.point_name(p2, lang),
             "p2_symbol": C.point_symbol(p2),
             "orb": round(info["orb"], 2),
+            "interpretation": parts["interpretation"],
+            "advice": parts["advice"],
             "text": text,
         })
     events.sort(key=lambda e: (e["date"], e["orb"]))
@@ -1433,7 +1572,9 @@ def transit_calendar_report(
     end_dt = datetime(end["year"], end["month"], end["day"], 12, 0)
     if end_dt <= start_dt:
         raise ValueError(_editorial_text('astrology.a87f6de2bf71a60c8a74bcd622109a5e639138d1e7822c58ee1c2cf28fa88e8a'))
-    if (end_dt - start_dt).days > 730:
+    # The ephemeris generator includes both endpoints, so a 730-day span would
+    # ask it for 731 daily samples and fail its own 730-day safety limit.
+    if (end_dt - start_dt).days >= 730:
         raise ValueError(_editorial_text('astrology.ffab982d4da2721c46286cb43cf55428bcd4cca4da6db694cc9eb1e3e890e8cc'))
 
     eph_points = EphemerisDataFactory(
@@ -1480,17 +1621,30 @@ def transit_calendar_report(
     lang = _lang()
     start_str = start_dt.strftime("%Y-%m-%d")
     end_str = end_dt.strftime("%Y-%m-%d")
+    bounds = (
+        start_dt.replace(hour=0, minute=0, second=0, microsecond=0),
+        end_dt.replace(hour=23, minute=59, second=59, microsecond=999999),
+    )
     events = []
+    refinement_cache = {}
     for (p1, kind, p2), info in passes:
         if info["orb"] > 1.5:
             continue  # аспект не становится точным в периоде
-        info = _refine_transit_pass(natal_model, loc, tz, (p1, kind, p2), info)
-        d10 = info["date"][:10]
+        info = _refine_transit_pass(
+            natal_model, loc, tz, (p1, kind, p2), info,
+            bounds=bounds,
+            refinement_cache=refinement_cache,
+            targeted_pair=True,
+        )
+        local_moment = _forecast_local_datetime(info["date"], tz)
+        event_date = local_moment.date().isoformat()
         # Минимум на самой границе при заметном орбе = аспект точен ВНЕ периода.
-        if info["orb"] > 0.4 and d10 in (start_str, end_str):
+        if not start_str <= event_date <= end_str:
+            continue
+        if info["orb"] > 0.4 and event_date in (start_str, end_str):
             continue
         events.append({
-            "date": info["date"][:10],
+            "date": event_date,
             "exact_datetime": info["date"],
             "p1": p1,
             "p1_ru": C.point_name(p1, lang),
@@ -2385,5 +2539,6 @@ def current_transits(lang: str = "ru", when: Optional[datetime] = None) -> list[
             "since_datetime": back.isoformat(timespec="minutes") + "Z" if back else None,
             "until_datetime": fwd.isoformat(timespec="minutes") + "Z" if fwd else None,
             "meaning": I.interpret_sign(name, sign, lang),
+            "guidance": I.current_transit_guidance(name, lang),
         })
     return out

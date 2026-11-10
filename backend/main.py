@@ -3,29 +3,33 @@
 from __future__ import annotations
 
 import logging
+import asyncio
 import copy
 import time
-from collections import defaultdict
+from decimal import Decimal, InvalidOperation
+from collections import OrderedDict
 from datetime import date as date_type, datetime, timedelta, timezone
 import pytz
 from functools import lru_cache
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Literal, Optional
+from uuid import UUID
 
 import requests
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 
 import re
 
-from . import astrology, constants, content_store, db, emailer, payments, seo, vedic
+from . import astrology, constants, content_store, db, emailer, interpretations, payments, robokassa, sales, seo, vedic, subscription_emails
 from . import api_language
 from .editorial_data import validate_required
 from .editorial_glossary import router as glossary_router
+from .request_size_limit import RequestSizeLimitMiddleware
 
 logger = logging.getLogger("astro")
 
@@ -58,11 +62,21 @@ async def lifespan(app: FastAPI):
     validate_required()
     db.init_db()
     content_store.init()
-    yield
+    email_worker = asyncio.create_task(subscription_emails.run())
+    try:
+        yield
+    finally:
+        email_worker.cancel()
+        try:
+            await email_worker
+        except asyncio.CancelledError:
+            pass
 
 
 app = FastAPI(title="Астрология — натальная карта и транзиты", version="0.1.0", lifespan=lifespan)
 app.include_router(glossary_router)
+from .mobile_editorial import router as mobile_editorial_router
+app.include_router(mobile_editorial_router)
 
 
 @app.exception_handler(HTTPException)
@@ -77,16 +91,15 @@ async def localized_http_error(request: Request, exc: HTTPException):
 
 @app.exception_handler(RequestValidationError)
 async def localized_validation_error(request: Request, exc: RequestValidationError):
-    from fastapi.exception_handlers import request_validation_exception_handler
+    from fastapi.encoders import jsonable_encoder
     from fastapi.responses import JSONResponse
-    import json
-    response = await request_validation_exception_handler(request, exc)
-    if api_language.language(request) != "en":
-        return response
-    payload = json.loads(response.body)
-    for error in payload.get("detail", []):
-        error["msg"] = api_language.translate(error.get("msg", ""), "en")
-    return JSONResponse(status_code=response.status_code, content=payload)
+    lang = api_language.language(request)
+    details = []
+    for raw_error in exc.errors():
+        error = dict(raw_error)
+        error["msg"] = api_language.validation_message(raw_error, lang)
+        details.append(error)
+    return JSONResponse(status_code=422, content=jsonable_encoder({"detail": details}))
 
 # CORS-middleware нет намеренно: API и фронтенд на одном источнике,
 # кросс-доменные запросы не нужны — браузерный same-origin по умолчанию строже.
@@ -95,7 +108,21 @@ async def localized_validation_error(request: Request, exc: RequestValidationErr
 # --------------------------------------------------------------------------- #
 #  Простой лимитер попыток (в памяти) — защита логина/регистрации от перебора
 # --------------------------------------------------------------------------- #
-_RATE: dict[str, list[float]] = defaultdict(list)
+_RATE: OrderedDict[str, list[float]] = OrderedDict()
+_RATE_MAX_KEYS = 10_000
+_RATE_REAP_INTERVAL = 60
+_RATE_LAST_REAP = 0.0
+
+
+def _prune_rate_records(now: float) -> None:
+    global _RATE_LAST_REAP
+    if now - _RATE_LAST_REAP < _RATE_REAP_INTERVAL:
+        return
+    expired_before = now - 3600
+    for key, timestamps in list(_RATE.items()):
+        if not timestamps or timestamps[-1] <= expired_before:
+            _RATE.pop(key, None)
+    _RATE_LAST_REAP = now
 
 
 def _client_ip(request: Request) -> str:
@@ -104,25 +131,33 @@ def _client_ip(request: Request) -> str:
 
 def _rate_limited(key: str, max_n: int, window: int) -> bool:
     now = time.time()
-    times = _RATE[key]
+    _prune_rate_records(now)
+    times = _RATE.get(key)
+    if times is None:
+        return False
     times[:] = [t for t in times if t > now - window]
+    if not times:
+        _RATE.pop(key, None)
+        return False
+    _RATE.move_to_end(key)
     return len(times) >= max_n
 
 
 def _rate_record(key: str) -> None:
-    _RATE[key].append(time.time())
+    now = time.time()
+    _prune_rate_records(now)
+    if key not in _RATE and len(_RATE) >= _RATE_MAX_KEYS:
+        _RATE.popitem(last=False)
+    _RATE.setdefault(key, []).append(now)
+    _RATE.move_to_end(key)
 
 
 MAX_BODY_BYTES = 1_000_000  # самый крупный легитимный запрос (ректификация) — десятки КБ
+app.add_middleware(RequestSizeLimitMiddleware, max_bytes=MAX_BODY_BYTES)
 
 
 @app.middleware("http")
 async def _sync_content(request, call_next):
-    # Лимит размера тела: защита от гигантских JSON (uvicorn сам его не ограничивает).
-    cl = request.headers.get("content-length")
-    if cl and cl.isdigit() and int(cl) > MAX_BODY_BYTES:
-        from fastapi.responses import JSONResponse
-        return JSONResponse(status_code=413, content={"detail": api_language.translate("Слишком большой запрос", api_language.language(request))})
     # Синхронизировать правки текстов из файла (дёшево, по mtime) — чтобы изменения
     # были видны во всех воркерах uvicorn, а не только там, где был сделан POST.
     content_store.refresh_if_changed()
@@ -293,6 +328,7 @@ class RegisterRequest(AuthRequest):
 class ProfileIn(BaseModel):
     label: str = Field(..., min_length=1, max_length=120)
     data: dict
+    client_id: Optional[str] = Field(None, min_length=8, max_length=80, pattern=r"^[A-Za-z0-9_-]+$")
 
 
 # --------------------------------------------------------------------------- #
@@ -349,6 +385,7 @@ def api_register(req: RegisterRequest, request: Request):
     except db.UserExistsError as exc:
         raise HTTPException(status_code=409, detail=str(exc))
     _rate_record(f"reg:{ip}")
+    db.set_preferred_language(user["id"], req.lang)
     _send_verify_email(request, user["id"], req.email, req.lang)
     return {"token": db.make_token(user["id"]), "username": user["username"], "is_admin": user.get("is_admin", False)}
 
@@ -357,7 +394,9 @@ def api_register(req: RegisterRequest, request: Request):
 def api_login(req: AuthRequest, request: Request):
     ip = _client_ip(request)
     key = f"login:{ip}:{req.username.strip().lower()}"
-    if _rate_limited(key, max_n=5, window=300):
+    ip_key = f"login-ip:{ip}"
+    if (_rate_limited(key, max_n=5, window=300)
+            or _rate_limited(ip_key, max_n=30, window=300)):
         raise HTTPException(status_code=429, detail="Слишком много попыток входа. Попробуйте через несколько минут.")
     # Вход по имени пользователя или по почте. Проверяем обоих кандидатов:
     # username сам может выглядеть как e-mail, и тогда поиск только по почте
@@ -369,6 +408,7 @@ def api_login(req: AuthRequest, request: Request):
     user = next((u for u in candidates if u and db.verify_password(req.password, u["password_hash"])), None)
     if not user:
         _rate_record(key)  # учитываем только НЕудачные попытки
+        _rate_record(ip_key)
         raise HTTPException(status_code=401, detail="Неверное имя пользователя или пароль")
     if user["is_banned"]:
         raise HTTPException(status_code=403, detail="Аккаунт заблокирован")
@@ -397,6 +437,7 @@ def api_attach_email(req: EmailAttach, request: Request, uid: int = Depends(curr
         raise HTTPException(status_code=429, detail="Слишком много запросов. Попробуйте позже.")
     if not db.set_user_email(uid, req.email):
         raise HTTPException(status_code=409, detail="Эта почта уже привязана к другому аккаунту")
+    db.set_preferred_language(uid, req.lang)
     _rate_record(f"email:{ip}")
     sent = _send_verify_email(request, uid, req.email, req.lang)
     return {"ok": True, "sent": sent}
@@ -412,6 +453,7 @@ def api_verify_email(req: EmailToken):
     if uid is None:
         raise HTTPException(status_code=400, detail="Ссылка недействительна или устарела")
     db.mark_email_verified(uid)
+    db.enqueue_active_subscription_email(uid)
     gift = db.grant_welcome_report(uid)  # лид-магнит: 1 бесплатный PDF за подтверждение почты
     return {"ok": True, "report_gift": gift}
 
@@ -462,7 +504,7 @@ def api_me(uid: int = Depends(current_user_id)):
     if not user:
         raise HTTPException(status_code=401, detail="Пользователь не найден")
     access = db.get_access_state(uid)
-    return {"username": user["username"], "is_admin": bool(user["is_admin"]),
+    return {"id": uid, "username": user["username"], "is_admin": bool(user["is_admin"]),
             "email": user["email"], "email_verified": bool(user["email_verified"]),
             "premium": access["premium"],
             "premium_until": access["premium_until"],
@@ -513,6 +555,33 @@ def _short_text(value, limit: int):
     return cut + "…"
 
 
+def _brief_transit_text(aspect: dict, limit: int = 220) -> str:
+    """Return a complete authored preview without leaking the detailed overview."""
+    source = aspect.get("interp")
+    lang = "en" if isinstance(source, str) and source.startswith("Transit overview.") else "ru"
+    energy_marker, advice_marker, advice_label = (
+        ("\n\nEnergy of the period. ", "\n\nRecommendations. ", "Advice: ")
+        if lang == "en"
+        else ("\n\nЭнергия периода. ", "\n\nРекомендации. ", "Совет: ")
+    )
+    if not isinstance(source, str) or energy_marker not in source:
+        return _short_text(source, limit)
+
+    def first_sentence(value: str) -> str:
+        sentences = re.split(r"(?<=[.!?])\s+", value.strip())
+        return sentences[0] if sentences else ""
+
+    energy = source.split(energy_marker, 1)[1].split("\n\n", 1)[0]
+    meaning = first_sentence(energy)
+    advice = ""
+    if advice_marker in source:
+        advice = first_sentence(source.rsplit(advice_marker, 1)[1].split("\n\n", 1)[0])
+    if not meaning:
+        return _short_text(source, limit)
+    with_advice = f"{meaning}\n\n{advice_label}{advice}"
+    return with_advice if advice and len(with_advice) <= limit else meaning
+
+
 def _brief_report(report: dict, kind: str) -> dict:
     """Сокращает авторские тексты, сохраняя расчётные положения и структуру ответа."""
     result = copy.deepcopy(report)
@@ -555,7 +624,10 @@ def _brief_report(report: dict, kind: str) -> dict:
             result["aspects"] = aspects[:3]
             for aspect in result["aspects"]:
                 if isinstance(aspect, dict) and "interp" in aspect:
-                    aspect["interp"] = _short_text(aspect.get("interp"), 220)
+                    aspect["interp"] = _brief_transit_text(aspect)
+        # The overview duplicates every interpretation in key and sphere groups.
+        # Dropping it here ensures no full text bypasses the limited aspect list.
+        result.pop("overview", None)
     elif kind == "forecast":
         result["summary"] = _short_text(result.get("summary"), 500)
         spheres = result.get("sphere_forecast")
@@ -563,7 +635,7 @@ def _brief_report(report: dict, kind: str) -> dict:
             result["sphere_forecast"] = spheres[:2]
             for sphere in result["sphere_forecast"]:
                 if isinstance(sphere, dict):
-                    sphere["text"] = _short_text(sphere.get("text"), 280)
+                    sphere["text"] = _short_text(sphere.get("text"), 900)
         events = result.get("events")
         if isinstance(events, list):
             result["events"] = events[:3]
@@ -600,8 +672,24 @@ def require_entitlement(entitlement: str):
 # --------------------------------------------------------------------------- #
 #  Подписка (ЮKassa)
 # --------------------------------------------------------------------------- #
+class BillingAttribution(BaseModel):
+    device_id: UUID
+    session_id: UUID
+    source: Literal["web", "app"] = "web"
+    utm_source: str | None = Field(None, max_length=40, pattern=r"^[A-Za-z0-9_-]+$")
+    utm_medium: str | None = Field(None, max_length=40, pattern=r"^[A-Za-z0-9_-]+$")
+    utm_campaign: str | None = Field(None, max_length=40, pattern=r"^[A-Za-z0-9_-]+$")
+    utm_content: str | None = Field(None, max_length=40, pattern=r"^[A-Za-z0-9_-]+$")
+
+
+class BillingCheck(BaseModel):
+    attempt: UUID | None = None
+
+
 class BillingCreate(BaseModel):
+    attribution: BillingAttribution | None = None
     plan: str = Field(..., pattern="^(month|year|plus_month|plus_year|consult|report)$")
+    lang: Literal["ru", "en"] = "ru"
 
 
 @app.get("/api/billing/plans")
@@ -612,9 +700,11 @@ def api_billing_plans():
 @app.post("/api/billing/create")
 def api_billing_create(body: BillingCreate, request: Request, uid: int = Depends(current_user_id)):
     return_url = str(request.base_url).rstrip("/") + "/?payment=check"
+    db.set_preferred_language(uid, body.lang)
     try:
-        url = payments.create_payment(uid, body.plan, return_url)
-    except payments.NotConfiguredError as exc:
+        url = payments.create_payment(uid, body.plan, return_url,
+                                      body.attribution.model_dump(mode="json", exclude_none=True) if body.attribution else None)
+    except (payments.NotConfiguredError, robokassa.NotConfiguredError) as exc:
         raise HTTPException(status_code=503, detail=str(exc))
     except Exception:
         logger.exception("Ошибка создания платежа")
@@ -623,12 +713,14 @@ def api_billing_create(body: BillingCreate, request: Request, uid: int = Depends
 
 
 @app.post("/api/billing/check")
-def api_billing_check(uid: int = Depends(current_user_id)):
+def api_billing_check(body: BillingCheck | None = None, uid: int = Depends(current_user_id)):
     try:
-        result = payments.check_payments(uid)
+        result = payments.check_payments(uid, str(body.attempt) if body and body.attempt else None)
         result["consultation"] = db.has_consultation(uid)
         result["report_credits"] = db.get_report_credits(uid)
         return result
+    except LookupError:
+        raise HTTPException(status_code=404, detail="Платёж не найден")
     except payments.NotConfiguredError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
     except Exception:
@@ -649,6 +741,39 @@ async def api_yookassa_webhook(request: Request):
     except Exception:
         logger.exception("Ошибка обработки вебхука ЮKassa")
     return {"ok": True}
+
+
+@app.post("/api/robokassa/result")
+async def api_robokassa_result(request: Request):
+    """Verify Robokassa ResultURL and exact order metadata before granting rights."""
+    from urllib.parse import parse_qsl
+
+    try:
+        raw = (await request.body()).decode("utf-8", errors="strict")
+        pairs = parse_qsl(raw, keep_blank_values=True, strict_parsing=True, max_num_fields=32)
+    except (UnicodeDecodeError, ValueError):
+        raise HTTPException(status_code=400, detail="Malformed Robokassa notification")
+    params = dict(pairs)
+    if len(params) != len(pairs):
+        raise HTTPException(status_code=400, detail="Duplicate Robokassa parameters")
+    if not robokassa.verify_result(params):
+        raise HTTPException(status_code=403, detail="Invalid Robokassa signature")
+
+    record = sales.payment_record(params["InvId"])
+    if not record or record.get("provider") != "robokassa":
+        raise HTTPException(status_code=404, detail="Payment not found")
+    if not params.get("Shp_attempt") or params["Shp_attempt"] != record.get("attempt"):
+        raise HTTPException(status_code=400, detail="Payment attempt mismatch")
+    try:
+        callback_amount = Decimal(params["OutSum"]).quantize(Decimal("0.01"))
+        expected_amount = Decimal(str(record["amount"])).quantize(Decimal("0.01"))
+    except (InvalidOperation, KeyError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid payment amount")
+    if callback_amount != expected_amount:
+        raise HTTPException(status_code=400, detail="Payment amount mismatch")
+    if record["status"] == "pending":
+        payments._apply_status(record["payment_id"], record["user_id"], record["plan"], "succeeded")
+    return PlainTextResponse(f"OK{params['InvId']}")
 
 
 class PasswordChange(BaseModel):
@@ -675,6 +800,11 @@ def require_admin(uid: int = Depends(current_user_id)) -> int:
     if not db.is_admin(uid):
         raise HTTPException(status_code=403, detail="Доступ только для администратора")
     return uid
+
+
+from .mobile_reports import ReportStore, create_router as mobile_reports_router
+
+app.include_router(mobile_reports_router(ReportStore(db.DATA_DIR / "mobile-reports.json"), require_admin))
 
 
 @app.get("/api/admin/stats")
@@ -844,15 +974,35 @@ def api_list_profiles(uid: int = Depends(current_user_id)):
 
 @app.post("/api/profiles")
 def api_add_profile(profile: ProfileIn, uid: int = Depends(current_user_id)):
-    # Бесплатный тариф — одна карта. Уже сохранённые не удаляются: подписка снова
-    # открывает их все (см. db.list_profiles, поле locked).
-    if not db.is_premium(uid) and db.count_profiles(uid) >= FREE_PROFILE_LIMIT:
-        raise HTTPException(
-            status_code=402,
-            detail="На бесплатном тарифе можно сохранить одну карту. "
-                   "Подписка «Премиум» снимает ограничение и вернёт доступ ко всем сохранённым.",
-        )
-    return db.add_profile(uid, profile.label, profile.data)
+    try:
+        return db.add_profile(uid, profile.label, profile.data, profile.client_id,
+                              limit=None if db.is_premium(uid) else FREE_PROFILE_LIMIT)
+    except db.ProfileDeletedError as exc:
+        raise HTTPException(status_code=409, detail="Создание карты отменено: карта была удалена.") from exc
+    except ValueError as exc:
+        if str(exc) != "profile_limit":
+            raise
+        raise HTTPException(status_code=402, detail="На бесплатном тарифе можно сохранить одну карту. "
+                            "Подписка «Премиум» снимает ограничение и вернёт доступ ко всем сохранённым.") from exc
+
+
+@app.put("/api/profiles/{profile_id}")
+def api_update_profile(profile_id: int, profile: ProfileIn, uid: int = Depends(current_user_id)):
+    updated = db.update_profile(uid, profile_id, profile.label, profile.data)
+    if updated is None:
+        raise HTTPException(status_code=404, detail="Карта не найдена")
+    return updated
+
+
+@app.delete("/api/profiles/by-client")
+def api_discard_profile(client_id: str = Query(..., min_length=8, max_length=80, pattern=r"^[A-Za-z0-9_-]+$"),
+                        uid: int = Depends(current_user_id)):
+    key = f"profile-discard:{uid}"
+    if _rate_limited(key, max_n=120, window=60):
+        raise HTTPException(status_code=429, detail="Слишком много запросов. Попробуйте позже.")
+    _rate_record(key)
+    db.delete_profile_by_client(uid, client_id)
+    return {"ok": True}
 
 
 @app.delete("/api/profiles/{profile_id}")
@@ -913,14 +1063,83 @@ def api_my_payments(uid: int = Depends(current_user_id)):
 
 
 @app.post("/api/report/consume")
-def api_report_consume(uid: int = Depends(current_user_id)):
-    """Списать один разовый PDF-кредит (после успешного скачивания отчёта).
-    Премиуму кредиты не нужны — у него PDF безлимитный, ничего не списываем."""
-    if db.is_premium(uid):
+def api_report_consume(premium_fallback: bool = False, uid: int = Depends(current_user_id)):
+    """Legacy credit debit; PDF downloads use reserve/complete/cancel below."""
+    if db.is_premium(uid) and not premium_fallback:
         return {"ok": True, "premium": True, "report_credits": db.get_report_credits(uid)}
     if not db.consume_report_credit(uid):
         raise HTTPException(status_code=402, detail="Нет доступных отчётов")
     return {"ok": True, "premium": False, "report_credits": db.get_report_credits(uid)}
+
+
+class PdfExportReservation(BaseModel):
+    token: str = Field(..., min_length=40, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
+
+
+class PdfCreditReservationRequest(BaseModel):
+    report_type: Literal["natal"]
+
+
+@app.post("/api/report/credit/reserve")
+def api_report_credit_reserve(body: PdfCreditReservationRequest, premium_fallback: bool = False,
+                              uid: int = Depends(current_user_id)):
+    access = db.get_access_state(uid)
+    if access["premium"] and not premium_fallback:
+        raise HTTPException(status_code=409, detail="Разовый отчёт доступен после исчерпания PDF-квоты")
+    reservation = db.reserve_report_credit(uid)
+    if not reservation:
+        raise HTTPException(status_code=402, detail="Нет доступных отчётов")
+    return reservation
+
+
+@app.post("/api/report/credit/complete")
+def api_report_credit_complete(body: PdfExportReservation, uid: int = Depends(current_user_id)):
+    if not db.finish_report_credit_reservation(uid, body.token, success=True):
+        raise HTTPException(status_code=409, detail="Резерв разового отчёта истёк")
+    return {"ok": True, "report_credits": db.get_report_credits(uid)}
+
+
+@app.post("/api/report/credit/cancel")
+def api_report_credit_cancel(body: PdfExportReservation, uid: int = Depends(current_user_id)):
+    if not db.finish_report_credit_reservation(uid, body.token, success=False):
+        raise HTTPException(status_code=409, detail="Резерв разового отчёта истёк")
+    return {"ok": True, "report_credits": db.get_report_credits(uid)}
+
+
+@app.get("/api/report/pdf/usage")
+def api_report_pdf_usage(uid: int = Depends(current_user_id)):
+    access = db.get_access_state(uid)
+    if not access["premium"]:
+        raise HTTPException(status_code=402, detail="Доступно по подписке «Премиум»")
+    if access["subscription_source"] == "admin":
+        return {"unlimited": True}
+    return db.pdf_export_usage(uid)
+
+
+@app.post("/api/report/pdf/reserve")
+def api_report_pdf_reserve(uid: int = Depends(current_user_id)):
+    access = db.get_access_state(uid)
+    if not access["premium"]:
+        raise HTTPException(status_code=402, detail="Доступно по подписке «Премиум»")
+    if access["subscription_source"] == "admin":
+        return {"unlimited": True}
+    reservation = db.reserve_pdf_export(uid)
+    if not reservation:
+        raise HTTPException(status_code=429, detail="pdf_export_limit_reached")
+    return reservation
+
+
+@app.post("/api/report/pdf/complete")
+def api_report_pdf_complete(body: PdfExportReservation, uid: int = Depends(current_user_id)):
+    if not db.finish_pdf_export(uid, body.token, success=True):
+        raise HTTPException(status_code=409, detail="pdf_export_reservation_expired")
+    return db.pdf_export_usage(uid)
+
+
+@app.post("/api/report/pdf/cancel")
+def api_report_pdf_cancel(body: PdfExportReservation, uid: int = Depends(current_user_id)):
+    db.finish_pdf_export(uid, body.token, success=False)
+    return db.pdf_export_usage(uid)
 
 
 # --------------------------------------------------------------------------- #
@@ -1142,8 +1361,24 @@ def api_events(body: EventBatch, request: Request, authorization: str | None = H
     uid = None
     if authorization and authorization.lower().startswith("bearer "):
         uid = db.verify_token(authorization.split(" ", 1)[1].strip())
-    n = db.record_events(body.device_id, uid, [e.model_dump() for e in body.events])
+    events = []
+    for event in body.events:
+        if event.name.startswith("server_"):
+            raise HTTPException(status_code=422, detail="Reserved event name")
+        props = event.props
+        if event.name.startswith("web_"):
+            try:
+                props = sales.clean_web_event(event.name, props, body.device_id)
+            except ValueError as exc:
+                raise HTTPException(status_code=422, detail=str(exc))
+        events.append({"name": event.name, "props": props})
+    n = db.record_events(body.device_id, uid, events)
     return {"ok": True, "accepted": n}
+
+
+@app.get("/api/admin/sales-funnel")
+def api_admin_sales_funnel(uid: int = Depends(require_admin), days: int = Query(30, ge=1, le=365)):
+    return sales.funnel(days)
 
 
 @app.get("/api/admin/events")

@@ -173,9 +173,18 @@ html[data-theme="light"] .sun-rays { display: block; }
   gap: 16px;
   flex-wrap: wrap;
 }
-.logo { display: flex; align-items: center; gap: 16px; }
+.site-header.home-header { padding-bottom: 24px; }
+.logo { position: relative; isolation: isolate; display: flex; align-items: center; gap: 16px; flex: 1 1 auto; min-width: 0; }
+.logo-watermark {
+  position: absolute; z-index: 0; left: 0; top: -28px; transform: none;
+  display: block; width: 185px; height: 185px; pointer-events: none;
+  background: url("/img/brand/astrosmap-mark.png") center / contain no-repeat;
+  opacity: .16;
+  animation: none !important;
+}
+.logo-text { position: relative; z-index: 1; width: min(100%, 520px); min-width: 0; text-align: left; }
 
-.auth-area { display: flex; align-items: center; gap: 12px; }
+.auth-area { position: relative; z-index: 2; display: flex; align-items: center; gap: 12px; }
 .theme-switch {
   display: flex; gap: 2px;
   background: var(--inset);
@@ -387,52 +396,57 @@ html[data-theme="light"] .sun-rays { display: block; }
   cursor: pointer; line-height: 1;
 }
 .saved-list .saved-del:hover { color: var(--bad); }
-.logo-glyph {
-  font-size: 42px;
-  color: var(--accent);
-  text-shadow: 0 0 24px rgba(201, 168, 106, 0.55);
-}
-/* Светлая тема — солнце, тёмная — луна */
-.logo-glyph::before { content: "\2609"; }                 /* ☉ */
-html[data-theme="dark"] .logo-glyph::before { content: "\263D"; }  /* ☽ */
-html[data-theme="dark"] .logo-glyph { text-shadow: 0 0 24px rgba(139, 123, 216, 0.55); }
+html[data-theme="dark"] .logo-watermark { opacity: .16; }
 
 /* Уважаем настройку «меньше движения» — отключаем анимации появления */
 @media (prefers-reduced-motion: reduce) {
-  .logo, .logo-glyph, .logo-text > * { animation: none !important; }
+  .logo-text > * { animation: none !important; }
   .stars span { animation: none !important; }
 }
-/* Большие буквы — «Натальная карта»: спокойный градиент без мерцания */
+/* Главное название и понятное назначение сервиса. */
 .site-header h1.title-main {
+  position: relative; z-index: 1;
+  display: block;
   font-family: "Cormorant Garamond", serif;
-  font-size: 50px;
+  font-size: clamp(38px, 4vw, 52px);
   font-weight: 700;
   letter-spacing: 1.5px;
   line-height: 1.02;
+  margin: 0;
+  text-align: center;
   background: linear-gradient(95deg, var(--accent), var(--accent-2));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   text-shadow: 0 2px 18px rgba(201, 168, 106, 0.18);
 }
-/* Средние буквы — «Project Artemisa» */
+/* A и Project Artemisa образуют одну полупрозрачную фоновую строку за названием. */
 .brand {
+  position: absolute; z-index: 0; top: 48px; left: 440px; right: auto;
+  pointer-events: none;
   font-family: "Cormorant Garamond", serif;
-  font-size: 26px;
+  width: max-content; max-width: none; white-space: nowrap;
+  font-size: clamp(30px, 3.8vw, 64px);
   font-weight: 600;
-  letter-spacing: 4px;
+  letter-spacing: .06em;
   text-transform: uppercase;
   color: var(--accent-2);
-  margin-top: 2px;
+  opacity: .18;
+  margin: 0;
+  animation: none !important;
 }
-/* Маленькие буквы — подпись */
-.tagline { color: var(--text-dim); font-size: 13.5px; margin-top: 4px; }
+/* Назначение сервиса и пояснение идут следующими уровнями. */
+.home-header h1.title-main { width: max-content; white-space: nowrap; text-align: left; }
+.service-name { color: var(--accent-2); font: 500 clamp(18px, 1.5vw, 23px)/1.2 "Cormorant Garamond", serif; margin-top: 5px; text-align: center; }
+.home-header .service-name { width: 185px; }
+html[data-theme="light"] .home-header .service-name { color: #6b55c7; }
+html[data-theme="dark"] .home-header .service-name { color: #a99bea; }
+.tagline { color: var(--text-dim); font-size: 13px; line-height: 1.5; max-width: 70ch; margin: 7px 0 0; }
 
-/* Плавное появление при загрузке: глиф и три строки по очереди (opacity+transform — без «дёрганья») */
-.logo-glyph, .logo-text > * { animation: hero-in 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
-.logo-glyph  { animation-delay: 0s; }
+/* Плавное появление названия и подписи бренда. */
+.logo-text > * { animation: hero-in 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
 .title-main  { animation-delay: 0.09s; }
-.brand       { animation-delay: 0.18s; }
+.service-name { animation-delay: 0.18s; }
 .tagline     { animation-delay: 0.27s; }
 @keyframes hero-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
@@ -1539,20 +1553,22 @@ html[data-theme="light"] .adm-tab.active { background: rgba(139,123,216,0.14); }
 }
 @media (max-width: 480px) { .prog-highlights { gap: 8px; } }
 
-/* Панель печати результата (для вошедших) */
-.result-toolbar { display: flex; justify-content: flex-end; margin-bottom: 10px; }
-.result-print-btn {
+/* Кнопка PDF и видимый остаток подписочной квоты. */
+.result-toolbar { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; }
+.result-pdf-btn {
   background: var(--inset); border: 1px solid var(--panel-border);
   color: var(--text); border-radius: 9px; padding: 8px 14px;
   font-family: inherit; font-size: 13px; cursor: pointer;
   transition: background .15s, border-color .15s;
 }
-.result-print-btn:hover { background: rgba(139,123,216,0.18); border-color: var(--accent-2); }
+.result-pdf-btn:hover { background: rgba(139,123,216,0.18); border-color: var(--accent-2); }
+.pdf-quota-note { color: var(--text-dim); font-size: 12px; line-height: 1.4; }
+.report-actions .pdf-quota-note { margin-right: auto; }
 .modal-report {
   width: 820px; max-width: 94vw; max-height: 90vh;
   overflow-y: auto; text-align: left;
 }
-.report-actions { position: sticky; top: -26px; display: flex; justify-content: flex-end; padding-bottom: 8px; }
+.report-actions { position: sticky; top: -26px; display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 12px; padding-bottom: 8px; }
 .report-content h1 { font-family: "Cormorant Garamond", serif; font-size: 30px; color: var(--accent); margin-bottom: 4px; }
 .report-content .rc-sub { color: var(--text-dim); font-size: 14px; margin-bottom: 20px; }
 .report-content h2 {
@@ -1565,8 +1581,7 @@ html[data-theme="light"] .adm-tab.active { background: rgba(139,123,216,0.14); }
 .report-content .rc-asp { font-size: 13.5px; line-height: 1.55; color: var(--text-dim); margin-bottom: 7px; padding-left: 12px; border-left: 2px solid var(--panel-border); }
 .report-content .rc-asp b { color: var(--text); }
 
-/* Печать выполняется через изолированный iframe (см. printFrom в app.js) со своим
-   самодостаточным CSS (PRINT_CSS) — это надёжно работает в Chrome, Edge и Firefox. */
+/* PDF формируется в изолированном iframe с печатной раскладкой. */
 
 /* Ведический календарь (Панчанг) */
 .vedic-head { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-bottom: 16px; }
@@ -1816,6 +1831,8 @@ html[data-theme="light"] .adm-tab.active { background: rgba(139,123,216,0.14); }
 .sky-sign { color: var(--accent); font-size: 15px; margin-top: 2px; }
 .sky-period { color: var(--text-dim); font-size: 12px; margin: 4px 0 8px; }
 .sky-meaning { color: var(--text); font-size: 13px; line-height: 1.45; margin: 0; }
+.sky-guidance { color: var(--text-dim); font-size: 13px; line-height: 1.45; margin: 8px 0 0; }
+.sky-guidance strong { color: var(--accent); }
 .sky-err { color: var(--text-dim); }
 .app-qr-row { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
 .app-qr { margin: 0; text-align: center; }
@@ -1848,17 +1865,21 @@ html[data-theme="light"] .adm-tab.active { background: rgba(139,123,216,0.14); }
   .panel { padding: 16px 14px; }
   .app-cta { padding: 18px 14px; }
   .site-header { padding: 16px 16px 8px; gap: 10px; }
+  .site-header.home-header { padding-bottom: 20px; }
   .auth-area { flex-wrap: wrap; gap: 8px; justify-content: flex-start; }
   .auth-btn { padding: 8px 12px; font-size: 12px; }
   .header-only { display: none; }   /* Премиум и смена пароля — в кабинете */
-  .logo { gap: 10px; }
-  .logo-glyph { font-size: 34px; }
+  .logo-watermark { width: 158px; height: 158px; left: 0; top: -30px; }
+  .home-header h1.title-main { width: max-content; }
+  .home-header .service-name { width: 158px; }
+  .brand { top: 24px; left: 166px; right: auto; font-size: 20px; letter-spacing: .03em; }
 }
 
 /* Узкие телефоны */
 @media (max-width: 480px) {
-  .site-header h1.title-main { font-size: 34px; }
-  .brand { font-size: 20px; letter-spacing: 3px; }
+  .site-header h1.title-main { font-size: 30px; }
+  .brand { font-size: 20px; letter-spacing: .03em; }
+  .service-name { font-size: 18px; }
   .tagline { font-size: 12px; }
   .scroll-top { width: 42px; height: 42px; }
   .row { grid-template-columns: 1fr; }
@@ -1871,6 +1892,29 @@ html[data-theme="light"] .adm-tab.active { background: rgba(139,123,216,0.14); }
   .cal-cell, .vedic-cell { padding: 4px 3px; }
   .glossary-grid, .archetypes-grid { grid-template-columns: 1fr; }
   .table-wrap { overflow-x: auto; }   /* широкие таблицы — горизонтальная прокрутка вместо обреза */
+}
+@media (max-width: 360px) {
+  .logo-watermark { width: 130px; height: 130px; }
+  .home-header h1.title-main { width: max-content; }
+  .home-header .service-name { width: 130px; }
+  .brand { left: 138px; right: auto; font-size: 16px; }
+}
+
+/* Keep the background brand between the wordmark and controls at intermediate widths. */
+@media (min-width: 961px) and (max-width: 1450px) {
+  .brand {
+    left: clamp(204px, calc(100vw - 674px), 440px);
+    font-size: clamp(29px, calc(5vw - 18.5px), 55px);
+  }
+}
+@media (min-width: 641px) and (max-width: 960px) {
+  .brand {
+    left: 360px;
+    font-size: clamp(22px, calc(11.5vw - 51px), 30px);
+  }
+}
+@media (min-width: 361px) and (max-width: 400px) {
+  .brand { left: auto; right: 0; font-size: clamp(16px, calc(10vw - 20px), 20px); }
 }
 
 /* --- Подписка «Премиум» --- */
@@ -1987,3 +2031,18 @@ html[data-theme="light"] .adm-tab.active { background: rgba(139,123,216,0.14); }
   .plan-section-once { grid-column: auto; }
   .plan-group-label { min-height: 0; }
 }
+
+.payment-notice {
+  position: relative;
+  z-index: 2;
+  max-width: 1100px;
+  margin: 16px auto;
+  padding: 16px 20px;
+  border: 1px solid var(--accent, #8877cc);
+  border-radius: 14px;
+  background: var(--bg-2);
+  color: var(--text, #eee);
+}
+.payment-notice p { margin: 0 0 12px; }
+.payment-notice button, .payment-notice a { margin: 4px 12px 4px 0; }
+@media (max-width: 600px) { .payment-notice { margin: 12px; } }

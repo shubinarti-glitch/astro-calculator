@@ -1,18 +1,31 @@
 # -*- coding: utf-8 -*-
-"""Smoke-тесты API: каждый эндпоинт отвечает корректно. Запуск: pytest -q
-
-Тесты не создают пользователей (авторизация проверяется на несуществующих),
-поэтому реальную базу data/app.db не засоряют.
-"""
+"""Smoke-тесты API: каждый эндпоинт отвечает корректно. Запуск: pytest -q."""
 import random
+import secrets
 import string
+import tempfile
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 
 from backend import astrology, db
+
+# API tests must never initialize or mutate the developer's local account DB.
+_TEST_DATA_DIR = tempfile.TemporaryDirectory(prefix="astrosmap-api-tests-")
+db.DATA_DIR = Path(_TEST_DATA_DIR.name)
+db.DB_PATH = db.DATA_DIR / "app.db"
+db.SECRET_FILE = db.DATA_DIR / "secret.key"
+db._SECRET = secrets.token_bytes(32)
+
 from backend.main import app
 
 db.init_db()  # таблицы на случай, если lifespan не запущен вне контекст-менеджера
+
+# The first account in a fresh DB is admin; keep a stable admin so ordinary
+# test accounts do not accidentally inherit that first-user privilege.
+if not any(user["is_admin"] for user in db.list_all_users()):
+    db.create_user("__pytest_admin__", "password123", "pytest-admin@example.invalid")
+
 client = TestClient(app)
 
 # Премиум-эндпоинты (ректификация/синастрия/прогноз) в тестах открыты через
@@ -143,6 +156,100 @@ def test_calendar():
     assert r.json()["location_meta"]["city"] == "London"
 
 
+def test_calendar_accepts_maximum_730_inclusive_days(monkeypatch):
+    from datetime import timedelta
+    from types import SimpleNamespace
+
+    class FakeEphemerisFactory:
+        def __init__(self, *, start_datetime, end_datetime, **kwargs):
+            assert (end_datetime - start_datetime).days + 1 == 730
+            self.start = start_datetime.date()
+
+        def get_ephemeris_data_as_astrological_subjects(self):
+            return [
+                SimpleNamespace(
+                    year=day.year, month=day.month, day=day.day,
+                    moon=SimpleNamespace(sign="Tau"),
+                    lunar_phase=SimpleNamespace(moon_phase_name="Full Moon", moon_emoji="🌕"),
+                )
+                for offset in range(730)
+                for day in [self.start + timedelta(days=offset)]
+            ]
+
+    class FakeTransitRange:
+        def get_transit_moments(self):
+            return SimpleNamespace(transits=[])
+
+    monkeypatch.setattr(astrology, "EphemerisDataFactory", FakeEphemerisFactory)
+    monkeypatch.setattr(astrology, "TransitsTimeRangeFactory", lambda *args: FakeTransitRange())
+    r = client.post("/api/calendar", json={
+        "natal": NATAL,
+        "start": {"year": 2026, "month": 1, "day": 1},
+        "end": {"year": 2027, "month": 12, "day": 31},
+    })
+    assert r.status_code == 200
+    assert len(r.json()["lunar"]) == 730
+
+
+def test_calendar_rejects_731_inclusive_days_before_ephemeris():
+    r = client.post("/api/calendar", json={
+        "natal": NATAL,
+        "start": {"year": 2026, "month": 1, "day": 1},
+        "end": {"year": 2028, "month": 1, "day": 1},
+    })
+    assert r.status_code == 400
+
+
+def test_refinement_cache_reuses_exact_windows_without_merging_event_keys(monkeypatch):
+    from datetime import timedelta
+    from types import SimpleNamespace
+
+    factory_calls = []
+
+    class FakeEphemerisFactory:
+        def __init__(self, *, start_datetime, end_datetime, step_type, step, **kwargs):
+            factory_calls.append((start_datetime, end_datetime, step_type, step))
+            self.start = start_datetime
+            self.step_type = step_type
+
+        def get_ephemeris_data_as_astrological_subjects(self):
+            return SimpleNamespace(start=self.start, step_type=self.step_type)
+
+    class FakeTransitRange:
+        def __init__(self, _natal, ephemeris):
+            self.ephemeris = ephemeris
+
+        def get_transit_moments(self):
+            offset = timedelta(hours=18 if self.ephemeris.step_type == "hours" else 2)
+            moment = (self.ephemeris.start + offset).isoformat()
+            aspects = [
+                {"p1_name": "Sun", "aspect": "square", "p2_name": "Moon", "orbit": 0.25},
+                {"p1_name": "Mars", "aspect": "trine", "p2_name": "Venus", "orbit": -0.5},
+            ]
+            return SimpleNamespace(transits=[{"date": moment, "aspects": aspects}])
+
+    monkeypatch.setattr(astrology, "EphemerisDataFactory", FakeEphemerisFactory)
+    monkeypatch.setattr(astrology, "TransitsTimeRangeFactory", FakeTransitRange)
+    natal = object()
+    loc = {"lat": 51.5, "lng": -0.12}
+    info = {"date": "2026-06-01T12:00:00", "orb": 1.0, "asp": {}}
+    cache = {}
+
+    sun_event = astrology._refine_transit_pass(
+        natal, loc, "Europe/London", ("Sun", "square", "Moon"), info,
+        refinement_cache=cache,
+    )
+    mars_event = astrology._refine_transit_pass(
+        natal, loc, "Europe/London", ("Mars", "trine", "Venus"), info,
+        refinement_cache=cache,
+    )
+
+    assert sun_event["date"] == mars_event["date"] == "2026-06-01T12:00:00"
+    assert sun_event["orb"] == 0.25
+    assert mars_event["orb"] == 0.5
+    assert len(factory_calls) == 2  # one shared coarse window and one shared fine window
+
+
 def test_vedic():
     r = client.post("/api/vedic-calendar", json={"year": 2026, "month": 6, "lat": 55.75, "lng": 37.61})
     assert r.status_code == 200
@@ -172,6 +279,15 @@ def test_validation_error_detail_shape():
     assert all(isinstance(item.get("msg"), str) and item["msg"] for item in detail)
 
 
+def test_validation_errors_are_localized_for_both_languages():
+    payload = {"username": "x", "password": "1234", "email": "a@b.ru"}
+    ru = client.post("/api/auth/register", json=payload, headers={"Accept-Language": "ru"})
+    en = client.post("/api/auth/register", json=payload, headers={"Accept-Language": "en"})
+    assert ru.status_code == en.status_code == 422
+    assert any(item["msg"] == "Обязательное поле." for item in ru.json()["detail"])
+    assert any(item["msg"] == "Field required." for item in en.json()["detail"])
+
+
 def test_login_nonexistent():
     r = client.post("/api/auth/login", json={"username": _rnd("nouser_"), "password": "wrongpass123"})
     assert r.status_code == 401
@@ -182,6 +298,19 @@ def test_login_throttle():
     codes = [client.post("/api/auth/login", json={"username": u, "password": "wrongpass123"}).status_code for _ in range(7)]
     assert codes.count(401) >= 5
     assert 429 in codes  # после 5 неудач — блокировка
+
+
+def test_login_throttle_shared_across_usernames_from_one_ip():
+    from backend.main import _RATE
+    ip_key = "login-ip:testclient"
+    _RATE.pop(ip_key, None)
+    codes = [
+        client.post("/api/auth/login", json={"username": _rnd("ip_brute_"), "password": "wrongpass123"}).status_code
+        for _ in range(31)
+    ]
+    assert codes[:30] == [401] * 30
+    assert codes[30] == 429
+    _RATE.pop(ip_key, None)
 
 
 def test_admin_requires_auth():
@@ -220,6 +349,30 @@ def test_natal_house_interp_richer():
     d = client.post("/api/natal", json=NATAL).json()
     sun = next(p for p in d["planets"] if p["name"] == "Sun")
     assert len(sun["interp_house"]) > 120
+
+
+def test_planet_catalog_returns_natural_english_modal_copy():
+    response = client.get("/api/planets?lang=en")
+    assert response.status_code == 200
+    planets = response.json()
+    assert len(planets) == 10
+    work = [planet["work"] for planet in planets.values()]
+    assert all(value and not value.startswith("In work") for value in work)
+    assert {value.split(".", 1)[0] for value in work} == {
+        "Professionally, the Sun points to a desire for recognition, creative expression and a role you can take pride in",
+        "At work, the Moon may draw you toward caring roles, hospitality, food, public-facing work or fields shaped by mood and memory",
+        "Mercury is associated with work involving language, information, analysis, teaching, trade and communication",
+        "In professional life, Venus is linked with beauty, art, fashion, diplomacy, finance and work that brings people together",
+        "Mars may support roles that call for energy, initiative, courage and quick action",
+        "Jupiter is often linked with teaching, law, travel, publishing and work focused on growth or big-picture meaning",
+        "In a career, Saturn speaks to discipline, endurance and long-term achievement built through persistence and experience",
+        "Uranus may draw you to technology, science, reform and other fields that welcome new approaches",
+        "Neptune is associated with art, music, film, service and spiritual or contemplative work",
+        "Pluto is often linked with research, psychology, crisis management, finance and work involving deep change",
+    }
+    assert "without having to explain yourself at length" in planets["Mercury"]["love"]
+    assert "rigid expectations" in planets["Uranus"]["love"]
+    assert "contemplative work" in planets["Neptune"]["work"]
 
 
 # ---- Ректификация: расширенный движок (символические дирекции + режим окна) ----
@@ -346,6 +499,34 @@ def test_body_size_limit():
     r = client.post("/api/natal", json=NATAL,
                     headers={"Content-Length": "2000000"})
     assert r.status_code == 413
+
+
+def test_body_size_limit_without_content_length():
+    import asyncio
+    from backend.request_size_limit import RequestSizeLimitMiddleware
+
+    sent = []
+    messages = iter([
+        {"type": "http.request", "body": b"x" * 700_000, "more_body": True},
+        {"type": "http.request", "body": b"x" * 300_001, "more_body": False},
+    ])
+
+    async def receive():
+        return next(messages)
+
+    async def send(message):
+        sent.append(message)
+
+    async def app(scope, receive, send):
+        raise AssertionError("oversized chunked body must be rejected before the app")
+
+    scope = {
+        "type": "http", "method": "POST", "path": "/api/natal", "headers": [],
+        "client": ("testclient", 123), "server": ("testserver", 80), "scheme": "http",
+        "query_string": b"", "http_version": "1.1",
+    }
+    asyncio.run(RequestSizeLimitMiddleware(app, max_bytes=1_000_000)(scope, receive, send))
+    assert next(message["status"] for message in sent if message["type"] == "http.response.start") == 413
 
 
 def test_geocode_rate_limited():
@@ -536,8 +717,8 @@ def test_premium_gate_when_not_overridden():
 def test_billing_plans_public():
     r = client.get("/api/billing/plans")
     assert r.status_code == 200
-    assert r.json()["month"]["price"] == 299
-    assert r.json()["year"]["price"] == 1990
+    assert r.json()["month"]["price"] == 329
+    assert r.json()["year"]["price"] == 2190
 
 
 def test_billing_create_requires_auth():
@@ -565,7 +746,7 @@ def test_subscription_extend_and_expiry():
 
 def test_billing_plus_plans():
     plans = client.get("/api/billing/plans").json()
-    assert plans["plus_month"]["price"] == 1799 and plans["plus_year"]["price"] == 3490
+    assert plans["plus_month"]["price"] == 1829 and plans["plus_year"]["price"] == 3690
 
 
 def test_consultation_credit():
@@ -871,7 +1052,99 @@ def test_report_credits_flow():
         assert client.post("/api/report/consume", headers=h).status_code == 402
         # план report валиден для создания платежа (проверяем схему, не сам платёж)
         from backend import payments
-        assert payments.PLANS["report"] == (149, 0)
+        assert payments.PLANS["report"] == (169, 0)
+    finally:
+        _cleanup(name)
+
+
+def test_premium_pdf_fallback_consumes_a_single_report_credit():
+    name, token = _make_user("premium_pdf_credit_")
+    try:
+        headers = {"Authorization": f"Bearer {token}"}
+        user = db.get_user_by_username(name)
+        db.extend_subscription(user["id"], "month", 30, source="website")
+        db.add_report_credit(user["id"])
+
+        # The normal premium path remains unlimited and does not consume credits.
+        normal = client.post("/api/report/consume", headers=headers)
+        assert normal.status_code == 200
+        assert normal.json()["premium"] is True
+        assert normal.json()["report_credits"] == 1
+
+        # The explicit fallback used after the monthly PDF quota consumes one credit.
+        fallback = client.post(
+            "/api/report/consume?premium_fallback=true", headers=headers
+        )
+        assert fallback.status_code == 200
+        assert fallback.json()["report_credits"] == 0
+        assert client.post(
+            "/api/report/consume?premium_fallback=true", headers=headers
+        ).status_code == 402
+    finally:
+        _cleanup(name)
+
+
+def test_report_credit_reservation_covers_render_and_is_one_time():
+    name, token = _make_user("report_credit_reserve_")
+    try:
+        headers = {"Authorization": f"Bearer {token}"}
+        user = db.get_user_by_username(name)
+        db.add_report_credit(user["id"])
+
+        payload = {"report_type": "natal"}
+        assert client.post("/api/report/credit/reserve", headers=headers,
+                           json={"report_type": "calendar"}).status_code == 422
+        first = client.post("/api/report/credit/reserve", headers=headers, json=payload)
+        assert first.status_code == 200
+        reservation = first.json()
+        assert reservation["report_credits"] == 0
+        assert client.post("/api/report/credit/reserve", headers=headers,
+                           json=payload).status_code == 402
+
+        cancelled = client.post(
+            "/api/report/credit/cancel", headers=headers,
+            json={"token": reservation["token"]},
+        )
+        assert cancelled.status_code == 200
+        assert cancelled.json()["report_credits"] == 1
+
+        second = client.post("/api/report/credit/reserve", headers=headers,
+                             json=payload).json()
+        completed = client.post(
+            "/api/report/credit/complete", headers=headers,
+            json={"token": second["token"]},
+        )
+        assert completed.status_code == 200
+        assert completed.json()["report_credits"] == 0
+        assert client.post(
+            "/api/report/credit/cancel", headers=headers,
+            json={"token": second["token"]},
+        ).status_code == 409
+    finally:
+        _cleanup(name)
+
+
+def test_premium_report_credit_reservation_requires_explicit_fallback():
+    name, token = _make_user("premium_report_credit_reserve_")
+    try:
+        headers = {"Authorization": f"Bearer {token}"}
+        user = db.get_user_by_username(name)
+        db.extend_subscription(user["id"], "month", 30, source="website")
+        db.add_report_credit(user["id"])
+
+        payload = {"report_type": "natal"}
+        assert client.post("/api/report/credit/reserve", headers=headers,
+                           json=payload).status_code == 409
+        fallback = client.post(
+            "/api/report/credit/reserve?premium_fallback=true", headers=headers,
+            json=payload,
+        )
+        assert fallback.status_code == 200
+        assert fallback.json()["report_credits"] == 0
+        assert client.post(
+            "/api/report/credit/cancel", headers=headers,
+            json={"token": fallback.json()["token"]},
+        ).json()["report_credits"] == 1
     finally:
         _cleanup(name)
 

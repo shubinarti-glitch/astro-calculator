@@ -345,11 +345,17 @@ const BTN_TEXT = {
 function updateCalcBtn() {
   $("calc-btn").querySelector(".btn-text").textContent = t(BTN_TEXT[mode] || "btn_natal");
 }
+function syncProgressionMinDate() {
+  $("prog-date").min = $("birth-date").value;
+}
+$("birth-date").addEventListener("input", syncProgressionMinDate);
+$("birth-date").addEventListener("change", syncProgressionMinDate);
 document.querySelectorAll(".tab").forEach((tab) => {
   tab.addEventListener("click", () => {
     document.querySelectorAll(".tab").forEach((el) => el.classList.remove("active"));
     tab.classList.add("active");
     mode = tab.dataset.mode;
+    if (mode === "progression") syncProgressionMinDate();
     const usesCurrentLocation = ["transit", "calendar", "forecast", "return", "vedic"].includes(mode);
     $("current-location-block").classList.toggle("hidden", !usesCurrentLocation);
     if (usesCurrentLocation) syncCurrentLocationFromBirth(false);
@@ -474,6 +480,7 @@ async function renderSkyNow() {
         <div class="sky-sign">${skyEsc(tr.sign_symbol || "")} ${skyEsc(tr.sign_ru)}</div>
         <div class="sky-period">${skyMoment(tr.since_datetime, tr.since)} — ${skyMoment(tr.until_datetime, tr.until)}</div>
         <p class="sky-meaning">${skyEsc(tr.meaning)}</p>
+        ${tr.guidance ? `<p class="sky-guidance"><strong>${skyEsc(t("sky_focus"))}:</strong> ${skyEsc(tr.guidance)}</p>` : ""}
       </article>`;
     }).join("");
   } catch (e) {
@@ -598,7 +605,7 @@ function getCurrentLocation(birth) {
   const lng = parseFloat($("current-lng").value);
   if (Number.isNaN(lat) || Number.isNaN(lng)) {
     const fallback = { lat: birth.lat, lng: birth.lng, tz_str: birth.tz_str, city: birth.city };
-    localStorage.setItem("astro_current_location", JSON.stringify(fallback));
+    try { localStorage.setItem("astro_current_location", JSON.stringify(fallback)); } catch (_) {}
     return fallback;
   }
   const result = {
@@ -607,7 +614,7 @@ function getCurrentLocation(birth) {
     tz_str: $("current-tz").value || birth.tz_str,
     city: $("current-city").value.trim() || birth.city,
   };
-  localStorage.setItem("astro_current_location", JSON.stringify(result));
+  try { localStorage.setItem("astro_current_location", JSON.stringify(result)); } catch (_) {}
   return result;
 }
 
@@ -907,6 +914,7 @@ $("birth-form").addEventListener("submit", async (e) => {
       if (!IS_PREMIUM) {
         const prev = await postJSON("/api/synastry/preview", { person_a: birth, person_b: personB });
         renderSynastryTeaser(prev);
+        sales.track("web_chart_success", { kind: "synastry_preview" });
         return; // тизер — не полноценный расчёт: не пишем в историю и lastData
       }
       data = await postJSON("/api/synastry", { person_a: birth, person_b: personB });
@@ -923,6 +931,9 @@ $("birth-form").addEventListener("submit", async (e) => {
       const pd = $("prog-date").value;
       const pt = $("prog-time").value || "12:00";
       if (!pd) throw new Error(t("e_prog_date"));
+      if (pd < $("birth-date").value || (pd === $("birth-date").value && pt < ($("birth-time").value || "12:00"))) {
+        throw new Error(t("e_prog_before_birth"));
+      }
       const [py, pm, pday] = pd.split("-").map(Number);
       const [ph, pmin] = pt.split(":").map(Number);
       const body = { natal: birth, target_date: { year: py, month: pm, day: pday, hour: ph, minute: pmin } };
@@ -1014,6 +1025,7 @@ $("birth-form").addEventListener("submit", async (e) => {
       data = await postJSON("/api/natal", birth);
       renderNatal(data);
     }
+    sales.track("web_chart_success", { kind: mode });
     lastData = data;
     lastMode = mode; // для перерисовки при смене языка
     recordHistory(birth);
@@ -1118,13 +1130,16 @@ function showError(msg) {
   $("result-toolbar").classList.add("hidden"); // нечего печатать при ошибке
   $("calc-btn").disabled = false;
 }
+function canPreviewPdfLocally() {
+  return ["localhost", "127.0.0.1", "::1"].includes(location.hostname);
+}
 function showResults() {
   $("loader").classList.add("hidden");
   $("error").classList.add("hidden");
   $("placeholder").classList.add("hidden");
   $("daily-block").classList.add("hidden");
   $("results").classList.remove("hidden");
-  $("result-toolbar").classList.toggle("hidden", !getToken()); // печать — для вошедших
+  $("result-toolbar").classList.toggle("hidden", !getToken() && !canPreviewPdfLocally());
   $("calc-btn").disabled = false;
   $("interp-section").classList.add("hidden"); // показываем только для натала
   // По умолчанию — раскладка «карта + таблицы»; календарь переключит сам.
@@ -1869,7 +1884,7 @@ $("deep-modal").addEventListener("click", (e) => {
 // поэтому любой результат (натал, синастрия, прогноз, Панчанг…) выглядит как на сайте.
 const PRINT_OVERRIDE = `
   @page { size: A4 portrait; margin: 14mm 14mm 17mm; }
-  html, body { background: #fff !important; margin: 0; padding: 0; color: #29253a !important; }
+  html, body { background: transparent !important; margin: 0; padding: 0; color: #29253a !important; }
   body { font-family: Manrope, Arial, sans-serif; font-size: 10.5pt; line-height: 1.55; }
   /* Скрыть интерактив и служебное */
   button, .result-toolbar, .lang-switch, .tabs, .modal-close, .report-actions,
@@ -1883,8 +1898,9 @@ const PRINT_OVERRIDE = `
   .interp-more > summary, .syn-index > summary::before { display: none !important; }
   /* Убрать свечения/тени и тёмные подложки */
   * { text-shadow: none !important; box-shadow: none !important; }
-  .modal-overlay { position: static !important; display: block !important; background: #fff !important; backdrop-filter: none !important; }
-  .modal { width: 100% !important; max-width: none !important; max-height: none !important; overflow: visible !important; border: none !important; padding: 0 !important; background: #fff !important; }
+  .modal-overlay { position: static !important; display: block !important; background: transparent !important; backdrop-filter: none !important; }
+  .modal { width: 100% !important; max-width: none !important; max-height: none !important; overflow: visible !important; border: none !important; padding: 0 !important; background: transparent !important; }
+  .print-document, .print-body, .editorial-report { background: transparent !important; }
   /* Карта по центру и не на весь лист */
   .chart-area { display: block !important; }
   .chart-svg { max-width: 660px; margin: 0 auto 14px; }
@@ -1905,7 +1921,7 @@ const PRINT_OVERRIDE = `
   .print-cover {
     min-height: 250mm; box-sizing: border-box; display: flex; flex-direction: column;
     justify-content: center; align-items: center; text-align: center; position: relative;
-    border: 1px solid #d8cda9; padding: 18mm 14mm; break-after: page; page-break-after: always;
+    padding: 18mm 14mm; break-after: page; page-break-after: always;
     background: linear-gradient(145deg, #fbf8ff 0%, #fff 48%, #faf6eb 100%) !important;
   }
   .print-cover::before, .print-cover::after {
@@ -1913,9 +1929,9 @@ const PRINT_OVERRIDE = `
     width: 122mm; height: 122mm; opacity: .22; left: 50%; top: 42%; transform: translate(-50%, -50%);
   }
   .print-cover::after { width: 92mm; height: 92mm; border-color: #7765c9; opacity: .16; }
-  .print-cover-mark { color: #c9a86a; font-size: 31pt; line-height: 1; position: relative; z-index: 1; }
-  .print-cover-logo { width: 30mm; height: 30mm; margin-bottom: 5mm; border-radius: 7mm; position: relative; z-index: 1; }
-  .print-cover-brand { font: 700 31pt/1.05 "Cormorant Garamond", Georgia, serif; color: #2a2150; position: relative; z-index: 1; }
+  .print-cover-mark { width:42mm; height:42mm; object-fit:contain; margin-bottom:5mm; position:relative; z-index:1; }
+  .print-cover-logo { width: 42mm; height: 42mm; margin-bottom: 5mm; object-fit: contain; position: relative; z-index: 1; }
+  .print-cover-brand { font: 700 31pt/1.05 "Cormorant Garamond", Georgia, serif; color: #9a7a3a; position: relative; z-index: 1; }
   .print-cover-domain { color: #7765c9; letter-spacing: 3px; font-size: 9pt; margin-top: 3mm; position: relative; z-index: 1; }
   .print-cover-rule { width: 42mm; border-top: 1.5px solid #c9a86a; margin: 12mm auto 9mm; position: relative; z-index: 1; }
   .print-cover-type { font: 600 23pt/1.15 "Cormorant Garamond", Georgia, serif; color: #4b4168; position: relative; z-index: 1; }
@@ -1927,22 +1943,22 @@ const PRINT_OVERRIDE = `
   .print-cover-note { margin-top: auto; max-width: 135mm; color: #8a8298; font-size: 8pt; position: relative; z-index: 1; }
   .print-toc { break-after: page; page-break-after: always; padding: 12mm 4mm 4mm; }
   .print-toc h1 { font: 700 26pt/1.1 "Cormorant Garamond", Georgia, serif; border-bottom: 2px solid #c9a86a; padding-bottom: 4mm; }
-  .print-toc ol { margin: 8mm 0 0; padding: 0; list-style: none; counter-reset: toc; }
-  .print-toc li { counter-increment: toc; display: flex; gap: 3mm; padding: 2.5mm 0; border-bottom: 1px solid #ece7f1; color: #39324d; }
-  .print-toc li::before { content: counter(toc, decimal-leading-zero); color: #9a7a3a; font-weight: 700; }
+  .print-toc ol { margin: 8mm 0 0; padding: 0; list-style: none; }
+  .print-toc li { display: flex; gap: 3mm; padding: 2.5mm 0; border-bottom: 1px solid #ece7f1; color: #39324d; }
+  .print-toc .toc-index { flex: 0 0 8mm; color: #9a7a3a; font-weight: 700; }
   .print-toc .toc-level-3 { padding-left: 8mm; color: #6b6378; font-size: 9pt; }
   .print-legal { margin-top: 10mm; padding: 5mm; border: 1px solid #d8cda9; background: #fbf8ef !important; color: #5f586a; font-size: 8.5pt; break-inside: avoid; }
   .print-legal strong { color: #2a2150; }
   .print-body { padding-top: 2mm; }
   /* Фирменная шапка проекта — как на сайте (золото + фиолет, засечки) */
   .print-brand { text-align: center; border-bottom: 2px solid #c9a86a; padding-bottom: 10px; margin-bottom: 18px; }
-  .print-brand-logo { font-size: 22pt; color: #c9a86a; line-height: 1; }
+  .print-brand-mark { display: block; width: 10mm; height: 10mm; object-fit: contain; margin: 0 auto 2mm; }
   .print-brand-main { font-family: "Cormorant Garamond", Georgia, serif; font-size: 26pt; font-weight: 700; color: #2a2150; line-height: 1.1; }
   .print-brand-sub { font-size: 9.5pt; letter-spacing: 2px; color: #6b5bc4; margin-top: 2px; }
   .print-brand-doc { font-size: 12pt; color: #444; margin-top: 6px; font-weight: 600; }
   .print-brand-date { font-size: 9pt; color: #999; margin-top: 2px; }
   /* Повторяющийся колонтитул внизу каждой страницы */
-  .print-footer { position: fixed; bottom: 0; left: 0; right: 0; text-align: center; font-size: 8pt; color: #aaa; padding-bottom: 2mm; }
+  .print-footer { position: fixed; bottom: 0; left: 0; right: 0; text-align: center; font-size: 8pt; color: #7765c9; padding-bottom: 2mm; }
 `;
 
 function printCover(title, brandTitle, dateStr, meta = {}) {
@@ -1958,7 +1974,7 @@ function printCover(title, brandTitle, dateStr, meta = {}) {
     ? { date: "Birth date", time: "Birth time", city: "Birth place", houses: "House system", note: "Astrological interpretations describe tendencies and opportunities and do not replace professional medical, financial or legal advice." }
     : { date: "Дата рождения", time: "Время рождения", city: "Место рождения", houses: "Система домов", note: "Астрологические трактовки описывают тенденции и возможности и не заменяют профессиональные медицинские, финансовые или юридические рекомендации." };
   return `<section class="print-cover">
-    <div class="print-cover-mark" aria-hidden="true">✦</div>
+    <img class="print-cover-logo" src="${location.origin}/img/brand/astrosmap-mark.png" alt="" />
     <div class="print-cover-brand">${escapeHtml(brandTitle)}</div>
     <div class="print-cover-domain">ASTROSMAP.RU</div>
     <div class="print-cover-rule"></div>
@@ -1981,24 +1997,45 @@ function printToc(doc, lang) {
   if (!headings.length) return "";
   const title = lang === "en" ? "Contents" : "Содержание";
   return `<section class="print-toc"><h1>${title}</h1><ol>${headings
-    .map((item) => `<li class="toc-level-${item.level}">${escapeHtml(item.text)}</li>`)
+    .map((item, index) => `<li class="toc-level-${item.level}"><span class="toc-index">${String(index + 1).padStart(2, "0")}</span><span>${escapeHtml(item.text)}</span></li>`)
     .join("")}</ol></section>`;
 }
 
 function ensurePrintToc(doc, lang) {
   if (!doc || doc.querySelector(".print-toc")) return;
   const toc = printToc(doc, lang);
-  if (toc) doc.querySelector(".print-cover")?.insertAdjacentHTML("afterend", toc);
+  if (toc) (doc.querySelector(".print-calendar-overview") || doc.querySelector(".print-cover"))?.insertAdjacentHTML("afterend", toc);
 }
 
-function printLegal(lang) {
+function printLegal(lang, accessMode) {
+  const interpretationNotice = accessMode === "brief"
+    ? (lang === "en"
+      ? "Some interpretations in this free report are shortened. Full interpretations are available with a paid Premium subscription."
+      : "В бесплатном отчёте часть трактовок сокращена. Полные трактовки доступны по платной подписке Premium.")
+    : "";
   return lang === "en"
-    ? `<aside class="print-legal"><strong>Important notice.</strong> This report is intended for information and entertainment. Astrological interpretations describe tendencies and do not constitute medical, psychological, legal or financial advice. For decisions affecting health, safety, rights or finances, consult a qualified professional. © AstroSMap — Project Artemisa. astrosmap.ru</aside>`
-    : `<aside class="print-legal"><strong>Важное предупреждение.</strong> Отчёт носит информационно-развлекательный характер. Астрологические трактовки описывают тенденции и не являются медицинской, психологической, юридической или финансовой рекомендацией. По вопросам здоровья, безопасности, прав и финансов обращайтесь к профильному специалисту. © AstroSMap — Project Artemisa. astrosmap.ru</aside>`;
+    ? `<aside class="print-legal">${interpretationNotice ? `<strong>${interpretationNotice}</strong> ` : ""}Important notice. This report is intended for information and entertainment. Astrological interpretations describe tendencies and do not constitute medical, psychological, legal or financial advice. For decisions affecting health, safety, rights or finances, consult a qualified professional. © AstroSMap — Project Artemisa. astrosmap.ru</aside>`
+    : `<aside class="print-legal">${interpretationNotice ? `<strong>${interpretationNotice}</strong> ` : ""}Важное предупреждение. Отчёт носит информационно-развлекательный характер. Астрологические трактовки описывают тенденции и не являются медицинской, психологической, юридической или финансовой рекомендацией. По вопросам здоровья, безопасности, прав и финансов обращайтесь к профильному специалисту. © AstroSMap — Project Artemisa. astrosmap.ru</aside>`;
 }
 
-// Собрать печатный документ во временном iframe. Одна раскладка на два сценария:
-// системная печать (printFrom) и одноклик-экспорт в PDF (downloadPdf).
+function pdfBrandAssets() {
+  return new Promise((resolve) => {
+    const image = new Image();
+    image.onload = () => {
+      const markCanvas = document.createElement("canvas");
+      markCanvas.width = markCanvas.height = 96;
+      const markContext = markCanvas.getContext("2d");
+      if (!markContext) return resolve(null);
+      markContext.drawImage(image, 0, 0, 96, 96);
+      resolve({ mark: markCanvas.toDataURL("image/png"), watermark: image });
+      markCanvas.width = markCanvas.height = 0;
+    };
+    image.onerror = () => resolve(null);
+    image.src = "/img/brand/astrosmap-mark.png";
+  });
+}
+
+// Собрать документ для PDF во временном iframe.
 // extraHead — доп. содержимое <head> (например, подключение html2pdf для PDF).
 // html2canvas не понимает width/height:100% у SVG — задаём явные пиксели по viewBox.
 // Вызывается и при сборке фрейма, и перед рендером PDF: внешний скрипт в <head>
@@ -2075,6 +2112,26 @@ function reportLabel(key) {
   };
   if (labels[key]) return labels[key][LANG === "en" ? 1 : 0];
   return ""; // Unknown schema fields are not editorial copy.
+}
+
+function calendarEventDateTime(value, timeZone) {
+  const raw = String(value || "");
+  if (!raw) return "";
+  const instantValue = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?$/.test(raw) ? `${raw}Z` : raw;
+  const instant = new Date(instantValue);
+  if (Number.isNaN(instant.getTime())) return raw;
+  const options = { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" };
+  const locale = LANG === "en" ? "en-GB" : "ru-RU";
+  try {
+    return new Intl.DateTimeFormat(locale, { ...options, timeZone: timeZone || "UTC" }).format(instant);
+  } catch {
+    return new Intl.DateTimeFormat(locale, { ...options, timeZone: "UTC" }).format(instant);
+  }
+}
+
+function calendarEventOrb(value) {
+  if (value == null || value === "" || !Number.isFinite(Number(value))) return "";
+  return `${new Intl.NumberFormat(LANG === "en" ? "en-US" : "ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value))}°`;
 }
 
 function reportValue(value, depth = 0, seen = new Set()) {
@@ -2205,6 +2262,139 @@ function natalReportAppendices(data) {
   return html;
 }
 
+function calendarPdfMode(data) {
+  const parse = (value) => {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || ""));
+    if (!match) return null;
+    const [, y, m, d] = match.map(Number);
+    const date = new Date(Date.UTC(y, m - 1, d));
+    return date.getUTCFullYear() === y && date.getUTCMonth() === m - 1 && date.getUTCDate() === d ? [y, m, d] : null;
+  };
+  const start = parse(data && data.start), end = parse(data && data.end);
+  if (!start || !end) return "invalid";
+  const dateKey = ([year, month, day]) => `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  if (dateKey(end) < dateKey(start)) return "invalid";
+  const [startYear, startMonth, startDay] = start;
+  const [endYear, endMonth, endDay] = end;
+  if (startDay === 1 && startYear === endYear && startMonth === endMonth && endDay === new Date(Date.UTC(endYear, endMonth, 0)).getUTCDate()) return "detailed";
+  if (startMonth === 1 && startDay === 1 && endYear === startYear && endMonth === 12 && endDay === 31) return "compact";
+  return "invalid";
+}
+
+function compactCalendarPdf(data) {
+  const label = (key) => escapeHtml(reportLabel(key));
+  const monthName = (key) => new Intl.DateTimeFormat(LANG === "en" ? "en-US" : "ru-RU", {
+    month: "long", year: "numeric", timeZone: "UTC",
+  }).format(new Date(`${key}-01T00:00:00Z`));
+  const eventsByMonth = new Map(), lunarByMonth = new Map();
+  for (const event of data.events || []) {
+    const month = String(event.date || "").slice(0, 7);
+    if (/^\d{4}-\d{2}$/.test(month)) (eventsByMonth.get(month) || eventsByMonth.set(month, []).get(month)).push(event);
+  }
+  const lunar = Array.isArray(data.lunar) ? data.lunar : Object.entries(data.lunar || {}).map(([date, day]) => ({ date, ...day }));
+  for (const day of lunar) {
+    const month = String(day.date || "").slice(0, 7);
+    if (!/^\d{4}-\d{2}$/.test(month)) continue;
+    const rows = lunarByMonth.get(month) || [];
+    const previous = rows.at(-1);
+    if ((day.phase_ru && previous?.phase !== day.phase_ru) || (day.sign_ru && previous?.sign !== day.sign_ru)) {
+      rows.push({ date: day.date, phase: day.phase_ru || "", sign: day.sign_ru || "" });
+    }
+    lunarByMonth.set(month, rows);
+  }
+  const start = data.start.slice(0, 7), end = data.end.slice(0, 7);
+  const [sy, sm] = start.split("-").map(Number), [ey, em] = end.split("-").map(Number);
+  const timestamp = (event) => Date.parse(event.exact_datetime || `${event.date || ""}T00:00:00Z`);
+  const lunarDate = (value) => {
+    const match = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    return match ? `${match[3]}.${match[2]}.${match[1]}` : String(value || "");
+  };
+  let html = "";
+  for (let year = sy, month = sm; year < ey || (year === ey && month <= em); month++) {
+    if (month > 12) { year++; month = 1; }
+    const key = `${year}-${String(month).padStart(2, "0")}`;
+    const events = (eventsByMonth.get(key) || []).sort((a, b) => timestamp(a) - timestamp(b));
+    const phases = lunarByMonth.get(key) || [];
+    const eventChunks = [];
+    if (events.length) {
+      for (let offset = 0; offset < events.length; offset += 20) {
+        const continued = offset ? " continued" : "";
+        const monthLabel = offset ? `<div class="calendar-year-month-repeat">${escapeHtml(monthName(key))} · ${escapeHtml(LANG === "en" ? "continued" : "продолжение")}</div>` : "";
+        eventChunks.push(`<section class="calendar-year-event-chunk${continued}">${monthLabel}<table><thead><tr><th>${label("exact_datetime")}</th><th>${label("t_name")}</th><th>${label("aspect_ru")}</th><th>${label("n_name")}</th><th>${label("orb")}</th></tr></thead><tbody>${events.slice(offset, offset + 20).map((event) => `<tr><td>${escapeHtml(calendarEventDateTime(event.exact_datetime, data.location_meta?.tz_str) || event.date || "")}</td><td>${escapeHtml(event.p1_ru || "")}</td><td>${escapeHtml(event.aspect_ru || "")}</td><td>${escapeHtml(event.p2_ru || "")}</td><td>${escapeHtml(calendarEventOrb(event.orb))}</td></tr>`).join("")}</tbody></table></section>`);
+      }
+    }
+    html += `<section><div class="calendar-year-event-intro"><h2>${escapeHtml(monthName(key))}</h2><h3>${label("events")}</h3>${eventChunks.shift() || `<p>${escapeHtml(LANG === "en" ? "No exact transits in this month." : "В этом месяце точных транзитов нет.")}</p>`}</div>${eventChunks.join("")}`;
+    const lunarChunks = [];
+    for (let offset = 0; offset < phases.length; offset += 10) {
+      const continued = offset ? " continued" : "";
+      const monthLabel = offset ? `<div class="calendar-year-month-repeat">${label("lunar")} · ${escapeHtml(monthName(key))} · ${escapeHtml(LANG === "en" ? "continued" : "продолжение")}</div>` : "";
+      lunarChunks.push(`<section class="calendar-year-lunar-chunk${continued}">${monthLabel}<table><thead><tr><th>${label("date")}</th><th>${label("phase_ru")}</th><th>${label("sign_ru")}</th></tr></thead><tbody>${phases.slice(offset, offset + 10).map((phase) => `<tr><td>${escapeHtml(lunarDate(phase.date))}</td><td>${escapeHtml(phase.phase)}</td><td>${escapeHtml(phase.sign)}</td></tr>`).join("")}</tbody></table></section>`);
+    }
+    html += phases.length
+      ? `<div class="calendar-year-lunar-intro"><h3>${label("lunar")}</h3>${lunarChunks.shift()}</div>${lunarChunks.join("")}`
+      : `<h3>${label("lunar")}</h3><p>${escapeHtml(LANG === "en" ? "No lunar phase data." : "Нет данных о фазах Луны.")}</p>`;
+    html += "</section>";
+  }
+  return html;
+}
+
+function monthlyCalendarPdf(data) {
+  const [year, month] = String(data.start || "").split("-").map(Number);
+  if (!year || !month) return "";
+  const monthKey = `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}`;
+  const monthName = new Intl.DateTimeFormat(LANG === "en" ? "en-US" : "ru-RU", {
+    month: "long", year: "numeric", timeZone: "UTC",
+  }).format(new Date(`${monthKey}-01T00:00:00Z`));
+  const weekdays = LANG === "en"
+    ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    : ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+  const lunar = Array.isArray(data.lunar) ? data.lunar : Object.entries(data.lunar || {}).map(([date, day]) => ({ date, ...day }));
+  const lunarByDate = new Map(lunar.map((day) => [day.date, day]));
+  const eventsByDate = new Map();
+  for (const event of data.events || []) {
+    const rows = eventsByDate.get(event.date) || [];
+    rows.push(event);
+    eventsByDate.set(event.date, rows);
+  }
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const firstWeekday = (new Date(Date.UTC(year, month - 1, 1)).getUTCDay() + 6) % 7;
+  const weekRows = Math.ceil((firstWeekday + daysInMonth) / 7);
+  const title = LANG === "en" ? "Month calendar" : "Календарь месяца";
+  const eventsLabel = LANG === "en" ? "exact aspects" : "точных аспектов";
+  const legend = LANG === "en"
+    ? "Moon icon and label: phase · zodiac symbol and name: Moon sign · green/red/purple dots: harmonious/tense/other exact transits"
+    : "Значок и название Луны — её фаза · символ и название — знак Луны · зелёные/красные/фиолетовые точки — гармоничные/напряжённые/прочие точные транзиты";
+  let cells = weekdays.map((day) => `<div class="print-calendar-weekday">${day}</div>`).join("");
+  for (let i = 0; i < firstWeekday; i++) cells += `<div class="print-calendar-cell empty" aria-hidden="true"></div>`;
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = `${monthKey}-${String(day).padStart(2, "0")}`;
+    const moon = lunarByDate.get(date);
+    const events = eventsByDate.get(date) || [];
+    const nature = events.some((event) => event.nature === "tense") ? "bad"
+      : events.some((event) => event.nature === "harmonious") ? "good" : "neutral";
+    const moonTitle = moon
+      ? `${moon.phase_ru || moon.phase || ""} · ${moon.sign_ru || moon.sign || ""}`
+      : (LANG === "en" ? "Moon data unavailable" : "Нет данных о Луне");
+    const moonContent = moon
+      ? `<span class="print-calendar-moon-icon">${escapeHtml(moon.emoji || "🌙")}</span><span class="glyph">${escapeHtml(moon.sign_symbol || "")}</span><span class="print-calendar-sign">${escapeHtml(moon.sign_ru || moon.sign || "")}</span>`
+      : `<span class="print-calendar-missing">—</span>`;
+    const dots = events.slice(0, 4).map((event) => `<i class="${FC_NATURE[event.nature] || "neutral"}"></i>`).join("");
+    const extra = events.length > 4 ? `<span class="print-calendar-extra">+${events.length - 4}</span>` : "";
+    cells += `<div class="print-calendar-cell ${events.length ? nature : ""}" data-date="${date}" title="${escapeHtml(moonTitle)}">
+      <b class="print-calendar-day">${day}</b><span class="print-calendar-moon">${moonContent}</span>
+      ${moon ? `<span class="print-calendar-phase">${escapeHtml(moon.phase_ru || moon.phase || "")}</span>` : ""}
+      <span class="print-calendar-events" aria-label="${events.length} ${eventsLabel}">${dots}${extra}<small>${events.length || ""}</small></span>
+    </div>`;
+  }
+  const emptyEnd = weekRows * 7 - firstWeekday - daysInMonth;
+  for (let i = 0; i < emptyEnd; i++) cells += `<div class="print-calendar-cell empty" aria-hidden="true"></div>`;
+  return `<section class="print-calendar-overview" data-week-rows="${weekRows}">
+    <h1>${title}</h1><h2>${escapeHtml(monthName)}</h2>
+    <div class="print-calendar-grid" style="--calendar-weeks:${weekRows}">${cells}</div>
+    <p class="print-calendar-legend">${legend}</p>
+  </section>`;
+}
+
 function buildEditorialReport(data, tool, title) {
   if (!data) return "";
   const toolTitle = title || t("tab_" + tool);
@@ -2214,6 +2404,13 @@ function buildEditorialReport(data, tool, title) {
   if (tool === "natal") {
     body += editorialDeepHtml(buildDeepReport(data));
     body += natalReportAppendices(data);
+  } else if (tool === "calendar" && calendarPdfMode(data) === "compact") {
+    for (const key of ["natal_meta", "location_meta", "start", "end"]) {
+      const content = reportValue(data[key]);
+      if (content) body += `<section><h2>${escapeHtml(reportLabel(key))}</h2>${content}</section>`;
+    }
+    body += `<p class="calendar-pdf-note">${escapeHtml(t("pdf_calendar_compact_note"))}</p>`;
+    body += compactCalendarPdf(data);
   } else {
     // Each technique uses only its own payload, including every day/event/candidate.
     // Prioritize narrative before detailed calculation data, independent of UI selection.
@@ -2236,6 +2433,19 @@ function buildEditorialReport(data, tool, title) {
       if (key === "lunar" && sectionData && !Array.isArray(sectionData)) {
         sectionData = Object.entries(sectionData).map(([date, day]) => ({ date, ...day }));
       }
+      if (tool === "calendar" && (key === "events" || key === "lunar") && Array.isArray(sectionData)) {
+        const heading = `<h2>${escapeHtml(reportLabel(key))}</h2>`;
+        const records = sectionData.map((item) => {
+          if (key !== "events" || calendarPdfMode(data) !== "detailed") return `<article class="calendar-report-record">${reportValue(item, 0, new Set())}</article>`;
+          const exactDateTime = calendarEventDateTime(item.exact_datetime, data.location_meta?.tz_str);
+          const [localDate] = exactDateTime.split(", ");
+          const printableEvent = { ...item, date: localDate || item.date, exact_datetime: exactDateTime || item.exact_datetime, orb: calendarEventOrb(item.orb) };
+          return `<article class="calendar-report-record">${reportValue(printableEvent, 0, new Set())}</article>`;
+        });
+        const first = records.shift() || `<p>${escapeHtml(LANG === "en" ? "No data for this period." : "Нет данных за этот период.")}</p>`;
+        body += `<section><div class="calendar-report-lead">${heading}${first}</div>${records.join("")}</section>`;
+        continue;
+      }
       const content = reportValue(sectionData, 0, seen);
       if (content) body += `<section><h2>${escapeHtml(reportLabel(key))}</h2>${content}</section>`;
     }
@@ -2254,6 +2464,50 @@ const EDITORIAL_PRINT_STYLE = `
   .editorial-report th { width:auto; }
   .editorial-report tbody th { width:30%; }
   .editorial-report .report-lead { break-inside:avoid; page-break-inside:avoid; }
+  .editorial-report .calendar-report-lead, .editorial-report .calendar-report-record { break-inside:avoid; page-break-inside:avoid; }
+  .editorial-report .calendar-year-event-chunk.continued { break-before:page; page-break-before:always; }
+  .editorial-report .calendar-year-event-chunk { break-inside:avoid; page-break-inside:avoid; }
+  .editorial-report .calendar-year-event-intro { break-inside:avoid; page-break-inside:avoid; }
+  .editorial-report .calendar-year-lunar-chunk.continued { break-before:page; page-break-before:always; }
+  .editorial-report .calendar-year-lunar-chunk,.editorial-report .calendar-year-lunar-intro { break-inside:avoid; page-break-inside:avoid; }
+  .editorial-report .calendar-year-month-repeat { margin:0 0 4mm; color:#9a7a3a; font:600 14pt/1.1 "Cormorant Garamond",Georgia,serif; text-transform:capitalize; }
+  .print-calendar-overview {
+    box-sizing:border-box; height:250mm; padding:6mm 1mm 3mm; display:flex; flex-direction:column;
+    break-after:page; page-break-after:always; color:#29253a;
+  }
+  .print-calendar-overview h1 { margin:0; font:700 23pt/1.1 "Cormorant Garamond",Georgia,serif; color:#2a2150; }
+  .print-calendar-overview h2 { margin:2mm 0 5mm; padding:0; border:0; font:600 16pt/1.1 "Cormorant Garamond",Georgia,serif; color:#9a7a3a; text-transform:capitalize; }
+  .print-calendar-grid {
+    flex:1; min-height:175mm; display:grid; grid-template-columns:repeat(7,minmax(0,1fr));
+    grid-template-rows:8mm repeat(var(--calendar-weeks),minmax(0,1fr)); gap:1.5mm;
+  }
+  .print-calendar-weekday {
+    display:flex; align-items:center; justify-content:center; border-bottom:1px solid #c9a86a;
+    color:#665c78; font-size:8pt; font-weight:700; text-align:center;
+  }
+  .print-calendar-cell {
+    box-sizing:border-box; min-width:0; position:relative; display:flex; flex-direction:column; gap:1mm;
+    padding:2mm; border:1px solid #ded7e8; border-radius:2mm; background:#fcfbfe;
+    break-inside:avoid; page-break-inside:avoid;
+  }
+  .print-calendar-cell.empty { border-color:transparent; background:transparent; }
+  .print-calendar-cell.good { border-left:1mm solid #5f9b70; }
+  .print-calendar-cell.bad { border-left:1mm solid #cf6d6d; }
+  .print-calendar-cell.neutral { border-left:1mm solid #8978c7; }
+  .print-calendar-day { color:#9a7a3a; font:700 11pt/1 Georgia,serif; }
+  .print-calendar-moon { display:flex; align-items:center; gap:1mm; min-width:0; font-size:8pt; }
+  .print-calendar-moon-icon { flex:none; font-size:9pt; }
+  .print-calendar-sign { min-width:0; overflow-wrap:anywhere; color:#51476b; font-size:7pt; }
+  .print-calendar-phase { color:#6d657a; font-size:6.5pt; line-height:1.15; overflow-wrap:anywhere; }
+  .print-calendar-missing { color:#a49cad; }
+  .print-calendar-events { position:absolute; bottom:1.4mm; left:2mm; right:2mm; display:flex; align-items:center; gap:.8mm; height:2mm; }
+  .print-calendar-events i, .print-calendar-legend i { display:inline-block; flex:none; width:1.7mm; height:1.7mm; border-radius:50%; }
+  .print-calendar-events i.good, .print-calendar-legend i.good { background:#5f9b70; }
+  .print-calendar-events i.bad, .print-calendar-legend i.bad { background:#cf6d6d; }
+  .print-calendar-events i.neutral, .print-calendar-legend i.neutral { background:#8978c7; }
+  .print-calendar-events small { margin-left:auto; color:#665c78; font-size:6.5pt; }
+  .print-calendar-extra { color:#665c78; font-size:6pt; }
+  .print-calendar-legend { margin:4mm 0 0; color:#665c78; font-size:7pt; line-height:1.4; }
   .print-legal { break-inside:avoid; }
   .editorial-report td p { margin:0; }
   .editorial-report tr { break-inside:avoid; }
@@ -2276,13 +2530,13 @@ function buildPrintFrame(srcId, title, extraHead) {
   frame.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;";
   document.body.appendChild(frame);
   // Название как на сайте: главный бренд — «Project Artemisa», под ним — тип документа.
-  const brandTitle = "AstroSMap — Project Artemisa";
+  const brandTitle = "AstroSMap · Project Artemisa";
   const brandSub = (typeof t === "function" ? t("hero_title") : "Натальная карта");
   const dateStr = new Date().toLocaleDateString(LANG === "en" ? "en-GB" : "ru-RU");
   // Фирменная шапка проекта вверху документа + повторяющийся колонтитул внизу.
   const brandHeader =
     `<div class="print-brand">
-       <div class="print-brand-logo" aria-hidden="true">✦</div>
+       <img class="print-brand-mark" src="${location.origin}/img/brand/astrosmap-mark.png" alt="" />
        <div class="print-brand-main">${brandTitle}</div>
        <div class="print-brand-sub">astrosmap.ru</div>
        ${title ? `<div class="print-brand-doc">${title}</div>` : ""}
@@ -2292,13 +2546,15 @@ function buildPrintFrame(srcId, title, extraHead) {
   const cover = reportTool === "natal"
     ? printCover(title || brandSub, brandTitle, dateStr, reportData.meta)
     : `<section class="print-cover">
-        <div class="print-cover-mark" aria-hidden="true">✦</div>
+        <img class="print-cover-mark" src="${location.origin}/img/brand/astrosmap-mark.png" alt="" />
         <div class="print-cover-brand">${escapeHtml(brandTitle)}</div>
         <div class="print-cover-domain">ASTROSMAP.RU</div>
         <div class="print-cover-rule"></div>
         <div class="print-cover-type">${escapeHtml(title || t("tab_" + reportTool))}</div>
         <p class="print-cover-note">${escapeHtml(dateStr)}</p>
       </section>`;
+  const calendarOverview = reportTool === "calendar" && calendarPdfMode(reportData) === "detailed"
+    ? monthlyCalendarPdf(reportData) : "";
   const doc = frame.contentWindow.document;
   doc.open();
   doc.write(
@@ -2306,7 +2562,7 @@ function buildPrintFrame(srcId, title, extraHead) {
     `<title>${brandTitle} — ${title || brandSub}</title>` +
     `<link rel="stylesheet" href="${location.origin}/css/style.css">` +
     `<style>${PRINT_OVERRIDE}${EDITORIAL_PRINT_STYLE}</style>${extraHead || ""}</head>` +
-    `<body data-theme="light"><main class="print-document">${cover}<div class="print-body">${brandHeader}${content}${printLegal(LANG)}</div></main>${brandFooter}</body></html>`
+    `<body data-theme="light"><main class="print-document">${cover}${calendarOverview}<div class="print-body">${brandHeader}${content}${printLegal(LANG, reportData.access_mode === "brief" || !IS_PREMIUM ? "brief" : reportData.access_mode)}</div></main>${brandFooter}</body></html>`
   );
   doc.close();
   // Раскрыть все свёрнутые блоки, чтобы в вывод попало всё содержимое.
@@ -2320,37 +2576,18 @@ function buildPrintFrame(srcId, title, extraHead) {
     if (doc.querySelector(".print-toc") || ++tocTries >= 20) clearInterval(tocPoll);
   }, 50);
   fixPrintSvg(doc);
-  return { frame, doc, brandTitle, dateStr };
-}
-
-function printFrom(srcId, title) {
-  if (!premiumGate()) return;
-  const built = buildPrintFrame(srcId, title);
-  if (!built) return;
-  const { frame, doc } = built;
-  let fired = false;
-  const fire = () => {
-    if (fired) return;
-    fired = true;
-    try { doc.querySelectorAll("details").forEach((d) => (d.open = true)); } catch (e) {}
-    try {
-      frame.contentWindow.focus();
-      frame.contentWindow.print();
-    } catch (e) { /* ignore */ }
-    setTimeout(() => frame.remove(), 1000);
-  };
-  // дать стилю/шрифтам загрузиться (важно для Edge и для внешнего style.css)
-  frame.onload = () => setTimeout(fire, 350);
-  // запасной триггер, если onload не сработал
-  setTimeout(fire, 1500);
+  return { frame, doc, brandTitle, dateStr, reportTool };
 }
 
 // Одноклик-экспорт активного отчёта в готовый PDF-файл — без системного диалога.
-// Рендер идёт в том же печатном iframe (та же вёрстка, что и «Печать»), а html2pdf
+// Рендер идёт в изолированном iframe, а html2pdf
 // подключается локально (script-src 'self') и работает внутри iframe.
-async function renderPagedReportPdf(win, source, options, onProgress = () => {}) {
+async function renderPagedReportPdf(win, source, options, onProgress = () => {}, excludedWatermarkPages = []) {
   if (win.document.fonts) await win.document.fonts.ready;
-  const worker = win.html2pdf().set({ ...options, enableLinks: false }).from(source).toContainer();
+  const brandAssets = await pdfBrandAssets();
+  // html2pdf runs in the iframe and rejects arrays created by the parent window.
+  const pdfOptions = { ...options, margin: win.Array.from(options.margin) };
+  const worker = win.html2pdf().set({ ...pdfOptions, enableLinks: false }).from(source).toContainer();
   const container = await worker.get("container");
   const overlay = await worker.get("overlay");
   try {
@@ -2364,32 +2601,66 @@ async function renderPagedReportPdf(win, source, options, onProgress = () => {})
     // Obtain the bundled jsPDF instance without ever rasterizing the full document.
     const seed = win.document.createElement("canvas");
     seed.width = seed.height = 1;
-    const pdf = await win.html2pdf().set({ ...options, enableLinks: false }).from(seed).toPdf().get("pdf");
+    const pdf = await win.html2pdf().set({ ...pdfOptions, enableLinks: false }).from(seed).toPdf().get("pdf");
     pdf.deletePage(1);
     seed.width = seed.height = 0;
-    for (let page = 0; page < total; page++) {
-      // toCanvas removes its overlay after rendering. Reattach the SAME laid-out
-      // container rather than invoking toContainer again and adding pagebreaks twice.
+    const pagesPerCanvas = total > 30 ? (Number(win.navigator?.deviceMemory) >= 8 ? 3 : 2) : Number(win.navigator?.deviceMemory) >= 8 ? 6 : 3;
+    for (let firstPage = 0; firstPage < total; firstPage += pagesPerCanvas) {
+      // Reuse the laid-out container; rendering several pages together avoids cloning it once per page.
       if (!win.document.body.contains(overlay)) win.document.body.appendChild(overlay);
-      const sliceHeight = Math.min(pageHeight, height - page * pageHeight);
+      const chunkHeight = Math.min(pageHeight * pagesPerCanvas, height - firstPage * pageHeight);
       const canvas = await worker.set({ html2canvas: {
-        ...options.html2canvas, width, height: sliceHeight, y: page * pageHeight,
+        ...options.html2canvas, width, height: chunkHeight, y: firstPage * pageHeight,
         scrollX: 0, scrollY: 0,
       } }).toCanvas().get("canvas");
       try {
         if (!canvas.width || !canvas.height) throw new Error("Empty PDF page canvas");
-        const encoded = canvas.toDataURL("image/jpeg", options.image.quality);
-        if (encoded === "data:,") throw new Error("PDF canvas limit exceeded");
-        pdf.addPage();
-        pdf.addImage(encoded, "JPEG", 10, 10, size.inner.width, size.inner.height * sliceHeight / pageHeight);
-        if (page > 0) {
-          pdf.setFontSize(8);
-          pdf.setTextColor(145, 137, 156);
-          pdf.text(`${page + 1} / ${total}`, 200, 291, { align: "right" });
+        const scale = canvas.width / width;
+        const pagesInChunk = Math.min(pagesPerCanvas, total - firstPage);
+        for (let offset = 0; offset < pagesInChunk; offset++) {
+          const page = firstPage + offset;
+          const sliceHeight = Math.min(pageHeight, height - page * pageHeight);
+          const sourceY = Math.round(offset * pageHeight * scale);
+          const pageCanvas = win.document.createElement("canvas");
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = Math.min(Math.round(sliceHeight * scale), canvas.height - sourceY);
+          try {
+            const context = pageCanvas.getContext("2d");
+            if (!context || !pageCanvas.height) throw new Error("Invalid PDF page canvas");
+            context.fillStyle = "#fff";
+            context.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+            context.drawImage(canvas, 0, sourceY, pageCanvas.width, pageCanvas.height, 0, 0, pageCanvas.width, pageCanvas.height);
+            if (brandAssets?.watermark && !excludedWatermarkPages.includes(page + 1)) {
+              const pxPerMm = pageCanvas.width / size.inner.width;
+              context.globalAlpha = 0.11;
+              context.drawImage(brandAssets.watermark, 19 * pxPerMm, 52 * pxPerMm, 152 * pxPerMm, 152 * pxPerMm);
+              context.globalAlpha = 1;
+            }
+            const imageBlob = await new Promise((resolve) => pageCanvas.toBlob(resolve, "image/jpeg", options.image.quality));
+            if (!imageBlob?.size) throw new Error("PDF canvas encoding failed");
+            const encoded = new win.Uint8Array(await imageBlob.arrayBuffer());
+            pdf.addPage();
+            pdf.addImage(encoded, "JPEG", 10, 10, size.inner.width, size.inner.height * sliceHeight / pageHeight);
+            pdf.setDrawColor(201, 168, 106);
+            pdf.setLineWidth(0.25);
+            pdf.rect(5, 5, 200, 287);
+            pdf.setDrawColor(224, 218, 232);
+            pdf.setLineWidth(0.2);
+            pdf.line(10, 272, 200, 272);
+            if (brandAssets?.mark) pdf.addImage(brandAssets.mark, "PNG", 12, 275, 6, 6, "brand-mark", "FAST");
+            pdf.setFont("helvetica", "normal");
+            pdf.setFontSize(7.5);
+            pdf.setTextColor(154, 122, 58);
+            pdf.text("AstroSMap · Project Artemisa", 21, 282);
+            pdf.setTextColor(145, 137, 156);
+            pdf.text(`${page + 1} / ${total}`, 195, 282, { align: "right" });
+            onProgress(page + 1, total);
+          } finally {
+            pageCanvas.width = pageCanvas.height = 0;
+          }
         }
-        onProgress(page + 1, total);
       } finally {
-        canvas.width = canvas.height = 0; // release each raster before the next page
+        canvas.width = canvas.height = 0; // release each multi-page raster before the next chunk
         await worker.set({ canvas: null });
       }
     }
@@ -2399,28 +2670,41 @@ async function renderPagedReportPdf(win, source, options, onProgress = () => {})
   }
 }
 
-function downloadPdf(srcId, title, btn, onDone) {
+function downloadPdf(srcId, title, btn, onDone, onFail) {
+  if (!validateCalendarPdf(srcId)) return false;
   const extraHead =
     `<script src="${location.origin}/js/vendor/html2pdf.bundle.min.js"></script>`;
   const built = buildPrintFrame(srcId, title, extraHead);
-  if (!built) return;
-  const { frame, doc, brandTitle, dateStr } = built;
+  if (!built) {
+    if (btn) btn.disabled = false;
+    if (typeof onFail === "function") Promise.resolve().then(onFail).catch(() => {});
+    alert(t("pdf_build_fail"));
+    return false;
+  }
+  const { frame, doc, brandTitle, dateStr, reportTool } = built;
   const safe = String(title || brandTitle).replace(/[\\/:*?"<>|\s]+/g, "_").replace(/^_+|_+$/g, "") || "astro";
   const isoDate = new Date().toISOString().slice(0, 10);
   const fname = `${safe}-${isoDate}.pdf`;
   const label = btn ? btn.textContent : "";
   if (btn) { btn.disabled = true; btn.textContent = (typeof t === "function" ? t("pdf_wait") : "…"); }
-  const cleanup = () => {
-    if (btn) { btn.disabled = false; btn.textContent = label; }
-    if (typeof onDone === "function") onDone(); // списываем кредит только после успешного экспорта
-    setTimeout(() => frame.remove(), 500);
+  const cleanup = async () => {
+    try {
+      if (typeof onDone === "function") await onDone();
+    } catch (error) {
+      console.error("PDF export confirmation failed", error);
+      alert(t("pdf_quota_confirm_error"));
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = label; }
+      setTimeout(() => frame.remove(), 500);
+    }
   };
-  const fail = () => {
+  const fail = async (error = new Error("PDF export failed")) => {
     if (btn) { btn.disabled = false; btn.textContent = label; }
-    frame.remove();
-    alert(LANG === "en"
-      ? "Could not build the PDF. Please use the Print button instead."
-      : "Не удалось собрать PDF. Воспользуйтесь кнопкой «Печать».");
+    console.error("PDF export failed", error);
+    try { if (typeof onFail === "function") await onFail(error); }
+    catch (cancelError) { console.error("PDF export reservation cancellation failed", cancelError); }
+    finally { frame.remove(); }
+    alert(t("pdf_build_fail"));
   };
   let done = false;
   const run = () => {
@@ -2435,17 +2719,17 @@ function downloadPdf(srcId, title, btn, onDone) {
     // В iframe 0×0 html2canvas обрезает SVG-колесо: даём фрейму реальный размер за экраном
     frame.style.cssText = "position:fixed;left:-9999px;top:0;width:820px;height:1160px;border:0;";
     const opt = {
-      margin: 10,
+      margin: [10, 10, reportTool === "calendar" ? 30 : 18, 10],
       filename: fname,
       image: { type: "jpeg", quality: 0.9 },
-      html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", logging: false },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: null, logging: false },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
       pagebreak: { mode: ["css", "legacy"] },
     };
     try {
       renderPagedReportPdf(win, win.document.body, opt, (page, total) => {
         if (btn) btn.textContent = `${t("pdf_wait")} ${page}/${total}`;
-      }).then((pdf) => pdf.save(fname, { returnPromise: true })).then(cleanup).catch(fail);
+      }, reportTool === "natal" ? [3] : []).then((pdf) => pdf.save(fname, { returnPromise: true })).then(cleanup).catch(fail);
     } catch (e) { fail(); }
   };
   // Дождаться загрузки html2pdf внутри iframe и прогрузки стилей, затем рендерить.
@@ -2457,41 +2741,120 @@ function downloadPdf(srcId, title, btn, onDone) {
       setTimeout(run, 300);
     } else if (++tries > 60) { // ~15 c таймаут
       clearInterval(poll);
-      fail();
+      fail(new Error("PDF renderer did not load within 15 seconds"));
     }
   }, 250);
+  return true;
 }
 
-$("deep-print").addEventListener("click", () => printFrom("deep-content"));
+async function downloadPremiumPdf(srcId, title, btn) {
+  if (!validateCalendarPdf(srcId)) return;
+  if (!premiumGate() || btn.disabled) return;
+  btn.disabled = true;
+  try {
+    const reservation = await postJSON("/api/report/pdf/reserve", {});
+    if (reservation.unlimited) {
+      btn.disabled = false;
+      downloadPdf(srcId, title, btn);
+      return;
+    }
+    setPdfQuota(reservation);
+    const complete = async () => {
+      try { setPdfQuota(await postJSON("/api/report/pdf/complete", { token: reservation.token })); }
+      catch { alert(t("pdf_quota_confirm_error")); }
+    };
+    const cancel = async () => {
+      try { setPdfQuota(await postJSON("/api/report/pdf/cancel", { token: reservation.token })); }
+      catch { await refreshPdfQuota(); }
+    };
+    try {
+      if (!validateCalendarPdf(srcId)) { await cancel(); btn.disabled = false; return; }
+      downloadPdf(srcId, title, btn, complete, cancel);
+    }
+    catch (error) { await cancel(); throw error; }
+  } catch (error) {
+    btn.disabled = false;
+    if (error.paywall) return;
+    if (error.message === "pdf_export_limit_reached" && REPORT_CREDITS > 0) {
+      // Отдельный кредит остаётся доступен сверх подписочной квоты.
+      downloadReportCreditPdf(srcId, title, btn, true);
+      return;
+    }
+    alert(error.message === "pdf_export_limit_reached" ? t("pdf_limit_reached") : error.message);
+    if (error.message === "pdf_export_limit_reached") await refreshPdfQuota();
+  }
+}
+
 if ($("deep-pdf")) {
-  $("deep-pdf").addEventListener("click", (e) => downloadPdf("deep-content", "", e.currentTarget));
+  $("deep-pdf").addEventListener("click", (e) => downloadPremiumPdf("deep-content", "", e.currentTarget));
 }
 
 function activeToolTitle() {
   return lastMode ? t("tab_" + lastMode) : "";
 }
-// Кнопка системной печати результата любого инструмента.
-$("result-print").addEventListener("click", () => printFrom("results", activeToolTitle()));
+
+function validateCalendarPdf(srcId) {
+  if (srcId !== "results" || lastMode !== "calendar") return true;
+  if (calendarPdfMode(lastData) !== "invalid") return true;
+  alert(t("pdf_calendar_period_format"));
+  return false;
+}
+
 // Кнопка скачивания результата готовым PDF-файлом.
 if ($("result-pdf")) {
   $("result-pdf").addEventListener("click", (e) => {
     const btn = e.currentTarget;
-    if (IS_PREMIUM) { downloadPdf("results", activeToolTitle(), btn); return; }
+    if (!validateCalendarPdf("results")) return;
+    // Локальный просмотр оформления не требует аккаунта и не расходует PDF-квоту.
+    if (canPreviewPdfLocally()) {
+      downloadPdf("results", activeToolTitle(), btn);
+      return;
+    }
+    if (IS_PREMIUM) { downloadPremiumPdf("results", activeToolTitle(), btn); return; }
     if (REPORT_CREDITS > 0) {
-      // Разовый отчёт: качаем и списываем кредит только по факту успешного экспорта.
-      downloadPdf("results", activeToolTitle(), btn, consumeReportCredit);
+      downloadReportCreditPdf("results", activeToolTitle(), btn);
       return;
     }
     openPaywall(getToken() ? 402 : 401); // нет ни подписки, ни разового отчёта
   });
 }
 
-async function consumeReportCredit() {
+async function downloadReportCreditPdf(srcId, title, btn, premiumFallback = false) {
+  if (!validateCalendarPdf(srcId) || btn.disabled) return;
+  if (lastMode !== "natal") { alert(t("report_credit_natal_only")); return; }
+  btn.disabled = true;
+  let reservation;
   try {
-    const r = await postJSON("/api/report/consume", {});
-    REPORT_CREDITS = r.report_credits;
+    const endpoint = premiumFallback
+      ? "/api/report/credit/reserve?premium_fallback=true"
+      : "/api/report/credit/reserve";
+    reservation = await postJSON(endpoint, { report_type: lastMode });
+    REPORT_CREDITS = reservation.report_credits;
     refreshPremiumBtn();
-  } catch (e) { /* кредит не списался — не критично, отчёт уже скачан */ }
+    const complete = async () => {
+      const result = await postJSON("/api/report/credit/complete", { token: reservation.token });
+      REPORT_CREDITS = result.report_credits;
+      refreshPremiumBtn();
+    };
+    const cancel = async () => {
+      try {
+        const result = await postJSON("/api/report/credit/cancel", { token: reservation.token });
+        REPORT_CREDITS = result.report_credits;
+        refreshPremiumBtn();
+      } catch {
+        try {
+          const response = await fetch("/api/auth/me", { headers: authHeaders() });
+          if (response.ok) REPORT_CREDITS = (await response.json()).report_credits || 0;
+        } catch {}
+      }
+    };
+    if (!validateCalendarPdf(srcId)) { await cancel(); btn.disabled = false; return; }
+    downloadPdf(srcId, title, btn, complete, cancel);
+  } catch (error) {
+    if (btn) btn.disabled = false;
+    if (error.paywall) return;
+    alert(error.message === "Нет доступных отчётов" ? t("report_credits_empty") : error.message);
+  }
 }
 
 // ---------- Рендер: транзиты ----------
@@ -2864,24 +3227,38 @@ function renderForecast(data) {
   $("data-grids").classList.add("hidden");
   $("forecast-view").classList.remove("hidden");
 
-  const pf = data.profection;
-  const pm = data.progressed_moon;
-
-  $("forecast-summary").innerHTML =
-    `<h3>${t("t_fc_for")}: ${data.natal_meta.name}</h3>` +
-    summaryBlock(data.natal_meta, null, [
-      [t("t_fc_period"), `${formatDate(data.start)} — ${formatDate(data.end)}`],
-      [t("forecast_location"), data.location_meta?.city || "—"],
-      [t("sum_tz"), data.location_meta?.tz_str || "—"],
+  const pf = data.profection || null;
+  const pm = data.progressed_moon || null;
+  const summaryRows = [
+    [t("t_fc_period"), `${formatDate(data.start)} – ${formatDate(data.end)}`],
+    [t("forecast_location"), data.location_meta?.city || "—"],
+    [t("sum_tz"), data.location_meta?.tz_str || "—"],
+  ];
+  if (pf) {
+    summaryRows.push(
       [t("t_fc_age"), `${pf.age} ${t("t_fc_age_unit")}`],
       [t("t_fc_house_year"), `${houseShort(pf.house_num)} (${pf.sphere})`],
       [t("t_fc_lord_year"), pf.lord ? `${pf.lord.name_ru} ${pf.lord.sign_loc || pf.lord.sign_ru}` : "—"],
-    ]) +
+    );
+  }
+
+  $("forecast-summary").innerHTML =
+    `<h3>${t("t_fc_for")}: ${data.natal_meta.name}</h3>` +
+    summaryBlock(data.natal_meta, null, summaryRows) +
     `<p class="score-hint" style="margin-top:12px">${data.summary}</p>`;
 
-  $("forecast-blocks").innerHTML =
-    `<div class="portrait-card"><h3>${t("t_fc_profection")}</h3><p>${pf.text}</p></div>` +
-    `<div class="portrait-card"><h3>${t("t_fc_prog_moon")}</h3><p>${pm.text}</p></div>`;
+  const forecastCards = [];
+  if (pf) forecastCards.push(`<div class="portrait-card"><h3>${t("t_fc_profection")}</h3><p>${pf.text}</p></div>`);
+  if (pm) forecastCards.push(`<div class="portrait-card"><h3>${t("t_fc_prog_moon")}</h3><p>${pm.text}</p></div>`);
+  if (!pf || !pm) {
+    forecastCards.push(
+      `<div class="portrait-card forecast-locked-card"><h3>${t("fc_locked_title")}</h3>` +
+      `<p>${t("fc_locked_text")}</p><button class="btn-primary" id="forecast-unlock">${t("fc_unlock")}</button></div>`,
+    );
+  }
+  $("forecast-blocks").innerHTML = forecastCards.join("");
+  const unlock = $("forecast-unlock");
+  if (unlock) unlock.addEventListener("click", () => openPaywall(getToken() ? 402 : 401));
 
   // Прогноз по сферам жизни — главное: «что вас ждёт».
   const evTitle = document.querySelector("#forecast-view .forecast-events-title");
@@ -3124,9 +3501,11 @@ function showCalendarDay(date) {
 const TOKEN_KEY = "astro_token";
 let authMode = "login";
 
-const getToken = () => localStorage.getItem(TOKEN_KEY);
-const setToken = (t) => localStorage.setItem(TOKEN_KEY, t);
-const clearToken = () => localStorage.removeItem(TOKEN_KEY);
+let memoryToken;
+const getToken = () => { if (memoryToken !== undefined) return memoryToken; try { return localStorage.getItem(TOKEN_KEY); } catch (_) { return null; } };
+const setToken = (token) => { memoryToken = token; try { localStorage.setItem(TOKEN_KEY, token); } catch (_) {} };
+const clearToken = () => { memoryToken = null; try { localStorage.removeItem(TOKEN_KEY); } catch (_) {} };
+sales.setHeaders(authHeaders);
 
 function authHeaders() {
   const t = getToken();
@@ -3137,16 +3516,22 @@ let IS_PREMIUM = false;
 let PREMIUM_UNTIL = null;
 let HAS_CONSULT = false;
 let REPORT_CREDITS = 0; // разовые PDF-отчёты (без подписки)
+let PENDING_PAYWALL = false; // после входа сразу продолжить к оформлению Premium
 // Telegram астролога для оплаченных консультаций (тарифы «Премиум+»)
 const ASTROLOGER_TG = "https://t.me/Astrosmap";
 
 function openPaywall(status) {
-  // Полный платный раздел (не натал) → размытое превью прямо в области результата.
-  if (mode && mode !== "natal") { showLockedPreview(mode); return; }
-  // Надстройки над наталом (глубокий разбор, PDF) → сразу окно.
-  if (!getToken()) {
+  // Для платного раздела оставляем понятное превью под модальным окном.
+  if (mode && mode !== "natal") showLockedPreview(mode);
+
+  // 401 означает, что сервер не принял авторизацию (в том числе старый токен).
+  // После успешного входа пользователь автоматически попадёт к тарифам.
+  if (status === 401 || !getToken()) {
+    PENDING_PAYWALL = true;
     $("auth-modal").classList.remove("hidden");
+    setAuthMode("login");
   } else {
+    PENDING_PAYWALL = false;
     openPremiumModal();
   }
 }
@@ -3191,6 +3576,7 @@ function showLockedPreview(m) {
 }
 
 function openPremiumModal() {
+  sales.track("web_pricing_view");
   const st = $("premium-status");
   if (IS_PREMIUM && PREMIUM_UNTIL) {
     st.textContent = `✦ ${t("premium_active_until")} ${formatDate(new Date(PREMIUM_UNTIL * 1000).toISOString().slice(0, 10))}`;
@@ -3218,7 +3604,33 @@ function openPremiumModal() {
   $("premium-modal").classList.remove("hidden");
 }
 
+let pdfQuotaRequest = 0;
+function setPdfQuota(usage) {
+  const text = usage.unlimited
+    ? t("pdf_quota_unlimited")
+    : t("pdf_quota_status").replace("{used}", usage.used).replace("{limit}", usage.limit).replace("{remaining}", usage.remaining);
+  [$("pdf-quota-main"), $("pdf-quota-deep")].forEach((node) => {
+    if (!node) return;
+    node.textContent = text;
+    node.classList.toggle("hidden", !IS_PREMIUM || !getToken());
+  });
+}
+
+async function refreshPdfQuota() {
+  const request = ++pdfQuotaRequest;
+  if (!IS_PREMIUM || !getToken()) {
+    [$("pdf-quota-main"), $("pdf-quota-deep")].forEach((node) => node?.classList.add("hidden"));
+    return;
+  }
+  try {
+    const response = await fetch("/api/report/pdf/usage", { headers: authHeaders() });
+    if (!response.ok || request !== pdfQuotaRequest) return;
+    setPdfQuota(await response.json());
+  } catch {}
+}
+
 function refreshPremiumBtn() {
+  refreshPdfQuota();
   const btn = $("premium-btn");
   if (IS_PREMIUM && PREMIUM_UNTIL) {
     btn.textContent = `✦ ${t("premium_until_btn")} ${formatDate(new Date(PREMIUM_UNTIL * 1000).toISOString().slice(0, 10))}`;
@@ -3283,11 +3695,15 @@ function openGlossary() {
 if (location.hash === "#glossary") setTimeout(openGlossary, 300);
 document.querySelectorAll("#premium-plans [data-plan]").forEach((btn) => {
   btn.addEventListener("click", async () => {
+    if (!getToken()) { $("premium-modal").classList.add("hidden"); openPaywall(401); return; }
     btn.disabled = true;
+    sales.track("web_checkout_start", { plan: btn.dataset.plan });
+    await Promise.race([sales.flush(), new Promise(resolve => setTimeout(resolve, 300))]);
     try {
-      const data = await postJSON("/api/billing/create", { plan: btn.dataset.plan });
+      const data = await postJSON("/api/billing/create", { plan: btn.dataset.plan, lang: LANG, attribution: sales.attribution() });
       window.location.href = data.confirmation_url;
     } catch (err) {
+      sales.track("web_checkout_error", { plan: btn.dataset.plan });
       $("premium-error").textContent = err.message;
       $("premium-error").classList.remove("hidden");
       btn.disabled = false;
@@ -3302,24 +3718,72 @@ function premiumGate() {
   return false;
 }
 
+let paymentCheckBusy = false;
+function showPaymentNotice(text, retry, needsLogin = false, consultation = false) {
+  let notice = $("payment-notice");
+  if (!notice) {
+    notice = document.createElement("section");
+    notice.id = "payment-notice";
+    notice.className = "payment-notice";
+    notice.setAttribute("role", "status");
+    notice.setAttribute("aria-live", "polite");
+    document.body.insertBefore(notice, document.body.firstChild);
+  }
+  notice.replaceChildren();
+  const message = document.createElement("p");
+  message.textContent = text;
+  notice.append(message);
+  const button = (label, action) => {
+    const node = document.createElement("button"); node.type = "button"; node.className = "auth-btn";
+    node.textContent = label; node.addEventListener("click", action); notice.append(node);
+  };
+  if (retry) button(LANG === "en" ? "Check again" : "Проверить ещё раз", checkPaymentReturn);
+  if (needsLogin) button(LANG === "en" ? "Sign in" : "Войти", () => { $("auth-modal").classList.remove("hidden"); setAuthMode("login"); });
+  else button(LANG === "en" ? "View my access" : "Мои доступы", openPremiumModal);
+  if (consultation) {
+    const link = document.createElement("a"); link.href = ASTROLOGER_TG; link.target = "_blank"; link.rel = "noopener";
+    link.textContent = LANG === "en" ? "Schedule consultation" : "Записаться на консультацию";
+    notice.append(link);
+  }
+}
 async function checkPaymentReturn() {
-  if (!window.location.search.includes("payment=check") || !getToken()) return;
-  history.replaceState(null, "", window.location.pathname);
+  const url = new URL(window.location.href);
+  if (url.searchParams.get("payment") !== "check" || paymentCheckBusy) return;
+  if (!getToken()) {
+    showPaymentNotice(LANG === "en" ? "Sign in to the account used for this purchase to check payment." : "Для проверки оплаты войдите в аккаунт, с которого оформляли покупку.", false, true);
+    return;
+  }
+  paymentCheckBusy = true;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  showPaymentNotice(LANG === "en" ? "Checking payment…" : "Проверяем оплату…", false);
   try {
-    const data = await postJSON("/api/billing/check", {});
-    if (data.activated) {
-      // подписка и/или консультация — при «только консультации» premium не включается
-      IS_PREMIUM = !!data.premium;
-      PREMIUM_UNTIL = data.subscription && data.subscription.expires_at;
-      HAS_CONSULT = !!data.consultation;
-      REPORT_CREDITS = data.report_credits || 0;
-      refreshPremiumBtn();
-      alert(t("premium_activated"));
-      if (HAS_CONSULT) openPremiumModal(); // сразу показать контакт для консультации
-    } else {
-      alert(t("premium_pending"));
+    const attempt = url.searchParams.get("attempt");
+    const response = await fetch("/api/billing/check", { method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(attempt ? { attempt } : {}), signal: controller.signal });
+    if (response.status === 401) {
+      clearToken();
+      showPaymentNotice(LANG === "en" ? "Your session expired. Sign in to check this payment." : "Сессия истекла. Войдите, чтобы проверить оплату.", false, true);
+      return;
     }
-  } catch (e) {}
+    if (!response.ok) throw new Error(String(response.status));
+    const data = await response.json();
+    IS_PREMIUM = !!data.premium;
+    PREMIUM_UNTIL = data.subscription && data.subscription.expires_at;
+    HAS_CONSULT = !!data.consultation;
+    REPORT_CREDITS = data.report_credits || 0;
+    refreshPremiumBtn();
+    const result = AstroSales.paymentResult(data, LANG === "en");
+    showPaymentNotice(result.text, !result.terminal, false, data.payment && data.payment.status === "succeeded" && (data.payment.plan === "consult" || data.payment.plan.startsWith("plus_")));
+    if (result.terminal) {
+      url.searchParams.delete("payment"); url.searchParams.delete("attempt");
+      history.replaceState(null, "", url.pathname + url.search + url.hash);
+    }
+  } catch (error) {
+    const missing = error.message === "404" || error.message === "422";
+    showPaymentNotice(missing
+      ? (LANG === "en" ? "This payment was not found for this account. Sign in to the account used for purchase or contact support." : "Платёж не найден для этого аккаунта. Войдите в аккаунт покупки или обратитесь в поддержку.")
+      : (LANG === "en" ? "Could not check payment. Your return link is saved; please try again." : "Не удалось проверить оплату. Ссылка возврата сохранена — повторите проверку."), true);
+  } finally { clearTimeout(timeout); paymentCheckBusy = false; }
 }
 
 // Ссылки из писем: /?email-token=… (подтверждение почты) и /?reset-token=… (сброс пароля).
@@ -3357,8 +3821,8 @@ function updateAuthUI(username, isAdmin = false) {
     $("user-name").textContent = username;
     $("saved-block").classList.remove("hidden");
     $("admin-btn").classList.toggle("hidden", !isAdmin);
-    // показать кнопку печати, если результат уже на экране
-    $("result-toolbar").classList.toggle("hidden", $("results").classList.contains("hidden"));
+    // Гостям PDF доступен только в локальном предпросмотре разработчика.
+    $("result-toolbar").classList.toggle("hidden", $("results").classList.contains("hidden") || (!getToken() && !canPreviewPdfLocally()));
     loadDaily();
   } else {
     $("login-btn").classList.remove("hidden");
@@ -3367,7 +3831,7 @@ function updateAuthUI(username, isAdmin = false) {
     $("saved-list").innerHTML = "";
     if ($("saved-list")) $("saved-list")._profiles = [];
     $("admin-btn").classList.add("hidden");
-    $("result-toolbar").classList.add("hidden");
+    $("result-toolbar").classList.toggle("hidden", $("results").classList.contains("hidden") || !canPreviewPdfLocally());
     $("b-saved-wrap").classList.add("hidden");
     $("daily-block").classList.add("hidden");
   }
@@ -3555,6 +4019,7 @@ $("auth-form").addEventListener("submit", async (e) => {
         }
       : { username, password });
     setToken(data.token);
+    if (authMode === "register") sales.track("web_signup_success");
     updateAuthUI(data.username, data.is_admin);
     $("auth-modal").classList.add("hidden");
     $("auth-password").value = "";
@@ -3568,6 +4033,11 @@ $("auth-form").addEventListener("submit", async (e) => {
       REPORT_CREDITS = me.report_credits || 0;
       refreshPremiumBtn();
     } catch (e) {}
+    await checkPaymentReturn();
+    if (PENDING_PAYWALL) {
+      PENDING_PAYWALL = false;
+      if (!IS_PREMIUM) openPremiumModal();
+    }
   } catch (ex) {
     showAuthError(ex.message);
   }
@@ -3836,6 +4306,7 @@ $("cab-history").addEventListener("click", (e) => {
 
 // --- Админ-панель ---
 async function loadAdmin() {
+  loadMobileReports();
   try {
     const [statsR, usersR, usageR, payR] = await Promise.all([
       fetch("/api/admin/stats", { headers: authHeaders() }),
@@ -3900,9 +4371,35 @@ async function loadAdmin() {
   }
 }
 
+async function loadMobileReports() {
+  const target = $("admin-mobile-reports");
+  target.textContent = LANG === "en" ? "Loading reports…" : "Загрузка обращений…";
+  try {
+    const response = await fetch("/api/admin/mobile-reports", { headers: authHeaders(), cache: "no-store" });
+    if (!response.ok) throw new Error("Reports unavailable");
+    const payload = await response.json();
+    target.replaceChildren();
+    if (!payload.reports.length) target.textContent = LANG === "en" ? "No reports." : "Обращений пока нет.";
+    for (const report of payload.reports) {
+      const item = document.createElement("details");
+      const title = document.createElement("summary");
+      title.textContent = `${new Date(report.received_at * 1000).toLocaleString()} · ${report.app_version} (${report.version_code}) · ${report.store} · ${report.id}`;
+      const body = document.createElement("p");
+      body.style.whiteSpace = "pre-wrap";
+      body.style.overflowWrap = "anywhere";
+      body.textContent = report.description;
+      item.append(title, body);
+      target.append(item);
+    }
+  } catch {
+    target.textContent = LANG === "en" ? "Could not load reports." : "Не удалось загрузить обращения.";
+  }
+}
+
 $("admin-btn").addEventListener("click", () => {
   $("admin-modal").classList.remove("hidden");
   loadAdmin();
+  loadSalesFunnel();
   textLimit = 60;
   loadTexts();
 });
@@ -4192,11 +4689,12 @@ function escapeHtml(s) {
 // --- Инициализация при загрузке ---
 (async function initAuth() {
   await checkEmailLinks(); // ссылки из писем работают и без входа
-  if (!getToken()) return;
+  if (!getToken()) { await checkPaymentReturn(); return; }
   try {
     const r = await fetch("/api/auth/me", { headers: authHeaders() });
     if (!r.ok) {
       clearToken();
+      await checkPaymentReturn();
       return;
     }
     const me = await r.json();
@@ -4209,7 +4707,7 @@ function escapeHtml(s) {
     await loadProfiles();
     await checkPaymentReturn();
   } catch {
-    /* offline */
+    await checkPaymentReturn();
   }
 })();
 
@@ -4225,3 +4723,48 @@ if ('serviceWorker' in navigator) {
     if (e.target.closest && e.target.closest("#results, #daily-block")) e.preventDefault();
   });
 });
+
+// Web cohort conversion is separate from all purchases made during the period.
+async function loadSalesFunnel() {
+  const target = $("sales-funnel");
+  const en = LANG === "en";
+  const say = (ru, english) => en ? english : ru;
+  $("sales-funnel-title").textContent = say("Воронка продаж", "Sales funnel");
+  $("sales-period-label").textContent = say("Период (дней)", "Period (days)");
+  target.textContent = say("Загрузка…", "Loading…");
+  const period = $("sales-period").value;
+  try {
+    const response = await fetch(`/api/admin/sales-funnel?days=${period}`, { headers: authHeaders() });
+    if (!response.ok) throw new Error("report");
+    const data = await response.json();
+    if ($("sales-period").value !== period) return;
+    const number = value => Number.isFinite(Number(value)) ? String(Number(value)) : "—";
+    const date = value => {
+      if (!value) return say("ещё не начат", "not started");
+      const parsed = new Date(typeof value === "number" ? value * 1000 : value);
+      return Number.isNaN(parsed.getTime()) ? "—" : parsed.toLocaleString(en ? "en-GB" : "ru-RU", { timeZone: "UTC" }) + " UTC";
+    };
+    const labels = {
+      web_visit: say("Посещение", "Visit"), web_chart_success: say("Расчёт", "Chart calculated"),
+      web_pricing_view: say("Тарифы", "Plans viewed"), server_payment_created: say("Платёж создан", "Payment created"),
+      server_payment_succeeded: say("Оплата подтверждена", "Payment confirmed"),
+    };
+    const table = (headers, rows) => '<div class="table-wrap"><table><thead><tr>' + headers.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr></thead><tbody>' + rows.map(row => '<tr>' + row.map(cell => `<td>${escapeHtml(cell)}</td>`).join('') + '</tr>').join('') + '</tbody></table></div>';
+    target.innerHTML = `<p class="section-note">${escapeHtml(date(data.since))} — ${escapeHtml(date(data.until))}<br>${escapeHtml(say("Начало сбора: ", "Tracking began: ") + date(data.tracking_since))}</p>` +
+      table([say("Шаг по порядку", "Ordered step"), say("Сеансы", "Sessions"), say("От прошлого шага", "From previous step")], (data.steps || []).map(step => [labels[step.name] || step.name, number(step.sessions), step.conversion == null ? "—" : number(step.conversion) + "%"])) +
+      `<p class="section-note">${escapeHtml(say("Конверсии относятся к сеансам с последовательными шагами. Покупки ниже — все подтверждённые оплаты за период, включая другие сеансы и источники. Они не являются конверсией всех посетителей.", "Conversion follows sessions with ordered steps. Purchases below include all confirmed payments in this period, including other sessions and sources. They are not a conversion rate of all visitors."))}</p>` +
+      table([say("Показатель за период", "Period metric"), say("Количество", "Count")], [
+        [say("Регистрации", "Signups"), number(data.signups)], [say("Покупки", "Purchases"), number(data.purchases)],
+        [say("Повторные покупки", "Repeat purchases"), number(data.repeat_purchases)], [say("Вне полной воронки", "Outside complete funnel"), number(data.direct_purchases)],
+        [say("Без атрибуции", "Unattributed"), number(data.unattributed_purchases)],
+      ]) + table([say("Тариф", "Plan"), say("Покупки", "Purchases")], (data.by_plan || []).map(item => [["month", "year", "plus_month", "plus_year", "consult", "report"].includes(item.plan) ? t("plan_" + item.plan) : item.plan, number(item.purchases)])) +
+      table([say("Источник", "Source"), say("Кампания", "Campaign"), say("Покупки", "Purchases")], (data.by_source || []).map(item => [item.source || "—", item.campaign || "—", number(item.purchases)]));
+    if (data.note) {
+      const note = document.createElement("p"); note.className = "section-note"; note.textContent = say(
+        "Время указано в UTC. Воронка учитывает шаги по порядку внутри одного веб-сеанса за выбранный период. Покупки — подтверждённые сервером оплаты за период, включая другие сеансы и приложение. «Вне полной воронки» означает, что не зафиксирован весь путь от посещения до покупки. Исторические визиты и источники до начала сбора недоступны.",
+        "Times are UTC. The funnel counts ordered steps in one web session within the selected period. Purchases are server-confirmed payments in the period, including other sessions and app traffic. Outside complete funnel means that the full visit-to-purchase path was not observed. Historical visits and sources before tracking began are unavailable."
+      ); target.append(note);
+    }
+  } catch (_) { target.textContent = say("Не удалось загрузить отчёт. Выберите период ещё раз для повторной загрузки.", "Could not load the report. Select a period again to retry."); }
+}
+$("sales-period").addEventListener("change", loadSalesFunnel);

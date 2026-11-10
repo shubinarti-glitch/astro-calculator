@@ -3,33 +3,40 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Натальная карта онлайн бесплатно с транзитами | Project Artemisa</title>
+  <title>Натальная карта онлайн бесплатно с транзитами | AstroSMap · Project Artemisa</title>
   <meta name="description" content="Постройте натальную карту онлайн бесплатно по дате, времени и месту рождения. Транзиты, синастрия, соляр, прогрессии, прогноз и интерпретации." />
   <link rel="canonical" href="https://astrosmap.ru/" />
   <meta name="theme-color" content="#0c0c1e" />
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="/icon.svg" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230c0c1e'/%3E%3Ctext x='16' y='23' font-size='20' text-anchor='middle' fill='%23c9a86a'%3E%E2%9C%B7%3C/text%3E%3C/svg%3E" />
-  <meta property="og:title" content="Натальная карта онлайн бесплатно с транзитами | Project Artemisa" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/img/brand/astrosmap-icon-180.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/img/brand/astrosmap-icon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/img/brand/astrosmap-icon-16.png" />
+  <meta property="og:title" content="Натальная карта онлайн бесплатно с транзитами | AstroSMap · Project Artemisa" />
   <meta property="og:description" content="Бесплатный расчёт натальной карты по дате, времени и месту рождения: транзиты, синастрия, соляр, прогрессии и прогноз." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://astrosmap.ru/" />
-  <meta name="twitter:card" content="summary" />
+  <meta property="og:image" content="https://astrosmap.ru/img/brand/astrosmap-logo-light-square.png" />
+  <meta property="og:image:width" content="1024" />
+  <meta property="og:image:height" content="1024" />
+  <meta property="og:image:alt" content="AstroSMap · Project Artemisa" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://astrosmap.ru/img/brand/astrosmap-logo-light-square.png" />
   <script>(function(){try{var t=localStorage.getItem('astro_theme')||'light';document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();</script>
   <link rel="stylesheet" href="/fonts/fonts.css?v=20" />
-  <link rel="stylesheet" href="/css/style.css?v=33" />
+  <link rel="stylesheet" href="/css/style.css?v=67" />
   <style>html[lang="en"] .chart-svg::after { content: "⤢ click to enlarge"; }</style>
 </head>
 <body>
   <div class="stars" id="stars"></div>
   <div class="sun-rays" aria-hidden="true"></div>
 
-  <header class="site-header">
+  <header class="site-header home-header">
     <div class="logo">
-      <span class="logo-glyph" aria-hidden="true"></span>
       <div class="logo-text">
-        <h1 class="title-main" data-i18n="hero_title">Натальная карта онлайн</h1>
+        <span class="logo-watermark" aria-hidden="true"></span>
         <p class="brand" data-i18n="brand">Project Artemisa</p>
+        <p class="service-name" data-i18n="hero_service">Натальная карта</p>
+        <h1 class="title-main" data-i18n="hero_title">AstroSMap</h1>
         <p class="tagline" data-i18n="tagline">Бесплатный расчёт · транзиты, прогрессии, соляр и прогноз</p>
       </div>
     </div>
@@ -141,7 +148,7 @@
       <ul class="premium-benefits">
         <li data-i18n="premium_ben_1">Транзиты, синастрия, соляр/лунар, прогрессии и прогноз</li>
         <li data-i18n="premium_ben_2">Подробный разбор личности и ректификация времени рождения</li>
-        <li data-i18n="premium_ben_3">Экспорт отчёта в PDF и еженедельный прогноз на почту</li>
+        <li data-i18n="premium_ben_3">До 5 PDF-отчётов за каждые 30 дней и еженедельный прогноз на почту</li>
       </ul>
       <div class="premium-status hidden" id="premium-status"></div>
       <div class="premium-plans" id="premium-plans">
@@ -149,12 +156,12 @@
           <div class="plan-group-label" data-i18n="plan_group_sub">Подписка</div>
           <button class="btn-primary plan-btn" data-plan="month" type="button">
             <span class="plan-name" data-i18n="plan_month">Месяц</span>
-            <span class="plan-price">299 ₽<small data-i18n="plan_month_note">/месяц</small></span>
+            <span class="plan-price">329 ₽<small data-i18n="plan_month_note">/месяц</small></span>
           </button>
           <button class="btn-primary plan-btn plan-best" data-plan="year" type="button">
             <span class="plan-badge" data-i18n="plan_year_badge">Выгодно −45%</span>
             <span class="plan-name" data-i18n="plan_year">Год</span>
-            <span class="plan-price">1990 ₽<small data-i18n="plan_year_note2">≈166 ₽/месяц</small></span>
+            <span class="plan-price">2190 ₽<small data-i18n="plan_year_note2">≈183 ₽/месяц</small></span>
           </button>
         </section>
         <section class="plan-section plan-section-consult">
@@ -168,11 +175,11 @@
           </a>
           <button class="btn-primary plan-btn" data-plan="plus_month" type="button">
             <span class="plan-name" data-i18n="plan_plus_month">Месяц + консультация</span>
-            <span class="plan-price">1799 ₽</span>
+            <span class="plan-price">1829 ₽</span>
           </button>
           <button class="btn-primary plan-btn" data-plan="plus_year" type="button">
             <span class="plan-name" data-i18n="plan_plus_year">Год + консультация</span>
-            <span class="plan-price">3490 ₽</span>
+            <span class="plan-price">3690 ₽</span>
           </button>
         </section>
         <section class="plan-section plan-section-once">
@@ -183,14 +190,14 @@
           </button>
           <button class="btn-primary plan-btn plan-report" data-plan="report" type="button">
             <span class="plan-name" data-i18n="plan_report">Разовый PDF-отчёт</span>
-            <span class="plan-price">149 ₽<small data-i18n="plan_report_note2">один отчёт в PDF</small></span>
+            <span class="plan-price">169 ₽<small data-i18n="plan_report_note2">один отчёт в PDF</small></span>
           </button>
         </section>
       </div>
       <div class="premium-status hidden" id="consult-status"></div>
       <div class="premium-status hidden" id="report-status"></div>
       <div class="auth-error hidden" id="premium-error"></div>
-      <p class="section-note" data-i18n-html="premium_note">Оплата через ЮKassa. Подписка активируется сразу после оплаты. Нажимая «Оплатить», вы принимаете условия <a href="#" id="premium-offer-link">Публичной оферты</a>.</p>
+      <p class="section-note" data-i18n-html="premium_note">Оплата через Robokassa. Подписка активируется после подтверждения оплаты. Нажимая «Оплатить», вы принимаете условия <a href="#" id="premium-offer-link">Публичной оферты</a>.</p>
     </div>
   </div>
 
@@ -205,11 +212,12 @@
         <p data-i18n-html="privacy_p2"><strong>2. Аналитика и локальное хранение.</strong> Device_id и события с возможной привязкой к user_id являются псевдонимизированными, а не полностью обезличенными данными. В localStorage могут храниться токен входа, язык, тема и последнее выбранное местоположение.</p>
         <p data-i18n-html="privacy_p3"><strong>3. Цели.</strong> Регистрация, авторизация и безопасность аккаунта; расчёты и сохранение результатов; поддержка; обработка платежей и подписки; отправка сервисных писем и добровольной рассылки; организация консультации; аналитика, диагностика и улучшение Сервиса.</p>
         <p data-i18n-html="privacy_p4"><strong>4. Основания и защита.</strong> Согласие пользователя, исполнение договора и требования закона. Пароль хранится только в виде криптографического хеша. Доступ к данным ограничивается, применяются технические и организационные меры защиты.</p>
-        <p data-i18n-html="privacy_p5"><strong>5. Получатели.</strong> ЮKassa — платежи (данные банковской карты Сервис не получает); Яндекс.Почта — доставка писем; OpenStreetMap — поиск места по введённому тексту; Telegram — только по инициативе пользователя для консультации; поставщик хостинга — размещение и техническая работа Сервиса. Передаётся только необходимый объём данных.</p>
+        <p data-i18n-html="privacy_p5"><strong>5. Получатели.</strong> Robokassa — обработка платежей и, при наличии необходимых полномочий, формирование чеков НПД; данные банковской карты обрабатывает Robokassa, Сервис их не получает. Яндекс.Почта — доставка писем; OpenStreetMap — поиск места по введённому тексту; Telegram — только по инициативе пользователя для консультации; поставщик хостинга — размещение и техническая работа Сервиса. Передаётся только необходимый объём данных.</p>
         <p data-i18n-html="privacy_p6"><strong>6. Сроки.</strong> Данные аккаунта — до его удаления или отзыва согласия; обращения поддержки — до 3 лет; аналитические события — до 1 года; токены — до истечения срока или отзыва; платежные и налоговые сведения — в течение установленного законом срока; резервные копии удалённых данных — до 30 дней.</p>
         <p data-i18n-html="privacy_p7"><strong>7. Права и удаление.</strong> Пользователь может исправлять данные, отключить рассылку, удалить отдельные материалы и удалить аккаунт через кабинет либо направить запрос на astrosmap@yandex.ru. Отзыв согласия производится тем же способом. Для защиты аккаунта может потребоваться подтверждение личности.</p>
         <p data-i18n-html="privacy_p8"><strong>8. Последствия удаления.</strong> После подтверждения запроса аккаунт и связанные данные удаляются либо обезличиваются, кроме сведений, которые оператор обязан хранить по закону. Данные могут оставаться в резервных копиях не более 30 дней.</p>
         <p data-i18n-html="privacy_p9"><strong>9. Данные третьих лиц.</strong> Вводя данные рождения другого человека, пользователь подтверждает наличие законного основания и его согласия.</p>
+        <p data-i18n-html="privacy_mobile_note"><a href="/mobile-privacy.html">Добровольные мобильные отчёты: дополнение от 24.09.2026, отдельные сроки хранения и отключение.</a></p>
         <p data-i18n-html="privacy_p10"><strong>10. Изменения.</strong> Актуальная версия Политики публикуется на astrosmap.ru/privacy.html. Версия документа: 2026-09-01.</p>
         <p class="info-disclaimer" data-i18n="privacy_disclaimer">Сервис носит образовательно-развлекательный характер и не оказывает медицинских, юридических или финансовых услуг.</p>
       </div>
@@ -241,12 +249,12 @@
       <h2 class="privacy-title" data-i18n="offer_title">Публичная оферта</h2>
       <div class="privacy-text">
         <p data-i18n="offer_intro">Настоящая Публичная оферта (далее — Оферта) является предложением Шубина Артёма Ивановича, применяющего специальный налоговый режим «Налог на профессиональный доход» (самозанятый), ИНН 245010711934, e-mail: astrosmap@yandex.ru (далее — Исполнитель), заключить договор возмездного оказания услуг с любым лицом, оплатившим услуги на сервисе «Project Artemisa», размещённом по адресу astrosmap.ru (далее — Сервис). Оплата услуги означает полное принятие условий Оферты (акцепт).</p>
-        <p data-i18n-html="offer_p1"><strong>1. Услуги и тарифы.</strong> Подписка «Премиум» — расширенный доступ к функциям Сервиса (глубокий отчёт, ректификация, синастрия, прогнозы, PDF-экспорт): месяц — 299 ₽, год — 1990 ₽. Подписка «Премиум+» — подписка и одна консультация астролога: месяц — 1799 ₽, год — 3490 ₽. Консультация астролога без подписки — 3500 ₽.</p>
-        <p data-i18n-html="offer_p2"><strong>2. Порядок оплаты.</strong> Оплата производится через платёжный сервис ЮKassa банковской картой или иными доступными способами. Данные карты обрабатываются ЮKassa; Исполнитель их не получает. Подписка активируется автоматически сразу после подтверждения оплаты и действует указанный в тарифе срок. Автоматическое продление подписки не применяется: по окончании срока списаний не происходит, продление — только новой оплатой по желанию пользователя.</p>
+        <p data-i18n-html="offer_p1"><strong>1. Услуги и тарифы.</strong> Подписка «Премиум» — расширенный доступ к функциям Сервиса (глубокий отчёт, ректификация, синастрия и прогнозы): месяц — 329 ₽, год — 2190 ₽. Для подписок «Премиум» и «Премиум+» доступно до 5 скачиваний PDF в любом скользящем 30-дневном периоде действия подписки. Разовый PDF-кредит и отдельно оплаченный PDF в этот лимит не входят. Подписка «Премиум+» — подписка и одна консультация астролога: месяц — 1829 ₽, год — 3690 ₽. Консультация астролога без подписки — 3500 ₽. Разовый PDF-отчёт по натальной карте — 169 ₽.</p>
+        <p data-i18n-html="offer_p2"><strong>2. Порядок оплаты.</strong> Новые заказы оплачиваются через Robokassa способами, доступными на её платёжной странице. Данные карты обрабатывает Robokassa; Исполнитель их не получает. Для формирования чека НПД сведения об оплате передаются Robokassa при наличии необходимых полномочий; если чек не сформирован автоматически, Исполнитель формирует и направляет его через приложение «Мой налог». Подписка активируется после подтверждения оплаты и действует указанный в тарифе срок. Автоматического продления нет: после окончания срока списания не производятся. После подтверждения оплаты разового PDF-отчёта в аккаунте, с которого оформлена покупка, становится доступно одно скачивание: пользователь рассчитывает натальную карту и нажимает «Скачать PDF». Файл формируется сервисом и скачивается на устройство; физическая доставка и отправка по электронной почте не предусмотрены.</p>
         <p data-i18n-html="offer_p3"><strong>3. Консультация астролога.</strong> После оплаты тарифа с консультацией Исполнитель связывается с пользователем в Telegram (кнопка связи появляется в Сервисе после оплаты) в течение 3 (трёх) рабочих дней для согласования времени. Консультация — личный разбор натальной карты длительностью до 60 минут, в формате видеосвязи либо ином удобном пользователю формате (переписка, голосовая беседа) по согласованию сторон. Для консультации пользователь предоставляет данные рождения.</p>
         <p data-i18n-html="offer_p4"><strong>4. Характер услуг.</strong> Услуги носят информационно-развлекательный характер. Расчёты и консультации описывают астрологические тенденции, не являются медицинской, психологической, юридической или финансовой помощью и не гарантируют наступления событий. Решения на основе полученной информации пользователь принимает самостоятельно.</p>
-        <p data-i18n-html="offer_p5"><strong>5. Отказ от услуги и возврат средств.</strong> Пользователь вправе отказаться от услуги в любой момент (ст. 32 Закона РФ «О защите прав потребителей»), направив заявление на e-mail Исполнителя с указанием имени пользователя и даты платежа. Возврат: за консультацию — в полном объёме, если консультация ещё не оказана; за подписку — пропорционально неиспользованному сроку. Возврат производится тем же способом, которым была произведена оплата, в течение 10 рабочих дней с момента получения заявления.</p>
-        <p data-i18n-html="offer_p6"><strong>6. Чек.</strong> На каждый платёж Исполнитель формирует чек в соответствии с Федеральным законом № 422-ФЗ (налог на профессиональный доход); чек направляется на контакт, указанный при оплате.</p>
+        <p data-i18n-html="offer_p5"><strong>5. Отказ от услуги и возврат средств.</strong> Пользователь вправе отказаться от услуги в любой момент (ст. 32 Закона РФ «О защите прав потребителей»), направив заявление на e-mail Исполнителя с указанием имени пользователя и даты платежа. При отказе пользователя от консультации до её проведения Исполнитель возвращает полученную оплату за вычетом фактически понесённых и документально подтверждённых расходов, непосредственно связанных с исполнением заказа. Если Исполнитель не может провести консультацию в согласованный срок и стороны не согласовали новую дату, пользователь вправе отказаться от услуги; уплаченная за неоказанную консультацию сумма возвращается в установленный законом срок. За подписку возврат рассчитывается пропорционально неиспользованному сроку; за разовый PDF-отчёт учитывается, подготовлен и предоставлен ли отчёт, а также фактически понесённые Исполнителем расходы, связанные с заказом. Возврат производится тем же способом, которым была произведена оплата, в сроки, установленные законодательством РФ.</p>
+        <p data-i18n-html="offer_p6"><strong>6. Чек.</strong> Robokassa формирует и направляет чек, если ей предоставлены необходимые полномочия на фискализацию. Если чек не сформирован автоматически, Исполнитель формирует и направляет его через приложение «Мой налог».</p>
         <p data-i18n-html="offer_p7"><strong>7. Претензии.</strong> Претензии по качеству услуг направляются на e-mail Исполнителя и рассматриваются в течение 10 рабочих дней. Споры разрешаются в соответствии с законодательством РФ.</p>
         <p data-i18n-html="offer_p8"><strong>8. Прочие условия.</strong> Исполнитель вправе изменять Оферту; для пользователя действует редакция, актуальная на момент оплаты. Во всём, что не урегулировано Офертой, применяются Пользовательское соглашение и законодательство РФ.</p>
       </div>
@@ -299,6 +307,8 @@
         <div id="admin-stats" class="admin-stats"></div>
         <h3 class="adm-section-title" data-i18n="admin_usage_title">Использование функций (30 дней / всего)</h3>
         <div class="table-wrap"><table id="admin-usage"></table></div>
+        <h3 class="adm-section-title">Mobile reports / Отчёты приложения</h3>
+        <div id="admin-mobile-reports" aria-live="polite"></div>
       </div>
 
       <div class="adm-pane hidden" id="adm-pane-users">
@@ -306,6 +316,10 @@
       </div>
 
       <div class="adm-pane hidden" id="adm-pane-pay">
+        <h3 id="sales-funnel-title">Воронка продаж</h3>
+        <label id="sales-period-label" for="sales-period">Период</label>
+        <select id="sales-period"><option value="7">7</option><option value="30" selected>30</option><option value="90">90</option></select>
+        <div id="sales-funnel" aria-live="polite"></div>
         <div id="admin-pay-summary" class="admin-stats"></div>
         <div class="table-wrap"><table id="admin-payments"></table></div>
       </div>
@@ -332,8 +346,8 @@
     <div class="modal modal-report">
       <button class="modal-close" id="deep-close" aria-label="Закрыть">×</button>
       <div class="report-actions">
+        <span id="pdf-quota-deep" class="pdf-quota-note hidden" role="status" aria-live="polite"></span>
         <button id="deep-pdf" class="vedic-btn" data-i18n="deep_pdf">📄 Скачать PDF</button>
-        <button id="deep-print" class="vedic-btn" data-i18n="deep_print">🖨 Печать</button>
       </div>
       <div id="deep-content" class="report-content"></div>
     </div>
@@ -668,8 +682,8 @@
       <div id="error" class="error hidden"></div>
 
       <div id="result-toolbar" class="result-toolbar hidden">
-        <button id="result-pdf" class="result-print-btn" data-i18n="result_pdf">📄 Скачать PDF</button>
-        <button id="result-print" class="result-print-btn" data-i18n="result_print">🖨 Печать</button>
+        <span id="pdf-quota-main" class="pdf-quota-note hidden" role="status" aria-live="polite"></span>
+        <button id="result-pdf" class="result-pdf-btn" data-i18n="result_pdf">📄 Скачать PDF</button>
       </div>
 
       <div id="results" class="results hidden">
@@ -886,7 +900,8 @@
     <p id="support-status" class="support-status hidden"></p>
   </div>
 
-  <script src="/js/i18n.js?v=35"></script>
-  <script src="/js/app.js?v=36"></script>
+  <script src="/js/i18n.js?v=40"></script>
+  <script src="/js/sales.js?v=1"></script>
+  <script src="/js/app.js?v=42"></script>
 </body>
 </html>

@@ -1,5 +1,6 @@
 """Localize public API errors without altering status codes or Russian defaults."""
 TRANSLATIONS = {
+    "Создание карты отменено: карта была удалена.": "Chart creation was cancelled: the chart was deleted.",
     "На бесплатном тарифе можно сохранить одну карту. Подписка «Премиум» снимает ограничение и вернёт доступ ко всем сохранённым.": "The free plan allows one saved chart. A Premium subscription removes this limit and restores access to all saved charts.",
     "Пользователь с таким именем уже существует": "This username is already taken.",
     "Платёжная система не настроена (data/yookassa.json)": "The payment system is not configured.",
@@ -69,3 +70,49 @@ def translate(detail, lang):
     if detail.startswith("Value error, "):
         return "Value error, " + translate(detail[len("Value error, "):], lang)
     return TRANSLATIONS.get(detail, detail)
+
+
+_VALIDATION_MESSAGES = {
+    "missing": ("Обязательное поле.", "Field required."),
+    "string_type": ("Введите текст.", "Input should be a valid string."),
+    "int_type": ("Введите целое число.", "Input should be a valid integer."),
+    "int_parsing": ("Введите целое число.", "Input should be a valid integer."),
+    "float_type": ("Введите число.", "Input should be a valid number."),
+    "float_parsing": ("Введите число.", "Input should be a valid number."),
+    "bool_type": ("Введите логическое значение.", "Input should be a valid boolean."),
+    "bool_parsing": ("Введите логическое значение.", "Input should be a valid boolean."),
+    "string_too_short": ("Значение слишком короткое (минимум {min_length}).", "String should have at least {min_length} characters."),
+    "string_too_long": ("Значение слишком длинное (максимум {max_length}).", "String should have at most {max_length} characters."),
+    "greater_than_equal": ("Значение должно быть не меньше {ge}.", "Input should be greater than or equal to {ge}"),
+    "less_than_equal": ("Значение должно быть не больше {le}.", "Input should be less than or equal to {le}"),
+    "greater_than": ("Значение должно быть больше {gt}.", "Input should be greater than {gt}"),
+    "less_than": ("Значение должно быть меньше {lt}.", "Input should be less than {lt}"),
+    "string_pattern_mismatch": ("Значение не соответствует требуемому формату.", "String does not match the required format."),
+    "extra_forbidden": ("Лишнее поле не допускается.", "Extra inputs are not permitted."),
+    "json_invalid": ("Некорректный формат JSON.", "Invalid JSON."),
+}
+
+
+def validation_message(error, lang):
+    """Return a localized Pydantic message using its stable type and context."""
+    if not isinstance(error, dict):
+        return "Ошибка проверки данных." if lang != "en" else "Invalid input."
+    error_type = error.get("type")
+    context = error.get("ctx") or {}
+    template = _VALIDATION_MESSAGES.get(error_type)
+    if template:
+        message = template[1] if lang == "en" else template[0]
+        try:
+            return message.format(**context)
+        except (KeyError, ValueError):
+            return "Invalid input." if lang == "en" else "Проверьте введённые данные."
+
+    original = str(error.get("msg") or "")
+    if original.startswith("Value error, "):
+        reason = original[len("Value error, "):]
+        reason = translate(reason, lang)
+        return ("Invalid value: " if lang == "en" else "Некорректное значение: ") + reason
+    translated = translate(original, lang)
+    if translated != original:
+        return translated
+    return ("Invalid input." if lang == "en" else "Проверьте введённые данные.")
