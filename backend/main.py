@@ -702,8 +702,12 @@ def api_billing_create(body: BillingCreate, request: Request, uid: int = Depends
     return_url = str(request.base_url).rstrip("/") + "/?payment=check"
     db.set_preferred_language(uid, body.lang)
     try:
+        if robokassa.config()["is_test"]:
+            raise HTTPException(status_code=503, detail="Оплата временно недоступна: магазин Robokassa работает в тестовом режиме.")
         url = payments.create_payment(uid, body.plan, return_url,
                                       body.attribution.model_dump(mode="json", exclude_none=True) if body.attribution else None)
+    except HTTPException:
+        raise
     except (payments.NotConfiguredError, robokassa.NotConfiguredError) as exc:
         raise HTTPException(status_code=503, detail=str(exc))
     except Exception:

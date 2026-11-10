@@ -52,6 +52,7 @@ def test_billing_create_uses_robokassa_with_current_plan_price(tmp_path, monkeyp
         calls.append((user_id, plan, return_url, price, attribution, email))
         return "https://auth.robokassa.ru/test-checkout"
 
+    monkeypatch.setattr(robokassa, "config", lambda: {"is_test": False})
     monkeypatch.setattr(robokassa, "create_payment", fake_checkout)
     client = TestClient(app)
     response = client.post(
@@ -62,6 +63,26 @@ def test_billing_create_uses_robokassa_with_current_plan_price(tmp_path, monkeyp
     assert response.json()["confirmation_url"] == "https://auth.robokassa.ru/test-checkout"
     assert calls and calls[0][0:2] == (user["id"], "month")
     assert calls[0][3] == payments.PLANS["month"][0] == 329
+
+
+def test_billing_create_blocks_checkout_in_robokassa_test_mode(tmp_path, monkeypatch):
+    monkeypatch.setattr(db, "DB_PATH", tmp_path / "test.db")
+    db.init_db()
+    user = db.create_user("robokassa_test_mode_block", "test-password")
+
+    def unexpected_checkout(*_args, **_kwargs):
+        raise AssertionError("test-mode checkout must not be created")
+
+    monkeypatch.setattr(robokassa, "config", lambda: {"is_test": True})
+    monkeypatch.setattr(robokassa, "create_payment", unexpected_checkout)
+    client = TestClient(app)
+    response = client.post(
+        "/api/billing/create", json={"plan": "month", "lang": "ru"},
+        headers={"Authorization": f"Bearer {db.make_token(user['id'])}"},
+    )
+
+    assert response.status_code == 503
+    assert "тестовом режиме" in response.json()["detail"]
 
 
 def test_robokassa_result_requires_signature_and_exact_amount(tmp_path, monkeypatch):
