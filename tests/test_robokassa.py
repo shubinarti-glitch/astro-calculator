@@ -28,7 +28,7 @@ def test_robokassa_checkout_signed_receipt_and_test_flag(tmp_path, monkeypatch):
                                fields["Receipt"],
                                robokassa.quote(fields["SuccessUrl2"], safe=""),
                                fields["SuccessUrl2Method"], "pass1", f"Shp_attempt={fields['Shp_attempt']}"))
-    assert robokassa.quote(fields["SuccessUrl2"], safe="").startswith("https%3A%2F%2Fastrosmap.ru%2F%3Fpayment%3Dcheck%26attempt%3D")
+    assert fields["SuccessUrl2"].startswith("https://astrosmap.ru/?payment=check&attempt=")
     assert fields["SignatureValue"] == robokassa.ALGORITHMS["sha256"](signature_base.encode()).hexdigest()
     assert sales.payment_provider(fields["InvId"]) == "robokassa"
     plus = json.loads(robokassa._receipt("plus_month", 1829))["items"]
