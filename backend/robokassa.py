@@ -69,10 +69,10 @@ _ITEMS = {
     "month": [_item(_ITEM_NAMES["month"], 329, "full_payment")],
     "year": [_item(_ITEM_NAMES["year"], 2190, "full_payment")],
     "plus_month": [_item("Подписка Премиум на месяц", 329, "full_payment"),
-                   _item("Консультация астролога", 1500, "full_prepayment")],
+                   _item("Консультация астролога", 1500, "full_payment")],
     "plus_year": [_item("Подписка Премиум на год", 2190, "full_payment"),
-                  _item("Консультация астролога", 1500, "full_prepayment")],
-    "consult": [_item(_ITEM_NAMES["consult"], 3500, "full_prepayment")],
+                  _item("Консультация астролога", 1500, "full_payment")],
+    "consult": [_item(_ITEM_NAMES["consult"], 3500, "full_payment")],
     "report": [_item(_ITEM_NAMES["report"], 169, "full_payment")],
 }
 

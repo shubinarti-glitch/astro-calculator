@@ -33,7 +33,13 @@ def test_robokassa_checkout_signed_receipt_and_test_flag(tmp_path, monkeypatch):
     assert sales.payment_provider(fields["InvId"]) == "robokassa"
     plus = json.loads(robokassa._receipt("plus_month", 1829))["items"]
     assert [item["sum"] for item in plus] == [329, 1500]
-    assert plus[1]["payment_method"] == "full_prepayment"
+    assert plus[1]["payment_method"] == "full_payment"
+
+
+def test_consultation_receipt_uses_same_payment_method_as_other_purchases():
+    for plan, price in (("consult", 3500), ("plus_month", 1829), ("plus_year", 3690)):
+        items = json.loads(robokassa._receipt(plan, price))["items"]
+        assert all(item["payment_method"] == "full_payment" for item in items)
 
 
 def test_receipt_totals_match_all_approved_plan_prices():
