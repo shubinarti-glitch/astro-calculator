@@ -95,7 +95,7 @@ def create_payment(user_id: int, plan: str, return_url: str, price: int, attribu
     if email and re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", email):
         fields["Email"] = email
     signed = ":".join((fields["MerchantLogin"], fields["OutSum"], invoice_id, fields["Receipt"],
-                       quote(fields["SuccessUrl2"], safe=""), fields["SuccessUrl2Method"], cfg["password1"],
+                       fields["SuccessUrl2"], fields["SuccessUrl2Method"], cfg["password1"],
                        f"Shp_attempt={attempt}"))
     fields["SignatureValue"] = ALGORITHMS[cfg["hash_algorithm"]](signed.encode("utf-8")).hexdigest()
     if cfg["is_test"]:
