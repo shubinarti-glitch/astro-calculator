@@ -26,12 +26,12 @@ def test_robokassa_checkout_signed_receipt_and_test_flag(tmp_path, monkeypatch):
                                  "payment_method": "full_payment", "payment_object": "service", "tax": "none"}]
     signature_base = ":".join((fields["MerchantLogin"], fields["OutSum"], fields["InvId"],
                                fields["Receipt"],
-                               robokassa.quote(fields["SuccessUrl2"], safe=""),
+                               fields["SuccessUrl2"],
                                fields["SuccessUrl2Method"], "pass1", f"Shp_attempt={fields['Shp_attempt']}"))
     assert fields["SuccessUrl2"].startswith("https://astrosmap.ru/?payment=check&attempt=")
     assert fields["SignatureValue"] == robokassa.ALGORITHMS["sha256"](signature_base.encode()).hexdigest()
-    raw_url_signature_base = signature_base.replace(robokassa.quote(fields["SuccessUrl2"], safe=""), fields["SuccessUrl2"])
-    assert fields["SignatureValue"] != robokassa.ALGORITHMS["sha256"](raw_url_signature_base.encode()).hexdigest()
+    encoded_url_signature_base = signature_base.replace(fields["SuccessUrl2"], robokassa.quote(fields["SuccessUrl2"], safe=""))
+    assert fields["SignatureValue"] != robokassa.ALGORITHMS["sha256"](encoded_url_signature_base.encode()).hexdigest()
     assert sales.payment_provider(fields["InvId"]) == "robokassa"
     plus = json.loads(robokassa._receipt("plus_month", 1829))["items"]
     assert [item["sum"] for item in plus] == [329, 1500]
