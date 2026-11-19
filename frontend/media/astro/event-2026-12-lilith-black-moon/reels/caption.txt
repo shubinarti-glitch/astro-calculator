@@ -1,0 +1,7 @@
+Warning: fs was declared with const; use let for reassignable variables.
+Warning: b was declared with const; use let for reassignable variables.
+Чёрная Луна Лилит в натальной карте — расчётная точка, а не планета. Не путай её с астероидом (1181) Lilith: это отдельное небесное тело. Если два приложения показывают Лилит в разных знаках, сначала сравни их настройки — возможно, они считают её по-разному. Астрологи могут использовать Лилит как тему для размышления о личных границах и поступках; это не диагноз и не научный вывод о характере. Источники: Swiss Ephemeris — https://www.astro.com/swisseph/swisseph.htm ; MP3C database — https://mp3c.oca.eu/bodies/Lilith/
+
+Изучи свою натальную карту на astrosmap.ru.
+
+#астрология #лилит #натальнаякарта #астрословарь #astrosmap
