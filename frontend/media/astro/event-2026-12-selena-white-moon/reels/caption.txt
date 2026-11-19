@@ -1,5 +1,3 @@
-Warning: fs was declared with const; use let for reassignable variables.
-Warning: b was declared with const; use let for reassignable variables.
 Белая Луна Селена — условная точка, которую используют некоторые астрологические школы. Это не настоящее небесное тело. Например, два приложения могут показать её в разных местах, потому что считают по-разному. Проверь настройки, прежде чем сравнивать карты. Её толкования — символический способ задать себе вопросы о ценностях и выборе, а не обещание защиты или удачи. Источник: Swiss Ephemeris — https://www.astro.com/swisseph/swisseph.htm
 
 Изучи свою натальную карту на astrosmap.ru.
